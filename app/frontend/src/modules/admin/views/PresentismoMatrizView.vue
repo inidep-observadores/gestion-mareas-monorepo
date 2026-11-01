@@ -27,10 +27,14 @@
             <ChevronDownIcon class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
           </div>
 
-          <button @click="exportToExcel" :disabled="isLoading || !data" class="h-10 px-4 inline-flex items-center justify-center gap-2 text-sm font-bold tracking-widest uppercase transition-all rounded-lg bg-surface border border-border text-primary hover:bg-primary/5 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
-            <DownloadIcon class="w-4 h-4" />
-            Exportar Excel
-          </button>
+          <ExportExcelButton
+            label="EXPORTAR"
+            title="Exportar planilla a Excel"
+            :loading="isExporting"
+            :disabled="isLoading || !data"
+            @click="exportToExcel"
+            class="px-4 py-1.5 h-10 rounded bg-surface shadow-theme-xs border-border"
+          />
         </div>
       </div>
 
@@ -254,7 +258,8 @@ import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import AdminLayout from '@/components/layout/AdminLayout.vue';
 import BackButton from '@/components/common/BackButton.vue';
 import SearchInput from '@/components/ui/SearchInput.vue';
-import { ChevronDownIcon, DownloadIcon, ArrowLeftIcon, ArrowRightIcon } from '@/icons';
+import ExportExcelButton from '@/modules/shared/components/ExportExcelButton.vue';
+import { ChevronDownIcon, ArrowLeftIcon, ArrowRightIcon } from '@/icons';
 import { toast } from 'vue-sonner';
 import presentismoApi from '../services/presentismo.service';
 import presentismoExportService from '../services/presentismo-export.service';

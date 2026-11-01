@@ -100,8 +100,8 @@ describe('ObservadoresDisponibilidadView.vue', () => {
     await wrapper.vm.$nextTick();
 
     expect(disponibilidadApi.obtenerDisponibilidad).toHaveBeenCalled();
-    const exportBtn = wrapper.findAll('button').find((b) => b.text().includes('Exportar Excel'));
-    expect(exportBtn?.exists()).toBe(true);
+    const exportBtn = wrapper.findComponent({ name: 'ExportExcelButton' });
+    expect(exportBtn.exists()).toBe(true);
   });
 
   it('debe ejecutar exportToExcel con el rango del timeline y observadores filtrados', async () => {
@@ -112,8 +112,8 @@ describe('ObservadoresDisponibilidadView.vue', () => {
     await new Promise((r) => setTimeout(r, 0));
     await wrapper.vm.$nextTick();
 
-    const exportBtn = wrapper.findAll('button').find((b) => b.text().includes('Exportar Excel'));
-    await exportBtn?.trigger('click');
+    const exportBtn = wrapper.findComponent({ name: 'ExportExcelButton' });
+    await exportBtn.trigger('click');
 
     expect(disponibilidadApi.exportarAExcel).toHaveBeenCalledWith(
       expect.objectContaining({

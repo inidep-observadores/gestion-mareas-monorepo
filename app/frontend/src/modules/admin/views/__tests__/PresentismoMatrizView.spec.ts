@@ -75,8 +75,8 @@ describe('PresentismoMatrizView.vue', () => {
     const wrapper = mount(PresentismoMatrizView, { global: { stubs: globalStubs } });
     await flushPromises();
 
-    const exportBtn = wrapper.findAll('button').find(b => b.text().includes('Exportar Excel'));
-    await exportBtn?.trigger('click');
+    const exportBtn = wrapper.findComponent({ name: 'ExportExcelButton' });
+    await exportBtn.trigger('click');
     await flushPromises();
 
     expect(presentismoExportService.exportarAExcel).toHaveBeenCalled();
