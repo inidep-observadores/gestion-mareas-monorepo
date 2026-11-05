@@ -445,8 +445,10 @@ export class DisponibilidadService {
         });
 
         // Determinar si es flexible
+        // Regla de negocio: La novedad NO puede ser flexible si la documentación está vencida
+        // o si el observador declaró disponibilidad a futuro para una fecha posterior.
         let isFlexible = false;
-        if (estadoEvaluado.estado === 'NOVEDAD') {
+        if (estadoEvaluado.estado === 'NOVEDAD' && !docVencida && !proximoAvisoDisponible) {
           isFlexible = novedadesDelDia.some(
             n => n.tipoNovedad?.codigo === 'FC' || n.permiteUrgencia === true
           );
@@ -548,7 +550,8 @@ export class DisponibilidadService {
             flexible: isFlexible,
             isPast,
             buqueId: estadoEvaluado.buqueId,
-            buqueNombre: estadoEvaluado.buqueNombre
+            buqueNombre: estadoEvaluado.buqueNombre,
+            warningDocVencida: warningString
           });
         }
       }

@@ -172,6 +172,52 @@ describe('DisponibilidadService', () => {
     expect(eventoFC?.flexible).toBe(true);
   });
 
+  it('no debe marcar como flexible un Franco Compensatorio si la documentación está vencida', async () => {
+    const today = new Date();
+    const ayer = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+    const haceDosMeses = new Date(today.getTime() - 60 * 24 * 60 * 60 * 1000);
+
+    mockPrismaService.observador.findMany.mockResolvedValue([
+      {
+        id: 'obs-fc-doc-vencida',
+        nombre: 'Raul',
+        apellido: 'Bargas',
+        codigoInterno: 999,
+        tipoObservador: 'OBSERVADOR',
+        tipoContrato: 'TITULAR',
+        conImpedimento: false,
+        motivoImpedimento: null,
+        disponible: true,
+        vencimientoCedula: haceDosMeses, // Vencida
+        vencimientoAptoMedico: null,
+      },
+    ]);
+
+    mockPrismaService.observadorNovedad.findMany.mockResolvedValue([
+      {
+        id: 'nov-fc-1',
+        observadorId: 'obs-fc-doc-vencida',
+        fechaInicio: ayer,
+        fechaFin: new Date(today.getTime() + 5 * 24 * 60 * 60 * 1000),
+        permiteUrgencia: false,
+        motivo: 'Francos acumulados',
+        tipoNovedad: {
+          codigo: 'FC',
+          descripcion: 'Franco Compensatorio',
+          afectaPresentismo: true,
+        },
+      },
+    ]);
+    mockPrismaService.marea.findMany.mockResolvedValue([]);
+
+    const result = await service.obtenerDisponibilidad(1);
+    const obs = result.observadores[0];
+    const eventoFC = obs.eventos.find(e => e.codigoCorto === 'FC');
+    expect(eventoFC).toBeDefined();
+    expect(eventoFC?.flexible).toBe(false);
+    expect(eventoFC?.warningDocVencida).toBeDefined();
+  });
+
   it('debe pintar como NO_DISP los días libres anteriores a un aviso de disponibilidad (DISPONIBLE)', async () => {
     const today = new Date();
     // Aviso de disponibilidad para dentro de 10 días

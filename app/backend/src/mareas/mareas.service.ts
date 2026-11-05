@@ -1701,6 +1701,34 @@ export class MareasService {
         observadores.forEach((obs) => {
             if (!obs.activo) return;
 
+            const timezone = DateUtils.getTimezone();
+            const todayStart = DateTime.fromJSDate(now, { zone: timezone }).startOf('day');
+
+            // 1. Evaluación de Documentación Vencida (Cédula y Apto Médico)
+            const dtVtoCedula = obs.vencimientoCedula
+                ? DateTime.fromJSDate(obs.vencimientoCedula, { zone: timezone }).startOf('day')
+                : null;
+            const dtVtoMedico = obs.vencimientoAptoMedico
+                ? DateTime.fromJSDate(obs.vencimientoAptoMedico, { zone: timezone }).startOf('day')
+                : null;
+
+            let docVencida = false;
+            let motivoDocVencida = '';
+
+            const cedulaVencida = dtVtoCedula !== null && dtVtoCedula < todayStart;
+            const medicoVencido = dtVtoMedico !== null && dtVtoMedico < todayStart;
+
+            if (cedulaVencida && medicoVencido) {
+                docVencida = true;
+                motivoDocVencida = `Documentación vencida: Cédula (${dtVtoCedula.toFormat('dd/MM/yyyy')}) y Apto médico (${dtVtoMedico.toFormat('dd/MM/yyyy')})`;
+            } else if (cedulaVencida) {
+                docVencida = true;
+                motivoDocVencida = `Documentación vencida: Cédula (${dtVtoCedula.toFormat('dd/MM/yyyy')})`;
+            } else if (medicoVencido) {
+                docVencida = true;
+                motivoDocVencida = `Documentación vencida: Apto médico (${dtVtoMedico.toFormat('dd/MM/yyyy')})`;
+            }
+
             const docData: DocFields = {
                 codigoInterno: obs.codigoInterno ?? null,
                 dni: obs.dni ?? null,
@@ -1719,8 +1747,20 @@ export class MareasService {
 
             const hasDesignation = designadosActivosByObs.has(obs.id);
             const novedadBloqueante = novedadesBloqueantesByObs.get(obs.id);
-            const avisoFuturoDisp = avisosFuturosDispByObs.get(obs.id);
-            const status = this.getObserverStatus(obs, activeNav.has(obs.id), hasDesignation, lastArrival, now, novedadBloqueante, avisoFuturoDisp);
+
+            // Avisos futuros de disponibilidad (por novedad o fechaProximaDisponibilidad en padrón)
+            let avisoFuturoDisp = avisosFuturosDispByObs.get(obs.id);
+            if (!avisoFuturoDisp && obs.fechaProximaDisponibilidad) {
+                const dtProx = DateTime.fromJSDate(obs.fechaProximaDisponibilidad, { zone: timezone }).startOf('day');
+                if (dtProx > todayStart) {
+                    avisoFuturoDisp = {
+                        fechaInicio: obs.fechaProximaDisponibilidad,
+                        tipoNovedad: { descripcion: 'Próxima disponibilidad' }
+                    };
+                }
+            }
+
+            const status = this.getObserverStatus(obs, activeNav.has(obs.id), hasDesignation, lastArrival, now, novedadBloqueante, avisoFuturoDisp, docVencida);
 
             // Determinar disponibilidad confirmada y planificación simulada futura
             let tieneAvisoVigente = false;
@@ -1805,6 +1845,8 @@ export class MareasService {
                         motivo = 'No disponible (desactivado en padrón)';
                     } else if (obs.conImpedimento) {
                         motivo = obs.motivoImpedimento || 'Sin motivo especificado';
+                    } else if (docVencida) {
+                        motivo = motivoDocVencida;
                     } else if (novedadBloqueante) {
                         motivo = novedadBloqueante.tipoNovedad?.descripcion + (novedadBloqueante.motivo ? ` - ${novedadBloqueante.motivo}` : '');
                     } else if (avisoFuturoDisp) {
@@ -1935,14 +1977,15 @@ export class MareasService {
         lastArrival: Date | undefined,
         now: Date,
         novedadBloqueante?: any,
-        avisoFuturoDisp?: any
+        avisoFuturoDisp?: any,
+        docVencida: boolean = false
     ): 'NAVEGANDO' | 'IMPEDIDO' | 'DESIGNADO' | 'DESCANSO' | 'DISPONIBLE' | 'OTRO' {
 
         if (isNavigating) return 'NAVEGANDO';
 
         if (obs.disponible === false) return 'IMPEDIDO';
 
-        if (obs.conImpedimento || novedadBloqueante || avisoFuturoDisp) return 'IMPEDIDO';
+        if (obs.conImpedimento || docVencida || novedadBloqueante || avisoFuturoDisp) return 'IMPEDIDO';
 
         if (hasDesignation) return 'DESIGNADO';
 

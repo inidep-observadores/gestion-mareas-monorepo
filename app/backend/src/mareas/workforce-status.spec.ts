@@ -279,4 +279,119 @@ describe('MareasService - getWorkforceStatus', () => {
 
         jest.useRealTimers();
     });
+
+    it('debe inhabilitar a IMPEDIDO a un observador con documentación vencida aunque tenga Franco Compensatorio', async () => {
+        const now = new Date('2026-11-04T12:00:00Z');
+        jest.useFakeTimers().setSystemTime(now);
+
+        const obsConDocVencida = {
+            id: 'obs-vencido',
+            apellido: 'Bargas Peña',
+            nombre: 'Raul Bernardo',
+            activo: true,
+            sexo: 'Masculino',
+            eventual: false,
+            tipoObservador: 'OBSERVADOR',
+            tipoContrato: 'TITULAR',
+            disponible: true,
+            conImpedimento: false,
+            vencimientoCedula: new Date('2026-10-15T00:00:00Z'), // Vencida
+            vencimientoAptoMedico: new Date('2027-05-20T00:00:00Z'),
+        };
+
+        mockPrismaService.observador.findMany.mockResolvedValue([obsConDocVencida]);
+        mockPrismaService.mareaEtapa.findMany.mockResolvedValue([]);
+        mockPrismaService.marea.findMany.mockResolvedValue([]);
+        mockPrismaService.systemStatus.findUnique.mockResolvedValue({ key: 'LAST_ALERT_CHECK', lastUpdate: now });
+
+        // Novedad activa de Franco Compensatorio (FC)
+        mockPrismaService.observadorNovedad.findMany.mockResolvedValue([
+            {
+                id: 'nov-fc',
+                observadorId: 'obs-vencido',
+                fechaInicio: new Date('2026-11-01T00:00:00Z'),
+                fechaFin: new Date('2026-11-08T00:00:00Z'),
+                activo: true,
+                estadoAprobacion: 'APROBADA',
+                tipoNovedad: { codigo: 'FC', descripcion: 'Franco Compensatorio', afectaPresentismo: true }
+            }
+        ]);
+
+        const result = await service.getWorkforceStatus(2026);
+
+        // No debe figurar en disponibles
+        expect(result.disponibles).toBe(0);
+        expect(result.listDisponibles).toHaveLength(0);
+
+        // Debe figurar como impedido con motivo de documentación vencida
+        expect(result.impedidos).toBe(1);
+        expect(result.listImpedidos).toHaveLength(1);
+        expect(result.listImpedidos[0].id).toBe('obs-vencido');
+        expect(result.listImpedidos[0].motivo).toContain('Documentación vencida: Cédula');
+
+        jest.useRealTimers();
+    });
+
+    it('debe priorizar aviso de disponibilidad futura sobre Franco Compensatorio en el período previo', async () => {
+        const now = new Date('2026-11-04T12:00:00Z');
+        jest.useFakeTimers().setSystemTime(now);
+
+        const obsConDispFutura = {
+            id: 'obs-futuro',
+            apellido: 'Perez',
+            nombre: 'Juan',
+            activo: true,
+            sexo: 'Masculino',
+            eventual: false,
+            tipoObservador: 'OBSERVADOR',
+            tipoContrato: 'TITULAR',
+            disponible: true,
+            conImpedimento: false,
+            vencimientoCedula: new Date('2027-10-15T00:00:00Z'),
+            vencimientoAptoMedico: new Date('2027-05-20T00:00:00Z'),
+        };
+
+        mockPrismaService.observador.findMany.mockResolvedValue([obsConDispFutura]);
+        mockPrismaService.mareaEtapa.findMany.mockResolvedValue([]);
+        mockPrismaService.marea.findMany.mockResolvedValue([]);
+        mockPrismaService.systemStatus.findUnique.mockResolvedValue({ key: 'LAST_ALERT_CHECK', lastUpdate: now });
+
+        // Novedad activa de FC hoy y aviso de disponibilidad a futuro para el 20/11
+        mockPrismaService.observadorNovedad.findMany.mockImplementation((args: any) => {
+            if (args?.where?.fechaInicio?.gt) {
+                return Promise.resolve([
+                    {
+                        id: 'nov-disp-futura',
+                        observadorId: 'obs-futuro',
+                        fechaInicio: new Date('2026-11-20T00:00:00Z'),
+                        fechaFin: null,
+                        activo: true,
+                        estadoAprobacion: 'APROBADA',
+                        tipoNovedad: { codigo: 'DISPONIBLE', descripcion: 'Disponible para embarque' }
+                    }
+                ]);
+            }
+            return Promise.resolve([
+                {
+                    id: 'nov-fc',
+                    observadorId: 'obs-futuro',
+                    fechaInicio: new Date('2026-11-01T00:00:00Z'),
+                    fechaFin: new Date('2026-11-08T00:00:00Z'),
+                    activo: true,
+                    estadoAprobacion: 'APROBADA',
+                    tipoNovedad: { codigo: 'FC', descripcion: 'Franco Compensatorio', afectaPresentismo: true }
+                }
+            ]);
+        });
+
+        const result = await service.getWorkforceStatus(2026);
+
+        // El período previo a la disponibilidad declarada a futuro es NO DISPONIBLE
+        expect(result.disponibles).toBe(0);
+        expect(result.listDisponibles).toHaveLength(0);
+        expect(result.impedidos).toBe(1);
+        expect(result.listImpedidos[0].motivo).toContain('Disponible a partir del 20/11/2026');
+
+        jest.useRealTimers();
+    });
 });
