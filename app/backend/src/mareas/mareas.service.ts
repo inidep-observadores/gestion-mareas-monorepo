@@ -1793,7 +1793,7 @@ export class MareasService {
             const disponibilidadConfirmada = tieneAvisoVigente || esFlexible;
 
             // Top Dry Check: Solo listar observadores genuinamente DISPONIBLES y de tipo OBSERVADOR (y sin marea designada ni planificación simulada)
-            if (obsConMareas.has(obs.id) && status === 'DISPONIBLE' && !hasDesignation && lastArrival && lastArrivalData && daysSince !== null && obs.tipoObservador === 'OBSERVADOR' && tieneAvisoVigente && !planificacion) {
+            if (obsConMareas.has(obs.id) && status === 'DISPONIBLE' && obs.disponible !== false && !hasDesignation && lastArrival && lastArrivalData && daysSince !== null && obs.tipoObservador === 'OBSERVADOR' && tieneAvisoVigente && !planificacion) {
                 topDryCandidates.push({
                     id: obs.id,
                     name,
@@ -1968,7 +1968,7 @@ export class MareasService {
 
     /**
      * Determines the operational status of an observer based on business rules.
-     * Priority: NAVIGATING > IMPEDED > RESTING > AVAILABLE
+     * Priority: NAVIGATING > DESIGNATED > RESTING > IMPEDED > AVAILABLE
      */
     private getObserverStatus(
         obs: any,
@@ -1983,10 +1983,6 @@ export class MareasService {
 
         if (isNavigating) return 'NAVEGANDO';
 
-        if (obs.disponible === false) return 'IMPEDIDO';
-
-        if (obs.conImpedimento || docVencida || novedadBloqueante || avisoFuturoDisp) return 'IMPEDIDO';
-
         if (hasDesignation) return 'DESIGNADO';
 
         if (lastArrival) {
@@ -1995,6 +1991,8 @@ export class MareasService {
                 return 'DESCANSO';
             }
         }
+
+        if (obs.conImpedimento || docVencida || novedadBloqueante || avisoFuturoDisp) return 'IMPEDIDO';
 
         return 'DISPONIBLE';
     }

@@ -159,6 +159,49 @@ describe('MareasService - getWorkforceStatus', () => {
         jest.useRealTimers();
     });
 
+    it('debe incluir en listDesignados a un observador designado aunque en el padrón tenga disponible false', async () => {
+        const now = new Date('2026-03-28T12:00:00Z');
+        jest.useFakeTimers().setSystemTime(now);
+
+        const obsObj = {
+            id: 'obs-no-disp',
+            apellido: 'Alvarez',
+            nombre: 'Pedro',
+            activo: true,
+            disponible: false, // Marcado como no disponible en padrón
+            sexo: 'Masculino',
+            eventual: false,
+            tipoObservador: 'OBSERVADOR',
+            tipoContrato: 'TITULAR'
+        };
+        mockPrismaService.observador.findMany.mockResolvedValue([obsObj]);
+
+        mockPrismaService.marea.findMany.mockResolvedValue([
+            {
+                id: 'marea-desig',
+                nroMarea: 20,
+                anioMarea: 2026,
+                observadorPrincipalId: 'obs-no-disp',
+                buque: { nombreBuque: 'BUQUE ALPHA' },
+                pesqueria: { nombre: 'MERLUZA' },
+                estadoActual: { codigo: 'DESIGNADA' }
+            }
+        ]);
+
+        mockPrismaService.mareaEtapa.findMany.mockResolvedValue([]);
+        mockPrismaService.systemStatus.findUnique.mockResolvedValue({ key: 'LAST_ALERT_CHECK', lastUpdate: now });
+
+        const result = await service.getWorkforceStatus(2026);
+
+        expect(result.designados).toBe(1);
+        expect(result.listDesignados).toHaveLength(1);
+        expect(result.listDesignados[0].id).toBe('obs-no-disp');
+        expect(result.listDesignados[0].disponible).toBe(false);
+        expect(result.impedidos).toBe(0);
+
+        jest.useRealTimers();
+    });
+
     it('debe clasificar disponibilidad confirmada y asociar la planificación simulada más próxima', async () => {
         const now = new Date('2026-10-31T12:00:00Z');
         jest.useFakeTimers().setSystemTime(now);

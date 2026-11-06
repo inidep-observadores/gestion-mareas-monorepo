@@ -128,6 +128,13 @@
                 Incluir planificados a futuro
               </span>
             </label>
+            <label class="inline-flex items-center gap-1.5 cursor-pointer select-none group">
+              <input type="checkbox" v-model="includeNoDisponibles"
+                class="w-3.5 h-3.5 rounded border-border text-primary focus:ring-primary/20 cursor-pointer" />
+              <span class="text-[10px] font-bold text-text-muted group-hover:text-text transition-colors">
+                Incluir no disponibles en padrón
+              </span>
+            </label>
           </div>
         </div>
 
@@ -184,6 +191,13 @@
                           class="hover:text-primary transition-colors cursor-pointer hover:underline decoration-primary/30 underline-offset-2"
                           @click="$emit('view-timeline', item.id, item.name, (item as any).fotoUrl)">
                           {{ item.name }}
+                        </span>
+
+                        <!-- Badge No Disponible en Padrón -->
+                        <span v-if="selectedStatus === 'Disponibles' && (item as any).disponible === false"
+                          class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30"
+                          title="Observador no disponible según padrón">
+                          No disponible
                         </span>
 
                         <!-- Badge ¿Disponible? si no está confirmada -->
@@ -451,6 +465,13 @@
                 Incluir planificados a futuro
               </span>
             </label>
+            <label class="inline-flex items-center gap-2 cursor-pointer select-none group">
+              <input type="checkbox" v-model="includeNoDisponibles"
+                class="w-4 h-4 rounded border-border text-primary focus:ring-primary/20 cursor-pointer" />
+              <span class="text-xs font-bold text-text-muted group-hover:text-text transition-colors">
+                Incluir no disponibles en padrón
+              </span>
+            </label>
           </div>
         </div>
 
@@ -510,6 +531,13 @@
                           class="hover:text-primary transition-colors cursor-pointer hover:underline decoration-primary/30 underline-offset-4"
                           @click="$emit('view-timeline', item.id, item.name, (item as any).fotoUrl)">
                           {{ item.name }}
+                        </span>
+
+                        <!-- Badge No Disponible en Padrón -->
+                        <span v-if="selectedStatus === 'Disponibles' && (item as any).disponible === false"
+                          class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30"
+                          title="Observador no disponible según padrón">
+                          No disponible
                         </span>
 
                         <!-- Badge ¿Disponible? si no está confirmada -->
@@ -660,6 +688,7 @@ const sortOrder = ref<'asc' | 'desc'>('desc')
 const selectedCategory = ref<string | null>(null)
 const includeNoConfirmada = ref(false)
 const includePlanificados = ref(false)
+const includeNoDisponibles = ref(false)
 
 const authStore = useAuthStore()
 const canManageObservations = computed(() => {
@@ -929,7 +958,7 @@ const getFilteredList = (list: any[]) => {
 const getFilteredDisponibles = (list: any[]) => {
   if (!list) return [];
   return list.filter(item => {
-    if (item.disponible === false) {
+    if (!includeNoDisponibles.value && item.disponible === false) {
       return false;
     }
     if (!includeNoConfirmada.value && !item.disponibilidadConfirmada) {

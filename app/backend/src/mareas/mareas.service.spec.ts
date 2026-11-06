@@ -472,27 +472,35 @@ describe('MareasService', () => {
     describe('getObserverStatus - Reglas de Disponibilidad', () => {
         const now = new Date('2026-11-01T12:00:00Z');
 
-        it('debería retornar IMPEDIDO si obs.disponible es false (prioridad alta sobre novedades)', () => {
-            const obs = { id: 'obs-1', disponible: false, conImpedimento: false };
-            const status = (service as any).getObserverStatus(obs, false, false, undefined, now);
-            expect(status).toBe('IMPEDIDO');
-        });
-
         it('debería priorizar NAVEGANDO si está en navegación activa aunque obs.disponible sea false', () => {
             const obs = { id: 'obs-1', disponible: false, conImpedimento: false };
             const status = (service as any).getObserverStatus(obs, true, false, undefined, now);
             expect(status).toBe('NAVEGANDO');
         });
 
-        it('debería prevalecer novedad bloqueante si obs.disponible es true', () => {
+        it('debería priorizar DESIGNADO si tiene designación activa aunque obs.disponible sea false', () => {
+            const obs = { id: 'obs-1', disponible: false, conImpedimento: false };
+            const status = (service as any).getObserverStatus(obs, false, true, undefined, now);
+            expect(status).toBe('DESIGNADO');
+        });
+
+        it('debería priorizar DESCANSO si está en descanso post-marea aunque obs.disponible sea false', () => {
+            const obs = { id: 'obs-1', disponible: false, conImpedimento: false };
+            // Arribo hace 2 días (menos del límite de descanso)
+            const lastArrival = new Date('2026-10-30T12:00:00Z');
+            const status = (service as any).getObserverStatus(obs, false, false, lastArrival, now);
+            expect(status).toBe('DESCANSO');
+        });
+
+        it('debería prevalecer novedad bloqueante como IMPEDIDO si no está navegando, ni designado ni descansando', () => {
             const obs = { id: 'obs-1', disponible: true, conImpedimento: false };
             const novedadBloqueante = { tipoNovedad: { descripcion: 'Licencia Médica' } };
             const status = (service as any).getObserverStatus(obs, false, false, undefined, now, novedadBloqueante);
             expect(status).toBe('IMPEDIDO');
         });
 
-        it('debería retornar DISPONIBLE si obs.disponible es true y no tiene novedades bloqueantes ni descansos', () => {
-            const obs = { id: 'obs-1', disponible: true, conImpedimento: false };
+        it('debería retornar DISPONIBLE si no tiene designación, descanso ni impedimentos (la no disponibilidad se filtra en frontend)', () => {
+            const obs = { id: 'obs-1', disponible: false, conImpedimento: false };
             const status = (service as any).getObserverStatus(obs, false, false, undefined, now);
             expect(status).toBe('DISPONIBLE');
         });
