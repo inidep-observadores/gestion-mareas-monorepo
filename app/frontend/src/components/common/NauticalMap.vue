@@ -14,7 +14,9 @@
     <div v-if="showControls" class="absolute bottom-[50px] right-[14px] z-[1000] pointer-events-auto">
       <MapLayerControl :base-layers="BASE_LAYERS" :overlay-layers="OVERLAY_LAYERS" :current-base-id="currentBaseId"
         :active-overlay-ids="activeOverlayIds" :show-graticule="localShowGraticule" @change-base="setBaseLayer"
-        @toggle-overlay="toggleOverlay" @update:show-graticule="toggleGraticule" />
+        @toggle-overlay="toggleOverlay" @update:show-graticule="toggleGraticule">
+        <template #extra><slot name="layer-control-extra" /></template>
+      </MapLayerControl>
     </div>
 
     <!-- Control de Tiempo (Solo si hay capas con tiempo activo) -->

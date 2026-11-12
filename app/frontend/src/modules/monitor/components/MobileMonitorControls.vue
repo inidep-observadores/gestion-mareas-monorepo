@@ -112,6 +112,7 @@
               </div>
               <BaseSwitch :modelValue="val" @update:modelValue="$emit('update:layer', key, $event)" />
           </div>
+          <UserLayersPanel class="pt-4" />
         </div>
       </div>
     </Transition>
@@ -205,6 +206,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import BaseSwitch from '@/components/ui/BaseSwitch.vue'
+import UserLayersPanel from './UserLayersPanel.vue'
 import SearchInput from '@/components/ui/SearchInput.vue'
 import { BASE_LAYERS } from '@/components/common/map-layers'
 import type { MonitorVessel } from './VesselListSidebar.vue'

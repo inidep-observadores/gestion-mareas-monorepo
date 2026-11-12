@@ -1,13 +1,17 @@
 <template>
   <NauticalMap ref="nauticalMap" :show-controls="!isMobile" @map-ready="onMapReady" @mousemove="emit('update:mouse-coords', $event.latlng)">
-    <!-- Slot for extra overlays if needed later -->
+    <template #layer-control-extra>
+      <UserLayersPanel />
+    </template>
   </NauticalMap>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onUnmounted } from 'vue'
+import { ref, watch, onUnmounted, toRaw } from 'vue'
 import L from 'leaflet'
 import NauticalMap from '@/components/common/NauticalMap.vue'
+import UserLayersPanel from './UserLayersPanel.vue'
+import { useUserMapLayers } from '../composables/useUserMapLayers'
 
 export interface FleetTrackPoint {
   lat: number
@@ -104,6 +108,65 @@ const LAYER_FILES = {
 
 const vesselMarkers = new Map<string, L.Marker>()
 
+// Capas GeoJSON importadas por el usuario (persistidas en IndexedDB)
+const userLayersGroup = L.layerGroup()
+const { layers: userLayers } = useUserMapLayers()
+
+const HEX_COLOR = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i
+
+const featureColor = (props: Record<string, unknown> | null | undefined, fallback: string): string => {
+  const raw = props?.['marker-color'] ?? props?.stroke ?? props?.color ?? props?.fill
+  return typeof raw === 'string' && HEX_COLOR.test(raw) ? raw : fallback
+}
+
+const featureLabel = (props: Record<string, unknown> | null | undefined): string | null => {
+  const raw = props?.description ?? props?.name ?? props?.Lance
+  return raw !== undefined && raw !== null && String(raw).trim() ? String(raw) : null
+}
+
+const MARKER_RADIUS: Record<string, number> = { small: 5, medium: 7, large: 9 }
+
+const renderUserLayers = () => {
+  if (!map) return
+  userLayersGroup.clearLayers()
+
+  userLayers.value.filter(l => l.isVisible).forEach(layer => {
+    try {
+      L.geoJSON(toRaw(layer.geojson) as GeoJSON.GeoJsonObject, {
+        pane: 'userLayers',
+        interactive: false,
+        style: feature => {
+          const color = featureColor(feature?.properties, layer.color)
+          return { color, weight: 2, opacity: 1, fillColor: color, fillOpacity: 0.15 }
+        },
+        pointToLayer: (feature, latlng) => {
+          const color = featureColor(feature.properties, layer.color)
+          const size = String(feature.properties?.['marker-size'] ?? '').toLowerCase()
+          return L.circleMarker(latlng, {
+            pane: 'userLayers',
+            radius: MARKER_RADIUS[size] ?? 6,
+            color: '#fff',
+            weight: 1.2,
+            fillColor: color,
+            fillOpacity: 1,
+            interactive: false
+          })
+        },
+        onEachFeature: (feature, l) => {
+          const label = layer.showDescriptions ? featureLabel(feature.properties) : null
+          if (!label) return
+          const el = document.createElement('div')
+          el.className = 'user-layer-label'
+          el.textContent = label // textContent: evita inyección de HTML desde el archivo
+          l.bindTooltip(el, { permanent: true, direction: 'top', className: 'user-layer-tooltip', interactive: false })
+        }
+      }).addTo(userLayersGroup)
+    } catch (e) {
+      console.error(`Error al dibujar la capa "${layer.name}":`, e)
+    }
+  })
+}
+
 const onMapReady = (mapInstance: L.Map) => {
   map = mapInstance
 
@@ -121,9 +184,17 @@ const onMapReady = (mapInstance: L.Map) => {
   geojsonLayers.centolla.addTo(map)
   geojsonLayers.langostino.addTo(map)
 
+  if (!map.getPane('userLayers')) {
+    map.createPane('userLayers')
+    map.getPane('userLayers')!.style.zIndex = '360' // Sobre GeoJSON base, bajo trayectorias
+    map.getPane('userLayers')!.style.pointerEvents = 'none'
+  }
+
+  userLayersGroup.addTo(map)
   trajectoriesLayer.addTo(map)
   markersLayer.addTo(map)
   pointsLayer.addTo(map)
+  renderUserLayers()
 
   // Initial load of active geojson layers
   loadGeoJson('limite') // Fixed layer
@@ -444,6 +515,7 @@ const findNearestPoint = (latlng: L.LatLng, points: FleetTrackPoint[]): number =
   return nearestIdx
 }
 
+watch(userLayers, renderUserLayers, { deep: true })
 watch(() => props.fleet, updateAll, { deep: true })
 watch(() => props.activeLayers.points, (val) => {
   if (val) updateAll()
@@ -531,6 +603,7 @@ onUnmounted(() => {
   trajectoriesLayer.remove()
   markersLayer.remove()
   pointsLayer.remove()
+  userLayersGroup.remove()
   geojsonLayers.limite.remove()
   geojsonLayers.veda.remove()
   geojsonLayers.vieira.remove()
@@ -766,6 +839,23 @@ onUnmounted(() => {
 }
 .leaflet-tooltip.subarea-tooltip::before {
   display: none !important;
+}
+.leaflet-tooltip.user-layer-tooltip {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+.leaflet-tooltip.user-layer-tooltip::before {
+  display: none !important;
+}
+.user-layer-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: rgba(var(--color-text-rgb), 0.8);
+  text-shadow: 0 0 4px rgba(var(--color-surface-rgb), 0.95), 0 0 2px rgba(var(--color-surface-rgb), 0.95);
+  white-space: nowrap;
+  pointer-events: none;
 }
 .subarea-label {
   font-size: 20px;
