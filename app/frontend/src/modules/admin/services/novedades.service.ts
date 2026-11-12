@@ -27,5 +27,18 @@ export const novedadesService = {
 
   async delete(id: string): Promise<void> {
     await httpClient.delete(`${API_URL}/${id}`);
+  },
+
+  async uploadFile(file: File): Promise<{ secureUrl: string, driveFileId: string, originalName: string, mimetype: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    // Asumiendo que el endpoint de archivos en NestJS está mapeado así
+    const response = await httpClient.post<{ secureUrl: string, driveFileId: string, originalName: string, mimetype: string }>('/files/novedad/drive', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
   }
 };

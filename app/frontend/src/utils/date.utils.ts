@@ -106,3 +106,85 @@ export const parseFromLocal = (dateStr: string): Date | null => {
     }
     return normalizeToLocalStartOfDay(dateStr);
 };
+
+/**
+ * UI Formatter: Muestra la fecha en formato DD/MM/YYYY
+ */
+export const formatDateUI = (dateInput?: string | Date | null | { value: string }): string => {
+    if (!dateInput) return '-';
+    // Handle proxy/ref object wrapping string value if passed mistakenly
+    const dateStr = typeof dateInput === 'object' && dateInput !== null && 'value' in dateInput ? String((dateInput as any).value) : dateInput;
+    if (!dateStr) return '-';
+    
+    // Si es un string, verificar formatos conocidos directamente
+    if (typeof dateStr === 'string') {
+        const trimmed = dateStr.trim();
+        // Si ya está en formato DD/MM/YYYY, devolverlo directamente
+        if (/^\d{2}\/\d{2}\/\d{4}$/.test(trimmed)) {
+            return trimmed;
+        }
+        // Si es formato ISO puro YYYY-MM-DD, convertir directamente sin desfase horario
+        const matchIso = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (matchIso) {
+            const [, year, month, day] = matchIso;
+            return `${day}/${month}/${year}`;
+        }
+    }
+
+    try {
+        const date = new Date(dateStr as string | Date);
+        if (isNaN(date.getTime())) return '-';
+        return new Intl.DateTimeFormat('es-AR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        }).format(date);
+    } catch {
+        return '-';
+    }
+};
+
+/**
+ * UI Formatter: Muestra fecha y hora en formato DD/MM/YYYY HH:mm (24h)
+ */
+export const formatDateTimeUI = (dateInput?: string | Date | null | { value: string }): string => {
+    if (!dateInput) return '-';
+    const dateStr = typeof dateInput === 'object' && dateInput !== null && 'value' in dateInput ? String((dateInput as any).value) : dateInput;
+    if (!dateStr) return '-';
+    
+    try {
+        const date = new Date(dateStr as string | Date);
+        if (isNaN(date.getTime())) return '-';
+        return new Intl.DateTimeFormat('es-AR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        }).format(date);
+    } catch {
+        return '-';
+    }
+};
+
+/**
+ * UI Formatter: Muestra la hora en formato HH:mm (24h)
+ */
+export const formatTimeUI = (dateInput?: string | Date | null | { value: string }): string => {
+    if (!dateInput) return '-';
+    const dateStr = typeof dateInput === 'object' && dateInput !== null && 'value' in dateInput ? String((dateInput as any).value) : dateInput;
+    if (!dateStr) return '-';
+    
+    try {
+        const date = new Date(dateStr as string | Date);
+        if (isNaN(date.getTime())) return '-';
+        return new Intl.DateTimeFormat('es-AR', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        }).format(date);
+    } catch {
+        return '-';
+    }
+};

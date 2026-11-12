@@ -244,6 +244,16 @@ const router = createRouter({
         roles: [ValidRoles.admin, ValidRoles.planificador],
       },
     },
+    {
+      path: '/planificacion/simulador',
+      name: 'SimuladorCobertura',
+      component: () => import('@/modules/planificacion/views/SimuladorCoberturaView.vue'),
+      meta: {
+        title: 'Simulador de Cobertura',
+        requiresAuth: true,
+        roles: [ValidRoles.admin, ValidRoles.planificador],
+      },
+    },
     // Admin Module
     {
       path: '/admin',
@@ -299,6 +309,16 @@ const router = createRouter({
       component: () => import('@/modules/admin/views/PresentismoMatrizView.vue'),
       meta: {
         title: 'Presentismo de Observadores',
+        requiresAuth: true,
+        roles: [ValidRoles.admin, ValidRoles.coordinador, ValidRoles.asistente, ValidRoles.tecnico],
+      },
+    },
+    {
+      path: '/sistema/observadores/disponibilidad',
+      name: 'SistemaObservadoresDisponibilidad',
+      component: () => import('@/modules/admin/views/ObservadoresDisponibilidadView.vue'),
+      meta: {
+        title: 'Disponibilidad de Observadores',
         requiresAuth: true,
         roles: [ValidRoles.admin, ValidRoles.coordinador, ValidRoles.asistente, ValidRoles.tecnico],
       },

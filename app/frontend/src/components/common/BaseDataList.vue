@@ -3,9 +3,10 @@
     <!-- Main Content Card (Contains Search, Filters, and List) -->
     <div class="p-4 sm:p-6 bg-white border border-gray-200 rounded-xl dark:bg-gray-800 dark:border-gray-700 shadow-sm">
       <!-- Search & Actions Row -->
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+      <div v-if="showSearch || buttonText || $slots.filters || $slots['header-actions']" class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6" :class="{ 'md:justify-end': !showSearch }">
         <!-- Search -->
         <SearchInput
+          v-if="showSearch"
           :model-value="search"
           @update:model-value="$emit('update:search', $event)"
           :placeholder="searchPlaceholder"
@@ -13,7 +14,7 @@
         />
 
         <!-- Filters & Actions -->
-        <div class="flex flex-wrap items-center gap-2 md:gap-3 w-full md:w-auto">
+        <div class="flex flex-wrap items-center gap-2 md:gap-3 w-full" :class="showSearch ? 'md:w-auto' : 'justify-between'">
           <slot name="filters"></slot>
           <slot name="header-actions"></slot>
           
@@ -90,15 +91,20 @@ import { SearchIcon, PlusIcon } from '@/icons'
 import SearchInput from '@/components/ui/SearchInput.vue'
 import { usePageHeader } from '@/composables/usePageHeader'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   title: string
   description?: string
   items: any[]
   isLoading: boolean
-  search: string
+  search?: string
   searchPlaceholder?: string
   buttonText?: string
-}>()
+  showSearch?: boolean
+}>(), {
+  showSearch: true,
+  search: '',
+  searchPlaceholder: 'Buscar...'
+})
 
 defineEmits(['update:search', 'create'])
 

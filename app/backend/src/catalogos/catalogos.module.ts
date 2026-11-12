@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TiposFlotaController } from './tipos-flota/tipos-flota.controller';
 import { TiposFlotaService } from './tipos-flota/tipos-flota.service';
 import { ArtesPescaController } from './artes-pesca/artes-pesca.controller';
@@ -23,9 +23,16 @@ import { FisheryClientModule } from '../common/fishery-client/fishery-client.mod
 import { AuthModule } from '../auth/auth.module';
 import { TiposNovedadController } from './tipos-novedad/tipos-novedad.controller';
 import { TiposNovedadService } from './tipos-novedad/tipos-novedad.service';
+import { FilesModule } from '../files/files.module';
+import { ReportsModule } from '../reports/reports.module';
 
 @Module({
-    imports: [AuthModule, FisheryClientModule],
+    imports: [
+        AuthModule, 
+        FisheryClientModule, 
+        forwardRef(() => FilesModule), 
+        forwardRef(() => ReportsModule)
+    ],
     controllers: [
         TiposFlotaController,
         ArtesPescaController,

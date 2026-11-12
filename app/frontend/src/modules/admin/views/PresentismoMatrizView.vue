@@ -1,7 +1,9 @@
 <template>
   <AdminLayout>
-    <div class="space-y-6">
-      <BackButton routeName="SistemaObservadores" label="Regresar al Panel" containerClass="mb-2" />
+    <div class="sticky top-[56px] lg:top-[72px] z-30 bg-surface pt-2 pb-3 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b border-border mb-6 flex flex-col gap-4">
+      <BackButton routeName="SistemaObservadores" label="Regresar al Panel" />
+
+      <!-- Encabezado Principal & Acciones -->
       <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 class="text-2xl font-black text-text uppercase tracking-tight">Planilla Mensual de Presentismo</h1>
@@ -25,71 +27,104 @@
             <ChevronDownIcon class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
           </div>
 
-          <button @click="exportToExcel" :disabled="isLoading || !data" class="h-10 px-4 inline-flex items-center justify-center gap-2 text-sm font-bold tracking-widest uppercase transition-all rounded-lg bg-surface border border-border text-primary hover:bg-primary/5 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
-            <DownloadIcon class="w-4 h-4" />
-            Exportar Excel
-          </button>
+          <ExportExcelButton
+            label="EXPORTAR"
+            title="Exportar planilla a Excel"
+            :loading="isExporting"
+            :disabled="isLoading || !data"
+            @click="exportToExcel"
+            class="px-4 py-1.5 h-10 rounded bg-surface shadow-theme-xs border-border"
+          />
         </div>
+      </div>
+
+      <!-- Filtros Compactos Expandibles -->
+      <div v-if="data" class="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
+        <!-- Header de la sección de filtros -->
+        <button
+          @click="isFiltersExpanded = !isFiltersExpanded"
+          class="w-full flex items-center justify-between px-4 py-3 text-left transition-colors hover:bg-surface-muted/50 cursor-pointer"
+        >
+          <span class="text-xs font-black uppercase tracking-widest text-text">
+            Filtros
+          </span>
+          <ChevronDownIcon
+            class="w-4 h-4 text-text-muted transition-transform duration-300"
+            :class="{ 'rotate-180': isFiltersExpanded }"
+          />
+        </button>
+
+        <!-- Contenido expandible -->
+        <Transition
+          enter-active-class="transition-all duration-300 ease-out"
+          enter-from-class="max-h-0 opacity-0"
+          enter-to-class="max-h-[500px] opacity-100"
+          leave-active-class="transition-all duration-200 ease-in"
+          leave-from-class="max-h-[500px] opacity-100"
+          leave-to-class="max-h-0 opacity-0"
+        >
+          <div v-if="isFiltersExpanded" class="p-4 pt-0 border-t border-border/50 flex flex-wrap items-center gap-6">
+            <SearchInput v-model="searchQuery" placeholder="Buscar observador..." class="w-full md:w-64 shrink-0" />
+
+            <div class="flex flex-wrap items-center gap-4 flex-1">
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-black uppercase tracking-widest text-text-muted mr-1">Observador:</span>
+                <button v-for="t in tiposObservador" :key="t" @click="toggleTipoObservador(t)" class="px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase transition-all" :class="activeTipoObservador.has(t) ? 'bg-primary/10 border border-primary text-primary' : 'bg-surface border border-border text-text-muted opacity-50'">
+                  {{ t }}
+                </button>
+              </div>
+
+              <div class="w-px h-6 bg-border mx-2 hidden lg:block"></div>
+
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-black uppercase tracking-widest text-text-muted mr-1">Contrato:</span>
+                <button v-for="c in tiposContrato" :key="c" @click="toggleTipoContrato(c)" class="px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase transition-all" :class="activeTipoContrato.has(c) ? 'bg-info/10 border border-info text-info' : 'bg-surface border border-border text-text-muted opacity-50'">
+                  {{ c }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </Transition>
       </div>
 
       <!-- Leyenda -->
-      <div class="flex flex-wrap gap-4 p-4 rounded-xl border border-border bg-surface shadow-sm">
+      <div v-show="false" class="flex flex-wrap gap-4 p-4 rounded-xl border border-border bg-surface shadow-sm">
         <div class="flex items-center gap-2">
-          <div class="w-8 h-6 rounded bg-[#00FF00] flex items-center justify-center text-[10px] font-black text-black">NAVEG</div>
+          <div class="w-8 h-6 rounded legend-navegando flex items-center justify-center text-[10px] font-black">NAVEG</div>
           <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">Navegando</span>
         </div>
         <div class="flex items-center gap-2">
-          <div class="w-8 h-6 rounded bg-[#FFE4C4] flex items-center justify-center text-[10px] font-black text-black">PUERTO</div>
+          <div class="w-8 h-6 rounded legend-puerto flex items-center justify-center text-[10px] font-black">PUERTO</div>
           <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">En Puerto</span>
         </div>
         <div class="flex items-center gap-2">
-          <div class="w-8 h-6 rounded bg-[#E6E6FA] flex items-center justify-center text-[10px] font-black text-black">VIAJE</div>
+          <div class="w-8 h-6 rounded legend-viaje flex items-center justify-center text-[10px] font-black">VIAJE</div>
           <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">En Viaje</span>
         </div>
         <div class="flex items-center gap-2">
-          <div class="w-8 h-6 rounded bg-[#E8E8E8] flex items-center justify-center text-[10px] font-black text-black">EZ</div>
+          <div class="w-8 h-6 rounded legend-ez flex items-center justify-center text-[10px] font-black">DISP</div>
           <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">Esperando Zarpada</span>
         </div>
         <div class="flex items-center gap-2">
-          <div class="w-8 h-6 rounded bg-[#ADD8E6] flex items-center justify-center text-[10px] font-black text-black">LICEN</div>
+          <div class="w-8 h-6 rounded legend-novedad flex items-center justify-center text-[10px] font-black">LICEN</div>
           <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">Novedad / Licencia</span>
         </div>
         <div class="flex items-center gap-2">
-          <div class="w-8 h-6 rounded bg-[#FFA500] flex items-center justify-center text-[10px] font-black text-black">FERIADO</div>
+          <div class="w-8 h-6 rounded legend-feriado flex items-center justify-center text-[10px] font-black">FERIADO</div>
           <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">Feriado</span>
         </div>
         <div class="flex items-center gap-2">
-          <div class="w-8 h-6 rounded bg-error flex items-center justify-center text-[10px] font-black text-white">ERR</div>
+          <div class="w-8 h-6 rounded legend-conflicto flex items-center justify-center text-[10px] font-black">ERR</div>
           <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">Conflicto</span>
         </div>
         <div class="flex items-center gap-2">
-          <div class="w-8 h-6 rounded border-2 border-red-500 bg-surface flex items-center justify-center text-[10px] font-black text-red-500">FC</div>
+          <div class="w-8 h-6 rounded border-2 legend-fc flex items-center justify-center text-[10px] font-black">FC</div>
           <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">Computa Franco</span>
         </div>
       </div>
+    </div>
 
-      <!-- Filtros Compactos -->
-      <div v-if="data" class="flex flex-wrap items-center gap-6 p-4 rounded-xl border border-border bg-surface shadow-sm">
-        <SearchInput v-model="searchQuery" placeholder="Buscar observador..." class="w-full md:w-64 shrink-0" />
-
-        <div class="flex flex-wrap items-center gap-4 flex-1">
-          <div class="flex items-center gap-2">
-            <span class="text-[10px] font-black uppercase tracking-widest text-text-muted mr-1">Observador:</span>
-            <button v-for="t in tiposObservador" :key="t" @click="toggleTipoObservador(t)" class="px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase transition-all" :class="activeTipoObservador.has(t) ? 'bg-primary/10 border border-primary text-primary' : 'bg-surface border border-border text-text-muted opacity-50'">
-              {{ t }}
-            </button>
-          </div>
-
-          <div class="w-px h-6 bg-border mx-2 hidden lg:block"></div>
-
-          <div class="flex items-center gap-2">
-            <span class="text-[10px] font-black uppercase tracking-widest text-text-muted mr-1">Contrato:</span>
-            <button v-for="c in tiposContrato" :key="c" @click="toggleTipoContrato(c)" class="px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase transition-all" :class="activeTipoContrato.has(c) ? 'bg-info/10 border border-info text-info' : 'bg-surface border border-border text-text-muted opacity-50'">
-              {{ c }}
-            </button>
-          </div>
-        </div>
-      </div>
+    <div class="space-y-6">
 
       <!-- Loading State -->
       <div v-if="isLoading && !data" class="p-12 flex flex-col items-center justify-center bg-surface border border-border rounded-2xl">
@@ -98,20 +133,34 @@
       </div>
 
       <template v-else-if="data">
-        <!-- Tabs -->
-        <div class="flex items-center gap-4 border-b border-border mb-4 px-2">
-          <button
-            @click="activeTab = 'timeline'"
-            :class="['px-4 py-2 font-bold text-sm border-b-2 transition-colors -mb-[1px]', activeTab === 'timeline' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text hover:border-border']"
-          >
-            Línea de Tiempo
-          </button>
-          <button
-            @click="activeTab = 'grilla'"
-            :class="['px-4 py-2 font-bold text-sm border-b-2 transition-colors -mb-[1px]', activeTab === 'grilla' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text hover:border-border']"
-          >
-            Tabla Clásica
-          </button>
+        <!-- Tabs & Navegación -->
+        <div class="flex items-center justify-between border-b border-border mb-4 px-2">
+          <div class="flex items-center gap-4">
+            <button
+              @click="activeTab = 'timeline'"
+              :class="['px-4 py-2 font-bold text-sm border-b-2 transition-colors -mb-[1px]', activeTab === 'timeline' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text hover:border-border']"
+            >
+              Línea de Tiempo
+            </button>
+            <button
+              @click="activeTab = 'grilla'"
+              :class="['px-4 py-2 font-bold text-sm border-b-2 transition-colors -mb-[1px]', activeTab === 'grilla' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text hover:border-border']"
+            >
+              Tabla Clásica
+            </button>
+          </div>
+
+          <div class="flex items-center gap-2 mb-2">
+            <button @click="previousMonth" class="p-2 rounded-lg bg-surface border border-border text-text-muted hover:text-primary hover:border-primary hover:bg-primary/5 transition-all shadow-sm active:scale-95" title="Mes anterior">
+              <ArrowLeftIcon class="w-4 h-4" />
+            </button>
+            <div class="px-4 py-1.5 rounded-lg bg-surface border border-border text-sm font-black text-text uppercase tracking-widest min-w-[140px] text-center shadow-sm">
+              {{ months[selectedMonth - 1] }} {{ selectedYear }}
+            </div>
+            <button @click="nextMonth" class="p-2 rounded-lg bg-surface border border-border text-text-muted hover:text-primary hover:border-primary hover:bg-primary/5 transition-all shadow-sm active:scale-95" title="Mes siguiente">
+              <ArrowRightIcon class="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         <!-- Matriz Table -->
@@ -171,20 +220,20 @@
                     <span v-else-if="row.dias[dia]?.estado === 'NAVEGANDO' && row.dias[dia]?.estadoSecundario === 'VIAJE'" class="text-[10px] font-black text-black px-1">N/V</span>
                     <span v-else-if="row.dias[dia]?.estado === 'NAVEGANDO'" class="text-[10px] font-black text-black px-1">NAVEG</span>
                     <span v-else-if="row.dias[dia]?.estado === 'PUERTO'" class="text-[10px] font-black text-black px-1">PUERTO</span>
-                    <span v-else-if="row.dias[dia]?.estado === 'ESPERANDO_ZARPADA'" class="text-[10px] font-black text-black px-1">EZ</span>
+                    <span v-else-if="row.dias[dia]?.estado === 'ESPERANDO_ZARPADA'" class="text-[10px] font-black text-black px-1">DISP</span>
                     <span v-else-if="row.dias[dia]?.estado === 'VIAJE'" class="text-[10px] font-black text-black px-1">VIAJE</span>
                     <span v-else-if="row.dias[dia]?.estado === 'NOVEDAD'" class="text-[10px] font-black text-black px-1">{{ row.dias[dia].codigoCorto === 'ENFERMEDAD' ? 'MÉDICO' : (row.dias[dia].codigoCorto || 'NOV') }}</span>
                     <span v-else-if="row.dias[dia]?.estado === 'FERIADO'" class="text-[10px] font-black text-black px-1">FERIADO</span>
                   </div>
 
                   <!-- Tooltip -->
-                  <div v-if="row.dias[dia]?.estado !== 'LIBRE' && row.dias[dia]?.estado !== 'FIN_SEMANA'" class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[200px] bg-gray-900 text-white text-xs p-2 rounded shadow-lg opacity-0 pointer-events-none group-hover/cell:opacity-100 transition-opacity z-30">
+                  <div v-if="row.dias[dia]?.estado !== 'LIBRE' && row.dias[dia]?.estado !== 'FIN_SEMANA'" class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[200px] bg-gray-900 dark:bg-gray-700 text-white text-xs p-2 rounded shadow-lg opacity-0 pointer-events-none group-hover/cell:opacity-100 transition-opacity z-30">
                     <div class="font-bold mb-1">{{ formatTooltipTitle(row.dias[dia]) }}</div>
-                    <div class="text-[10px] text-gray-300 leading-tight" v-if="row.dias[dia].detalle || row.dias[dia].conflictoDetalle">
+                    <div class="text-[10px] text-gray-300 dark:text-gray-200 leading-tight whitespace-pre-line" v-if="row.dias[dia].detalle || row.dias[dia].conflictoDetalle">
                       {{ row.dias[dia].conflictoDetalle || row.dias[dia].detalle }}
                     </div>
                     <!-- Triangulito -->
-                    <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                    <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
                   </div>
                 </td>
               </tr>
@@ -196,7 +245,7 @@
       <!-- Timeline -->
       <div v-show="activeTab === 'timeline'" class="bg-surface rounded-2xl shadow-sm border border-border overflow-hidden p-4 flex flex-col gap-4">
 
-        <div ref="timelineContainer" class="w-full h-[65vh] bg-surface text-text rounded-lg border border-border shadow-inner"></div>
+        <div ref="timelineContainer" class="w-full h-[65vh] bg-surface text-text rounded-lg border border-border shadow-inner presentismo-timeline"></div>
       </div>
 
       </template>
@@ -209,7 +258,8 @@ import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import AdminLayout from '@/components/layout/AdminLayout.vue';
 import BackButton from '@/components/common/BackButton.vue';
 import SearchInput from '@/components/ui/SearchInput.vue';
-import { ChevronDownIcon, DownloadIcon } from '@/icons';
+import ExportExcelButton from '@/modules/shared/components/ExportExcelButton.vue';
+import { ChevronDownIcon, ArrowLeftIcon, ArrowRightIcon } from '@/icons';
 import { toast } from 'vue-sonner';
 import presentismoApi from '../services/presentismo.service';
 import presentismoExportService from '../services/presentismo-export.service';
@@ -233,6 +283,7 @@ const prevData = ref<PlanillaMensualResponse | null>(null);
 const nextData = ref<PlanillaMensualResponse | null>(null);
 const isLoading = ref(false);
 const searchQuery = ref('');
+const isFiltersExpanded = ref(true);
 
 const activeTab = ref('timeline');
 
@@ -323,6 +374,26 @@ const fetchData = async () => {
   }
 };
 
+const previousMonth = () => {
+  if (selectedMonth.value === 1) {
+    selectedMonth.value = 12;
+    selectedYear.value--;
+  } else {
+    selectedMonth.value--;
+  }
+  fetchData();
+};
+
+const nextMonth = () => {
+  if (selectedMonth.value === 12) {
+    selectedMonth.value = 1;
+    selectedYear.value++;
+  } else {
+    selectedMonth.value++;
+  }
+  fetchData();
+};
+
 watch([activeTab, filteredMatriz, selectedMonth, selectedYear], async () => {
   if (!data.value) return;
 
@@ -395,10 +466,18 @@ const buildBlockInfo = (stateSignature: string, startDia: number, endDia: number
   } else if (diaData.estado === 'ESPERANDO_ZARPADA') {
     className = 'bg-[#E8E8E8] text-black';
     visClassName = 'vis-item-ez';
-    content = 'EZ';
+    content = 'DISP';
   } else if (diaData.estado === 'VIAJE') {
-    className = 'bg-[#E6E6FA] text-black';
-    visClassName = 'vis-item-viaje';
+    const isTransito = diaData.codigoCorto?.includes('TRANSITO') || diaData.detalle?.includes('En tránsito');
+    if (isTransito) {
+      className = 'bg-[#F3F4F6] text-black';
+      visClassName = 'vis-item-transito';
+      content = 'En tránsito';
+    } else {
+      className = 'bg-[#E6E6FA] text-black';
+      visClassName = 'vis-item-viaje';
+      content = 'Viaje';
+    }
   } else if (diaData.estado === 'NOVEDAD') {
     className = 'bg-[#ADD8E6] text-black';
     visClassName = 'vis-item-novedad';
@@ -465,7 +544,8 @@ const renderTimeline = () => {
         end: new Date(year, month - 1, block.endDia + 1),
         content: block.content,
         className: block.visClassName + (isCurrentMonth ? '' : ' vis-item-attenuated'),
-        title: block.diaData.detalle || formatTooltipTitle(block.diaData)
+        title: `<div class="font-bold mb-1">${formatTooltipTitle(block.diaData)}</div>` +
+               ((block.diaData.conflictoDetalle || block.diaData.detalle) ? `<div class="text-[10px] leading-tight opacity-90">${block.diaData.conflictoDetalle || block.diaData.detalle}</div>` : '')
       });
     });
   };
@@ -515,20 +595,20 @@ const getCellClass = (dia: DiaEstado) => {
 
   switch (dia.estado) {
     case 'CONFLICTO':
-      return 'bg-error shadow-inner animate-pulse';
+      return 'legend-conflicto shadow-inner animate-pulse';
     case 'NAVEGANDO':
-      if (dia.estadoSecundario === 'VIAJE') return 'bg-[linear-gradient(135deg,#00FF00_50%,#E6E6FA_50%)] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
-      return 'bg-[#00FF00] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
+      if (dia.estadoSecundario === 'VIAJE') return 'legend-naveg-viaje shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
+      return 'legend-navegando shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
     case 'PUERTO':
-      return 'bg-[#FFE4C4] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
+      return 'legend-puerto shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
     case 'ESPERANDO_ZARPADA':
-      return 'bg-[#E8E8E8] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
+      return 'legend-ez shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
     case 'VIAJE':
-      return 'bg-[#E6E6FA] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
+      return 'legend-viaje shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
     case 'NOVEDAD':
-      return 'bg-[#ADD8E6] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
+      return 'legend-novedad shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
     case 'FERIADO':
-      return 'bg-[#FFA500] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
+      return 'legend-feriado shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]';
     case 'FIN_SEMANA':
       return 'bg-transparent';
     case 'LIBRE':
@@ -539,11 +619,19 @@ const getCellClass = (dia: DiaEstado) => {
 
 const formatTooltipTitle = (dia: DiaEstado) => {
   const estado = dia.estado;
+  if (estado === 'VIAJE') {
+    if (dia.codigoCorto?.includes('FIN') || dia.detalle?.toLowerCase().includes('fin')) {
+      return 'Fin de viaje';
+    }
+    if (dia.codigoCorto?.includes('INICIO') || dia.detalle?.toLowerCase().includes('inicio')) {
+      return 'Inicio de viaje';
+    }
+    return 'En Viaje';
+  }
   const map: Record<string, string> = {
     'NAVEGANDO': 'Navegando',
     'PUERTO': 'En Puerto (No Local)',
-    'ESPERANDO_ZARPADA': 'Esperando Zarpada',
-    'VIAJE': 'En Viaje',
+    'ESPERANDO_ZARPADA': 'A disponibilidad',
     'NOVEDAD': 'Novedad / Licencia',
     'FERIADO': 'Feriado',
     'CONFLICTO': '¡Conflicto!',
@@ -650,40 +738,32 @@ onBeforeUnmount(() => {
   color: var(--color-text) !important;
 }
 
-:deep(.vis-item-conflicto) {
-  background-color: #ef4444 !important; /* bg-error */
-  color: white !important;
-}
+/* ESTILOS SEMÁNTICOS (Legend + Timeline Items) - MODO CLARO */
+.legend-navegando, :global(.presentismo-timeline .vis-item-navegando) { background-color: #22c55e !important; color: white !important; border-color: #16a34a !important; border-width: 2px !important; border-style: solid !important; }
+.legend-naveg-viaje, :global(.presentismo-timeline .vis-item-naveg-viaje) { background: linear-gradient(135deg, #22c55e 50%, #e0e7ff 50%) !important; color: black !important; border-color: #a5b4fc !important; border-width: 2px !important; border-style: solid !important; }
+.legend-puerto, :global(.presentismo-timeline .vis-item-puerto) { background-color: #ffedd5 !important; color: black !important; border-color: #fdba74 !important; border-width: 2px !important; border-style: solid !important; }
+.legend-viaje, :global(.presentismo-timeline .vis-item-viaje) { background-color: #e0e7ff !important; color: black !important; border-color: #a5b4fc !important; border-width: 2px !important; border-style: solid !important; }
+.legend-ez, :global(.presentismo-timeline .vis-item-ez) { background-color: #f3f4f6 !important; color: black !important; border-color: #d1d5db !important; border-width: 2px !important; border-style: solid !important; }
+.legend-transito, :global(.presentismo-timeline .vis-item-transito) { background-color: #f8fafc !important; color: #334155 !important; border-color: #cbd5e1 !important; border-width: 2px !important; border-style: solid !important; }
+.legend-novedad, :global(.presentismo-timeline .vis-item-novedad) { background-color: #e0f2fe !important; color: black !important; border-color: #7dd3fc !important; border-width: 2px !important; border-style: solid !important; }
+.legend-feriado, :global(.presentismo-timeline .vis-item-feriado) { background-color: #f97316 !important; color: white !important; border-color: #c2410c !important; border-width: 2px !important; border-style: solid !important; }
+.legend-conflicto, :global(.presentismo-timeline .vis-item-conflicto) { background-color: #ef4444 !important; color: white !important; border-color: #b91c1c !important; border-width: 2px !important; border-style: solid !important; }
+.legend-fc { background-color: transparent !important; color: #ef4444 !important; border-color: #ef4444 !important; }
 
-:deep(.vis-item-naveg-viaje) {
-  background: linear-gradient(135deg, #00FF00 50%, #E6E6FA 50%) !important;
-}
+/* ESTILOS SEMÁNTICOS (Legend + Timeline Items) - MODO OSCURO */
+:global(.dark) .legend-navegando, :global(.dark .presentismo-timeline .vis-item-navegando) { background-color: #15803d !important; color: white !important; border-color: #166534 !important; }
+:global(.dark) .legend-naveg-viaje, :global(.dark .presentismo-timeline .vis-item-naveg-viaje) { background: linear-gradient(135deg, #15803d 50%, rgba(79, 70, 229, 0.4) 50%) !important; color: white !important; border-color: rgba(79, 70, 229, 0.5) !important; }
+:global(.dark) .legend-puerto, :global(.dark .presentismo-timeline .vis-item-puerto) { background-color: rgba(234, 88, 12, 0.3) !important; color: #ffedd5 !important; border-color: rgba(234, 88, 12, 0.5) !important; }
+:global(.dark) .legend-viaje, :global(.dark .presentismo-timeline .vis-item-viaje) { background-color: rgba(79, 70, 229, 0.3) !important; color: #e0e7ff !important; border-color: rgba(79, 70, 229, 0.5) !important; }
+:global(.dark) .legend-ez, :global(.dark .presentismo-timeline .vis-item-ez) { background-color: #374151 !important; color: #e5e7eb !important; border-color: #4b5563 !important; }
+:global(.dark) .legend-transito, :global(.dark .presentismo-timeline .vis-item-transito) { background-color: #1e293b !important; color: #cbd5e1 !important; border-color: #475569 !important; }
+:global(.dark) .legend-novedad, :global(.dark .presentismo-timeline .vis-item-novedad) { background-color: rgba(14, 165, 233, 0.3) !important; color: #bae6fd !important; border-color: rgba(14, 165, 233, 0.5) !important; }
+:global(.dark) .legend-feriado, :global(.dark .presentismo-timeline .vis-item-feriado) { background-color: #9a3412 !important; color: white !important; border-color: #7c2d12 !important; }
+:global(.dark) .legend-conflicto, :global(.dark .presentismo-timeline .vis-item-conflicto) { background-color: #991b1b !important; color: white !important; border-color: #7f1d1d !important; }
+:global(.dark) .legend-fc { background-color: transparent !important; color: #f87171 !important; border-color: #f87171 !important; }
 
-:deep(.vis-item-navegando) {
-  background-color: #00FF00 !important;
-}
 
-:deep(.vis-item-puerto) {
-  background-color: #FFE4C4 !important;
-}
-
-:deep(.vis-item-ez) {
-  background-color: #E8E8E8 !important;
-}
-
-:deep(.vis-item-viaje) {
-  background-color: #E6E6FA !important;
-}
-
-:deep(.vis-item-novedad) {
-  background-color: #ADD8E6 !important;
-}
-
-:deep(.vis-item-feriado) {
-  background-color: #FFA500 !important;
-}
-
-:deep(.vis-item-content) {
+:global(.presentismo-timeline .vis-item-content) {
   padding: 4px 6px !important;
   width: 100% !important;
   overflow: hidden !important;
@@ -718,5 +798,27 @@ onBeforeUnmount(() => {
 :deep(.vis-time-axis .vis-text.vis-sunday) {
   color: #ef4444 !important; /* text-red-500 */
   font-weight: bold !important;
+}
+
+/* Modificaciones para el Tooltip en Vis-Timeline (Timeline Mode) */
+:global(.vis-tooltip) {
+  background-color: #111827 !important; /* bg-gray-900 */
+  color: #ffffff !important;
+  font-size: 12px !important;
+  font-family: inherit !important;
+  padding: 8px !important;
+  border-radius: 4px !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+  border: none !important;
+  z-index: 1000 !important;
+  pointer-events: none !important;
+  white-space: normal !important;
+  max-width: 250px !important;
+}
+
+:global(.dark .vis-tooltip) {
+  background-color: #374151 !important; /* bg-gray-700 */
+  border: 1px solid #4b5563 !important; /* border-gray-600 */
+  color: #f3f4f6 !important; /* text-gray-100 */
 }
 </style>

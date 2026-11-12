@@ -443,13 +443,14 @@
       :arrival-date="selectedReclamoItem?.arrivalDate ? new Date(selectedReclamoItem.arrivalDate).toLocaleDateString() : ''"
       @close="showReclamoDialog = false" @confirm="handleReclamoConfirm" />
     <ObservadorTimelineDialog :show="showTimelineDialog" :observador-id="selectedObserver?.id"
-      :observador-name="selectedObserver?.name" :year="selectedYear" @close="showTimelineDialog = false" />
+        :observador-name="selectedObserver?.name" @close="showTimelineDialog = false" />
 
     <MareaQuickDetailModal :is-open="showMareaModal" :marea-id="selectedMareaId" @close="showMareaModal = false" />
   </div>
 </template>
 
 <script setup lang="ts">
+import { formatDateUI, formatDateTimeUI, formatTimeUI } from '@/utils/date.utils';
 import { computed, onMounted, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import { storeToRefs } from 'pinia'
@@ -463,6 +464,7 @@ import TrajectorySourceBadge from '@/modules/alerts/components/TrajectorySourceB
 import { TrajectoryRangeUtils } from '@/modules/alerts/utils/trajectory-range.utils'
 import { useConfigStore } from '@/modules/shared/stores/config.store'
 import CreditNoteRisk from './CreditNoteRisk.vue'
+import { getCreditNoteRiskItems } from '../utils/credit-note-risk.utils'
 import type { WorkforceStatus } from '../services/dashboard.service'
 
 const showReclamoDialog = ref(false)
@@ -549,39 +551,17 @@ const toggleExpandIndividual = (id: string) => {
   expandedIndividualId.value = expandedIndividualId.value === id ? null : id
 }
 
+const creditRiskAlertsCount = computed(() => getCreditNoteRiskItems(props.workforceData).length)
+
 const totalAlerts = computed(
-  () => revisionDelays.value.length + reportDelays.value.length + movementAlerts.value.length + fatigueAlerts.value.length
+  () => revisionDelays.value.length + reportDelays.value.length + movementAlerts.value.length + creditRiskAlertsCount.value
 )
 
 const getObserverName = (item: any) => item.metadata?.observerName || 'Sin Observador'
 
-const formatDate = (dateInput: any) => {
-  if (!dateInput) return '-'
+const formatDate = (dateInput: any) => formatDateUI(dateInput)
 
-  // Extraer valor si es un objeto de fecha serializado
-  const dateStr = typeof dateInput === 'object' && dateInput?.value
-    ? dateInput.value
-    : dateInput
-
-  const date = new Date(dateStr)
-  if (isNaN(date.getTime())) return '-'
-
-  return date.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' })
-}
-
-const formatTime = (dateInput: any) => {
-  if (!dateInput) return ''
-
-  // Extraer valor si es un objeto de fecha serializado
-  const dateStr = typeof dateInput === 'object' && dateInput?.value
-    ? dateInput.value
-    : dateInput
-
-  const date = new Date(dateStr)
-  if (isNaN(date.getTime())) return ''
-
-  return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false })
-}
+const formatTime = (dateInput: any) => formatTimeUI(dateInput)
 
 const buildInitials = (name: string) =>
   name

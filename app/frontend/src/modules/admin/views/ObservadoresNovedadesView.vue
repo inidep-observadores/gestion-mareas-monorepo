@@ -1,87 +1,128 @@
 <template>
   <AdminLayout>
-    <BackButton routeName="SistemaObservadores" label="Regresar al Panel" />
-    
-    <div class="flex gap-6 border-b border-border mb-6 overflow-x-auto">
-      <button 
-        @click="activeTab = 'historial'" 
-        class="pb-3 px-1 border-b-2 font-bold transition-colors whitespace-nowrap"
-        :class="activeTab === 'historial' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'"
-      >
-        Historial Completo
-      </button>
-      <button 
-        @click="activeTab = 'pendientes'" 
-        class="pb-3 px-1 border-b-2 font-bold transition-colors whitespace-nowrap flex items-center gap-2"
-        :class="activeTab === 'pendientes' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'"
-      >
-        Bandeja de Pendientes
-        <span v-if="pendientesCount > 0" class="bg-error text-white text-[10px] px-2 py-0.5 rounded-full">
-          {{ pendientesCount }}
-        </span>
-      </button>
+    <div class="sticky top-[56px] lg:top-[72px] z-30 bg-surface pt-2 pb-2 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b border-border mb-6">
+      <BackButton routeName="SistemaObservadores" label="Regresar al Panel" class="mb-4" />
+      
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <!-- Tabs a la izquierda -->
+        <div class="flex gap-6 overflow-x-auto">
+          <button 
+            @click="activeTab = 'historial'" 
+            class="pb-3 px-1 border-b-2 font-bold transition-colors whitespace-nowrap"
+            :class="activeTab === 'historial' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'"
+          >
+            Historial Completo
+          </button>
+          <button 
+            @click="activeTab = 'pendientes'" 
+            class="pb-3 px-1 border-b-2 font-bold transition-colors whitespace-nowrap flex items-center gap-2"
+            :class="activeTab === 'pendientes' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'"
+          >
+            Bandeja de Pendientes
+            <span v-if="pendientesCount > 0" class="bg-error text-white text-[10px] px-2 py-0.5 rounded-full">
+              {{ pendientesCount }}
+            </span>
+          </button>
+          <button 
+            v-show="false"
+            @click="activeTab = 'calendario'" 
+            class="pb-3 px-1 border-b-2 font-bold transition-colors whitespace-nowrap"
+            :class="activeTab === 'calendario' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'"
+          >
+            Calendario
+          </button>
+        </div>
+
+        <!-- Buscador de texto en el panel superior a la derecha de los tabs -->
+        <div class="pb-2 md:pb-1 w-full md:w-auto">
+          <SearchInput
+            v-model="searchQuery"
+            placeholder="Buscar novedad por observador o motivo..."
+            class="w-full sm:w-72 md:w-80 lg:w-96"
+          />
+        </div>
+      </div>
     </div>
 
     <div class="flex flex-col xl:flex-row gap-6 items-start">
       <div class="flex-1 min-w-0 w-full transition-all duration-300">
         <BaseDataList 
+          v-if="activeTab !== 'calendario'"
           title="Gestión de Novedades" 
-      description="Administración de licencias, francos compensatorios y otras novedades de los observadores."
-      :items="filteredNovedades"
-      :is-loading="isLoading" 
-      v-model:search="searchQuery" 
-      search-placeholder="Buscar novedad por observador o motivo...">
+          description="Administración de licencias, francos compensatorios y otras novedades de los observadores."
+          :items="filteredNovedades"
+          :is-loading="isLoading" 
+          :show-search="false"
+        >
+          <template #filters>
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 w-full">
+              <!-- Filtros (Contrato, Origen, Fechas, Limpiar) a la izquierda -->
+              <div class="flex flex-wrap items-center gap-2">
+                <select 
+                  v-model="filterContrato"
+                  class="px-3 py-2 bg-surface border border-border rounded-lg text-xs focus:outline-none focus:border-primary cursor-pointer text-text"
+                >
+                  <option value="">Contrato (Todos)</option>
+                  <option v-for="c in TIPO_CONTRATO" :key="c.id" :value="c.id">{{ c.name }}</option>
+                </select>
 
-      <template #filters>
-        <div class="flex flex-col items-end gap-3 w-full">
-          <button 
-            @click="openCreateModal" 
-            class="flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-theme-xs hover:bg-brand-600 disabled:opacity-50 transition-colors"
-          >
-            <PlusIcon class="w-4 h-4 stroke-[3]" />
-            Nueva Novedad
-          </button>
+                <select 
+                  v-model="filterTipoNovedad"
+                  class="px-3 py-2 bg-surface border border-border rounded-lg text-xs focus:outline-none focus:border-primary cursor-pointer text-text max-w-[180px] truncate"
+                >
+                  <option value="">Tipo (Todos)</option>
+                  <option v-for="t in tiposNovedadOptions" :key="t.id" :value="t.id">{{ t.descripcion }}</option>
+                </select>
 
-          <div class="flex flex-wrap items-center gap-2">
-            <select 
-              v-model="filterContrato"
-              class="px-3 py-2.5 bg-surface border border-border rounded-lg text-sm focus:outline-none focus:border-primary cursor-pointer text-text"
-            >
-              <option value="">Contrato (Todos)</option>
-              <option v-for="c in TIPO_CONTRATO" :key="c.id" :value="c.id">{{ c.name }}</option>
-            </select>
+                <select 
+                  v-model="filterOrigen"
+                  class="px-3 py-2 bg-surface border border-border rounded-lg text-xs focus:outline-none focus:border-primary cursor-pointer text-text"
+                >
+                  <option value="">Origen (Todos)</option>
+                  <option v-for="o in origenesPermitidos" :key="o" :value="o">{{ o }}</option>
+                </select>
 
-            <select 
-              v-model="filterOrigen"
-              class="px-3 py-2.5 bg-surface border border-border rounded-lg text-sm focus:outline-none focus:border-primary cursor-pointer text-text"
-            >
-              <option value="">Origen (Todos)</option>
-              <option v-for="o in origenesPermitidos" :key="o" :value="o">{{ o }}</option>
-            </select>
+                <div class="flex items-center gap-2">
+                  <DatePicker 
+                    v-model="filterFechaInicio"
+                    placeholder="Desde..."
+                    class="w-28"
+                  />
+                  <span class="text-text-muted">-</span>
+                  <DatePicker 
+                    v-model="filterFechaFin"
+                    placeholder="Hasta..."
+                    class="w-28"
+                  />
+                </div>
 
-            <div class="flex items-center gap-2">
-              <DatePicker 
-                v-model="filterFechaInicio"
-                placeholder="Desde..."
-                class="w-32"
-              />
-              <span class="text-text-muted">-</span>
-              <DatePicker 
-                v-model="filterFechaFin"
-                placeholder="Hasta..."
-                class="w-32"
-              />
+                <button @click="clearFilters"
+                  class="group flex items-center gap-2 px-3 py-2 rounded-lg border border-border text-[10px] font-black uppercase tracking-widest text-text-muted hover:bg-surface-muted hover:text-primary transition-all active:scale-95 bg-surface shadow-theme-xs"
+                  title="Limpiar filtros">
+                  <RefreshCcwIcon class="w-3.5 h-3.5 group-hover:rotate-180 transition-transform duration-500" />
+                  Limpiar
+                </button>
+
+                <label v-if="activeTab === 'historial'" class="flex items-center gap-2 text-xs text-text cursor-pointer select-none px-2 py-1.5 rounded-lg hover:bg-surface-muted transition-colors border border-transparent hover:border-border">
+                  <input 
+                    type="checkbox" 
+                    v-model="showRechazadasYEliminadas" 
+                    class="rounded border-border text-primary focus:ring-primary/20 h-4 w-4 cursor-pointer"
+                  />
+                  <span class="text-xs text-text-muted font-medium">Mostrar rechazadas y eliminadas</span>
+                </label>
+              </div>
+
+              <!-- Botón Nueva Novedad a la derecha -->
+              <button 
+                @click="openCreateModal" 
+                class="flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-theme-xs hover:bg-brand-600 disabled:opacity-50 transition-colors shrink-0"
+              >
+                <PlusIcon class="w-4 h-4 stroke-[3]" />
+                Nueva Novedad
+              </button>
             </div>
-
-            <button @click="clearFilters"
-              class="group flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border text-[10px] font-black uppercase tracking-widest text-text-muted hover:bg-surface-muted hover:text-primary transition-all active:scale-95 bg-surface shadow-theme-xs"
-              title="Limpiar filtros">
-              <RefreshCcwIcon class="w-3.5 h-3.5 group-hover:rotate-180 transition-transform duration-500" />
-              Limpiar
-            </button>
-          </div>
-        </div>
-      </template>
+          </template>
       
       <template #table-header>
         <th scope="col" class="px-6 py-3 cursor-pointer group" @click="handleSort('observador.apellido')">
@@ -108,6 +149,15 @@
               <component :is="getSortIcon()" class="w-3.5 h-3.5 transition-all duration-200" :class="[
                   sortKey === 'origen' ? 'opacity-100 text-primary' : 'opacity-0 group-hover:opacity-50',
                   sortKey === 'origen' && sortOrder === 'asc' ? 'rotate-180' : ''
+              ]" />
+          </div>
+        </th>
+        <th scope="col" class="px-6 py-3 cursor-pointer group" @click="handleSort('fechaCreacion')">
+          <div class="flex items-center gap-2">
+              Registrado
+              <component :is="getSortIcon()" class="w-3.5 h-3.5 transition-all duration-200" :class="[
+                  sortKey === 'fechaCreacion' ? 'opacity-100 text-primary' : 'opacity-0 group-hover:opacity-50',
+                  sortKey === 'fechaCreacion' && sortOrder === 'asc' ? 'rotate-180' : ''
               ]" />
           </div>
         </th>
@@ -139,10 +189,29 @@
         </td>
         <td class="px-6 py-4 cursor-pointer hover:bg-surface-muted/50 transition-colors" @click="openSidePanel(novedad)">
           <div class="flex flex-col gap-1 items-start">
-            <span class="bg-info/10 text-info text-[11px] font-bold px-2 py-0.5 rounded-full border border-info/20 uppercase tracking-tighter">
-              {{ novedad.tipoNovedad?.descripcion || 'Desconocido' }}
+            <div class="flex items-center gap-2">
+              <span class="inline-flex items-center text-[11px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-tighter"
+                :class="novedad.tipoNovedad?.codigo === 'ACTUALIZACION_CEDULA' ? 'bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/20' : 'bg-info/10 text-info border-info/20'">
+                {{ novedad.tipoNovedad?.descripcion || 'Desconocido' }}
+              </span>
+              <PaperclipIcon v-if="novedad.archivos?.length" class="h-4 w-4 text-primary shrink-0" title="Contiene archivos adjuntos" />
+            </div>
+            <span v-if="!novedad.activo" class="bg-error/10 text-error text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">
+              Eliminada
             </span>
-            <span v-if="novedad.estadoAprobacion === 'PENDIENTE'" class="bg-warning/10 text-warning text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">
+            <span v-else-if="novedad.metadata?.datosCedula" class="bg-sky-500/10 text-sky-700 dark:text-sky-300 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter border border-sky-500/20 flex items-center gap-1">
+              <span>🪪</span> Cédula N° {{ novedad.metadata.datosCedula.numeroCedula || 'S/N' }}
+            </span>
+            <span v-else-if="novedad.metadata?.esCorreccion" class="bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter border border-amber-500/20 flex items-center gap-1">
+              <span>🔄</span> Rectificación
+            </span>
+            <span v-else-if="novedad.metadata?.esAjustePeriodo" class="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter border border-indigo-500/20 flex items-center gap-1">
+              <span>⚡</span> {{ novedad.metadata?.tipoAjuste === 'ADELANTO_DISPONIBILIDAD' ? 'Adelanta Disponibilidad' : 'Ajuste de Período' }}
+            </span>
+            <span v-else-if="novedad.estadoAprobacion === 'RECTIFICADA'" class="bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter flex items-center gap-1">
+              <span>🔄</span> Rectificada
+            </span>
+            <span v-else-if="novedad.estadoAprobacion === 'PENDIENTE'" class="bg-warning/10 text-warning text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">
               Pendiente
             </span>
             <span v-else-if="novedad.estadoAprobacion === 'RECHAZADA'" class="bg-error/10 text-error text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">
@@ -156,6 +225,9 @@
           </span>
         </td>
         <td class="px-6 py-4 font-mono font-bold text-text whitespace-nowrap cursor-pointer hover:bg-surface-muted/50 transition-colors" @click="openSidePanel(novedad)">
+          {{ formatDate(novedad.fechaCreacion) }}
+        </td>
+        <td class="px-6 py-4 font-mono font-bold text-text whitespace-nowrap cursor-pointer hover:bg-surface-muted/50 transition-colors" @click="openSidePanel(novedad)">
           {{ formatDate(novedad.fechaInicio) }}
         </td>
         <td class="px-6 py-4 font-mono font-bold text-text whitespace-nowrap cursor-pointer hover:bg-surface-muted/50 transition-colors" @click="openSidePanel(novedad)">
@@ -163,18 +235,20 @@
         </td>
         <td class="px-6 py-4 text-right">
           <div class="flex items-center justify-end gap-3">
-            <template v-if="novedad.estadoAprobacion === 'PENDIENTE'">
-              <button @click="promptAction(novedad, 'APROBADA')" class="font-bold text-success hover:underline text-xs bg-success/10 px-2 py-1 rounded">
-                  Aprobar
+            <template v-if="novedad.activo && novedad.estadoAprobacion === 'PENDIENTE'">
+              <button @click="promptAction(novedad, 'APROBADA')" 
+                      class="font-bold text-success hover:underline text-xs bg-success/10 px-2.5 py-1 rounded transition-colors whitespace-nowrap">
+                {{ novedad.tipoNovedad?.codigo === 'ACTUALIZACION_CEDULA' ? 'Aprobar Cédula' : (novedad.metadata?.esCorreccion ? 'Aprobar Reemplazo' : (novedad.metadata?.esAjustePeriodo ? 'Aprobar Ajuste' : 'Aprobar')) }}
               </button>
-              <button @click="promptAction(novedad, 'RECHAZADA')" class="font-bold text-error hover:underline text-xs bg-error/10 px-2 py-1 rounded">
-                  Rechazar
+              <button @click="promptAction(novedad, 'RECHAZADA')" 
+                      class="font-bold text-error hover:underline text-xs bg-error/10 px-2.5 py-1 rounded transition-colors whitespace-nowrap">
+                {{ novedad.metadata?.esCorreccion ? 'Descartar' : 'Rechazar' }}
               </button>
             </template>
-            <button @click="openEditModal(novedad)" class="font-bold text-primary hover:underline">
+            <button v-if="novedad.activo && novedad.estadoAprobacion !== 'RECHAZADA' && novedad.estadoAprobacion !== 'RECTIFICADA'" @click="openEditModal(novedad)" class="font-bold text-primary hover:underline">
                 Editar
             </button>
-            <button @click="deleteNovedad(novedad)" class="font-bold text-error hover:underline" title="Eliminar">
+            <button v-if="novedad.activo && novedad.estadoAprobacion !== 'RECTIFICADA'" @click="deleteNovedad(novedad)" class="font-bold text-error hover:underline" title="Eliminar">
               <TrashIcon class="w-4 h-4" />
             </button>
           </div>
@@ -185,9 +259,25 @@
         <div class="cursor-pointer hover:bg-surface-muted/30 transition-colors rounded-xl -mx-2 -mt-2 p-2" @click="openSidePanel(novedad)">
           <div class="flex items-start gap-4 mb-4">
             <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2 mb-1.5">
-                <span class="text-[10px] font-black bg-info/10 text-info px-2 py-0.5 rounded-md uppercase">
-                  {{ novedad.tipoNovedad?.descripcion || 'Desconocido' }}
+              <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+                <div class="flex items-center gap-1.5">
+                  <span class="inline-flex items-center text-[10px] font-black px-2 py-0.5 rounded-md uppercase"
+                    :class="novedad.tipoNovedad?.codigo === 'ACTUALIZACION_CEDULA' ? 'bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/20' : 'bg-info/10 text-info'">
+                    {{ novedad.tipoNovedad?.descripcion || 'Desconocido' }}
+                  </span>
+                  <PaperclipIcon v-if="novedad.archivos?.length" class="h-4 w-4 text-primary shrink-0" title="Contiene archivos adjuntos" />
+                </div>
+                <span v-if="novedad.metadata?.datosCedula" class="inline-flex items-center text-[9px] font-black bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/20 px-1.5 py-0.5 rounded uppercase">
+                  🪪 Cédula N° {{ novedad.metadata.datosCedula.numeroCedula || 'S/N' }}
+                </span>
+                <span v-else-if="novedad.metadata?.esCorreccion" class="inline-flex items-center text-[9px] font-black bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 px-1.5 py-0.5 rounded uppercase">
+                  🔄 Rectificación
+                </span>
+                <span v-else-if="novedad.estadoAprobacion === 'RECTIFICADA'" class="inline-flex items-center text-[9px] font-black bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded uppercase">
+                  🔄 Rectificada
+                </span>
+                <span v-else-if="novedad.metadata?.esAjustePeriodo" class="inline-flex items-center text-[9px] font-black bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 px-1.5 py-0.5 rounded uppercase">
+                  ⚡ {{ novedad.metadata?.tipoAjuste === 'ADELANTO_DISPONIBILIDAD' ? 'Adelanta Disp.' : 'Ajuste' }}
                 </span>
                 <span class="text-[9px] font-bold text-text-muted border border-border px-1.5 py-0.5 rounded uppercase">
                   {{ novedad.origen || 'MANUAL' }}
@@ -214,18 +304,25 @@
         </div>
 
         <div class="pt-3 border-t border-border flex gap-2">
-          <button @click="openEditModal(novedad)"
+          <button v-if="novedad.activo && novedad.estadoAprobacion !== 'RECHAZADA' && novedad.estadoAprobacion !== 'RECTIFICADA'" @click="openEditModal(novedad)"
               class="flex-1 py-2.5 text-sm font-bold text-primary bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors flex items-center justify-center gap-2">
               <EditIcon class="w-4 h-4" />
               Editar
           </button>
-          <button @click="deleteNovedad(novedad)"
+          <button v-if="novedad.activo && novedad.estadoAprobacion !== 'RECTIFICADA'" @click="deleteNovedad(novedad)"
               class="px-4 py-2.5 text-sm font-bold text-error bg-error/10 rounded-lg hover:bg-error/20 transition-colors flex items-center justify-center">
               <TrashIcon class="w-4 h-4" />
           </button>
         </div>
       </template>
         </BaseDataList>
+        
+        <ObservadorCalendarView 
+          v-else 
+          :novedades="novedades" 
+          @eventClick="openSidePanel" 
+          @observerChanged="closeSidePanel"
+        />
       </div>
 
       <!-- PANEL DE DETALLE LATERAL PERSISTENTE -->
@@ -233,13 +330,14 @@
         enter-to-class="translate-x-0 opacity-100" leave-active-class="transition duration-200 ease-in"
         leave-from-class="translate-x-0 opacity-100" leave-to-class="translate-x-4 opacity-0">
         <div v-if="showSidePanel && sidePanelNovedad"
-          class="w-full xl:w-[350px] 2xl:w-[450px] shrink-0 sticky top-6 h-[calc(100vh-3rem)] flex flex-col bg-surface border border-border rounded-2xl shadow-sm overflow-hidden self-start z-10 hidden xl:block">
+          class="w-full xl:w-[350px] 2xl:w-[450px] shrink-0 sticky top-24 h-[calc(100vh-14rem)] flex flex-col bg-surface border border-border rounded-2xl shadow-sm overflow-hidden self-start z-10 hidden xl:block">
           <NovedadContextDetailContent
             :novedad="sidePanelNovedad"
             @close="showSidePanel = false"
             @approve="(n) => { showSidePanel = false; promptAction(n, 'APROBADA'); }"
             @reject="(n) => { showSidePanel = false; promptAction(n, 'RECHAZADA'); }"
             @edit="(n) => { showSidePanel = false; openEditModal(n); }"
+            @delete="(n) => { showSidePanel = false; deleteNovedad(n); }"
           />
         </div>
       </Transition>
@@ -261,6 +359,7 @@
                   @approve="(n) => { showSidePanel = false; promptAction(n, 'APROBADA'); }"
                   @reject="(n) => { showSidePanel = false; promptAction(n, 'RECHAZADA'); }"
                   @edit="(n) => { showSidePanel = false; openEditModal(n); }"
+                  @delete="(n) => { showSidePanel = false; deleteNovedad(n); }"
                 />
               </div>
             </Transition>
@@ -297,9 +396,9 @@
     <!-- Action Dialog for Approve/Reject -->
     <ConfirmationDialog
       :show="showActionModal"
-      :title="actionType === 'APROBADA' ? 'Aprobar Novedad' : 'Rechazar Novedad'"
-      :confirmText="actionType === 'APROBADA' ? 'Confirmar Aprobación' : 'Rechazar Definitivamente'"
-      :message="actionType === 'APROBADA' ? '¿Estás seguro que deseas aprobar esta novedad y registrarla en el sistema?' : 'Por favor, ingresa el motivo del rechazo. Este campo es obligatorio para rechazar.'"
+      :title="actionModalTitle"
+      :confirmText="actionModalConfirmText"
+      :message="actionModalMessage"
       @confirm="confirmAction"
       @close="closeActionModal"
     >
@@ -319,29 +418,55 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { formatDateUI, formatDateTimeUI, formatTimeUI } from '@/utils/date.utils';
+import { ref, onMounted, computed, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import AdminLayout from '@/components/layout/AdminLayout.vue';
 import BackButton from '@/components/common/BackButton.vue';
 import BaseDataList from '@/components/common/BaseDataList.vue';
 import NovedadDialog from '../components/NovedadDialog.vue';
 import NovedadContextDetailContent from '../components/NovedadContextDetailContent.vue';
+import ObservadorCalendarView from '../components/ObservadorCalendarView.vue';
 import ConfirmationDialog from '@/components/common/ConfirmationDialog.vue';
 import { novedadesService } from '../services/novedades.service';
 import type { Novedad } from '../interfaces/novedad.interface';
+import type { TipoNovedad } from '../interfaces/tipo-novedad.interface';
+import tiposNovedadApi from '../services/tipos-novedad.service';
 import { toast } from 'vue-sonner';
-import { TrashIcon, ChevronDownIcon, EditIcon, PlusIcon } from '@/icons';
+import { TrashIcon, ChevronDownIcon, EditIcon, PlusIcon, PaperclipIcon } from '@/icons';
 import { RefreshCcwIcon } from 'lucide-vue-next';
 import { TIPO_CONTRATO } from '../constants/observador.constants';
 import DatePicker from '@/components/common/DatePicker.vue';
+import SearchInput from '@/components/ui/SearchInput.vue';
 
 const novedades = ref<Novedad[]>([]);
 const isLoading = ref(true);
 const searchQuery = ref('');
 
 const filterContrato = ref('');
+const filterTipoNovedad = ref('');
+const catalogoTipos = ref<TipoNovedad[]>([]);
 const filterOrigen = ref('');
 const filterFechaInicio = ref<string | null>(null);
 const filterFechaFin = ref<string | null>(null);
+const showRechazadasYEliminadas = ref(false);
+
+const tiposNovedadOptions = computed(() => {
+  const map = new Map<string, { id: string; descripcion: string }>();
+  catalogoTipos.value.forEach(t => {
+    if (t.id && t.descripcion) {
+      map.set(t.id, { id: t.id, descripcion: t.descripcion });
+    }
+  });
+  novedades.value.forEach(n => {
+    const tId = n.tipoNovedadId || n.tipoNovedad?.id;
+    const desc = n.tipoNovedad?.descripcion;
+    if (tId && desc && !map.has(tId)) {
+      map.set(tId, { id: tId, descripcion: desc });
+    }
+  });
+  return Array.from(map.values()).sort((a, b) => a.descripcion.localeCompare(b.descripcion));
+});
 
 const origenesPermitidos = computed(() => {
   const set = new Set(novedades.value.map(n => n.origen || 'MANUAL'));
@@ -351,9 +476,11 @@ const origenesPermitidos = computed(() => {
 const clearFilters = () => {
   searchQuery.value = '';
   filterContrato.value = '';
+  filterTipoNovedad.value = '';
   filterOrigen.value = '';
   filterFechaInicio.value = null;
   filterFechaFin.value = null;
+  showRechazadasYEliminadas.value = false;
 };
 
 const showSidePanel = ref(false);
@@ -364,19 +491,106 @@ const openSidePanel = (novedad: Novedad) => {
   showSidePanel.value = true;
 };
 
+const closeSidePanel = () => {
+  showSidePanel.value = false;
+  sidePanelNovedad.value = null;
+};
+
 const showModal = ref(false);
 const selectedNovedad = ref<Novedad | null>(null);
 
 const showConfirmDelete = ref(false);
 const novedadToDelete = ref<Novedad | null>(null);
 
-const activeTab = ref<'historial' | 'pendientes'>('historial');
-const pendientesCount = computed(() => novedades.value.filter(n => n.estadoAprobacion === 'PENDIENTE').length);
+const route = useRoute();
+const validTabs = ['historial', 'pendientes', 'calendario'] as const;
+type TabType = typeof validTabs[number];
+
+const initialTab = typeof route?.query?.tab === 'string' && validTabs.includes(route.query.tab as TabType)
+  ? (route.query.tab as TabType)
+  : 'historial';
+
+const activeTab = ref<TabType>(initialTab);
+
+watch(() => route?.query?.tab, (newTab) => {
+  if (typeof newTab === 'string' && validTabs.includes(newTab as TabType)) {
+    activeTab.value = newTab as TabType;
+  }
+});
+const pendientesCount = computed(() => novedades.value.filter(n => n.estadoAprobacion === 'PENDIENTE' && n.activo !== false).length);
 
 const showActionModal = ref(false);
 const actionType = ref<'APROBADA' | 'RECHAZADA'>('APROBADA');
 const actionComment = ref('');
 const novedadToAction = ref<Novedad | null>(null);
+
+const actionModalTitle = computed(() => {
+  if (!novedadToAction.value) return '';
+  const esActualizacionCedula = novedadToAction.value.tipoNovedad?.codigo === 'ACTUALIZACION_CEDULA' || !!novedadToAction.value.metadata?.datosCedula;
+  const esCorreccion = !!novedadToAction.value.metadata?.esCorreccion;
+  const esAjustePeriodo = !!novedadToAction.value.metadata?.esAjustePeriodo;
+  if (actionType.value === 'APROBADA') {
+    if (esActualizacionCedula) return 'Aprobar Actualización de Cédula de Embarco';
+    if (esCorreccion) return 'Aprobar Rectificación de Novedad';
+    if (esAjustePeriodo) return 'Aprobar y Ajustar Período de Novedad';
+    return 'Aprobar Novedad';
+  } else {
+    if (esActualizacionCedula) return 'Rechazar Actualización de Cédula';
+    if (esCorreccion) return 'Descartar Rectificación';
+    if (esAjustePeriodo) return 'Descartar Ajuste de Período';
+    return 'Rechazar Novedad';
+  }
+});
+
+const actionModalConfirmText = computed(() => {
+  if (!novedadToAction.value) return '';
+  const esActualizacionCedula = novedadToAction.value.tipoNovedad?.codigo === 'ACTUALIZACION_CEDULA' || !!novedadToAction.value.metadata?.datosCedula;
+  const esCorreccion = !!novedadToAction.value.metadata?.esCorreccion;
+  const esAjustePeriodo = !!novedadToAction.value.metadata?.esAjustePeriodo;
+  if (actionType.value === 'APROBADA') {
+    if (esActualizacionCedula) return 'Aprobar e Impactar Ficha';
+    if (esCorreccion) return 'Confirmar Reemplazo';
+    if (esAjustePeriodo) return 'Confirmar y Ajustar';
+    return 'Confirmar Aprobación';
+  } else {
+    if (esActualizacionCedula) return 'Rechazar Solicitud';
+    if (esCorreccion) return 'Descartar Rectificación';
+    if (esAjustePeriodo) return 'Descartar';
+    return 'Rechazar Definitivamente';
+  }
+});
+
+const actionModalMessage = computed(() => {
+  if (!novedadToAction.value) return '';
+  const esActualizacionCedula = novedadToAction.value.tipoNovedad?.codigo === 'ACTUALIZACION_CEDULA' || !!novedadToAction.value.metadata?.datosCedula;
+  const esCorreccion = !!novedadToAction.value.metadata?.esCorreccion;
+  const esAjustePeriodo = !!novedadToAction.value.metadata?.esAjustePeriodo;
+  if (actionType.value === 'APROBADA') {
+    if (esActualizacionCedula) {
+      const dc = novedadToAction.value.metadata?.datosCedula;
+      const numStr = dc?.numeroCedula ? `N° ${dc.numeroCedula}` : 'S/N';
+      const vtoCed = dc?.vencimientoCedula ? formatDate(dc.vencimientoCedula) : 'S/D';
+      const vtoMed = dc?.vencimientoAptoMedico ? formatDate(dc.vencimientoAptoMedico) : 'S/D';
+      return `Al confirmar la aprobación, se actualizarán automáticamente los datos de documentación en la ficha del observador:\n• Cédula: ${numStr}\n• Vencimiento Cédula: ${vtoCed}\n• Vencimiento Reconocimiento Médico: ${vtoMed}`;
+    }
+    if (esCorreccion) {
+      return 'Esta novedad es una solicitud de rectificación de una novedad previamente aprobada. Al confirmarla, la novedad aprobada original pasará a histórico inactivo y esta nueva solicitud se registrará como la vigente.';
+    }
+    if (esAjustePeriodo) {
+      const fechaCorte = novedadToAction.value.metadata?.fechaCortePropuesta;
+      return `Esta novedad intersecta con un período previo. Al confirmarla, la novedad vigente anterior ajustará automáticamente su fecha de finalización al ${fechaCorte || 'día previo'} para dar lugar a este nuevo registro.`;
+    }
+    return '¿Está seguro de que desea aprobar esta novedad y registrarla en el sistema?';
+  } else {
+    if (esActualizacionCedula) {
+      return 'Por favor, ingrese el motivo del rechazo. La ficha del observador no se modificará.';
+    }
+    if (esCorreccion || esAjustePeriodo) {
+      return 'Por favor, ingrese el motivo del descarte. La novedad aprobada original continuará vigente sin modificaciones.';
+    }
+    return 'Por favor, ingrese el motivo del rechazo. Este campo es obligatorio para rechazar.';
+  }
+});
 
 const sortKey = ref<string>('fechaInicio');
 const sortOrder = ref<'asc' | 'desc'>('desc');
@@ -392,15 +606,7 @@ const handleSort = (key: string) => {
 
 const getSortIcon = () => ChevronDownIcon;
 
-const formatDate = (isoStr: string) => {
-  if (!isoStr) return '';
-  const date = new Date(isoStr);
-  return date.toLocaleDateString('es-AR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  });
-};
+const formatDate = (isoStr: string) => formatDateUI(isoStr)
 
 
 
@@ -409,9 +615,12 @@ const filteredNovedades = computed(() => {
 
     // Filter by Tab
     if (activeTab.value === 'pendientes') {
-      items = items.filter(n => n.estadoAprobacion === 'PENDIENTE');
+      items = items.filter(n => n.estadoAprobacion === 'PENDIENTE' && n.activo !== false);
     } else {
-      items = items.filter(n => n.estadoAprobacion !== 'PENDIENTE');
+      items = items.filter(n => n.estadoAprobacion !== 'PENDIENTE' || n.activo === false);
+      if (!showRechazadasYEliminadas.value) {
+        items = items.filter(n => n.activo !== false && n.estadoAprobacion !== 'RECHAZADA');
+      }
     }
 
     if (searchQuery.value) {
@@ -426,6 +635,10 @@ const filteredNovedades = computed(() => {
 
     if (filterContrato.value) {
         items = items.filter(n => n.observador?.tipoContrato === filterContrato.value);
+    }
+
+    if (filterTipoNovedad.value) {
+        items = items.filter(n => n.tipoNovedadId === filterTipoNovedad.value || n.tipoNovedad?.id === filterTipoNovedad.value);
     }
     
     if (filterOrigen.value) {
@@ -565,7 +778,16 @@ const confirmAction = async () => {
   }
 };
 
+const loadCatalogos = async () => {
+  try {
+    catalogoTipos.value = await tiposNovedadApi.getAll();
+  } catch (err) {
+    console.error('Error al cargar catálogo de tipos de novedad:', err);
+  }
+};
+
 onMounted(() => {
   loadNovedades();
+  loadCatalogos();
 });
 </script>

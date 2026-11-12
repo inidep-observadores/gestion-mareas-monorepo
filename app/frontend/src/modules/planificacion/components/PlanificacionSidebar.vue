@@ -188,6 +188,11 @@ const navigationGroups = [
         name: 'Matriz Experiencia',
         path: '/planificacion/experiencia-observadores',
       },
+      {
+        icon: CalenderIcon,
+        name: 'Simulador de Cobertura',
+        path: '/planificacion/simulador',
+      },
     ],
   },
 ]

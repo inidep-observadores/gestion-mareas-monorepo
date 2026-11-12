@@ -2,6 +2,7 @@ import { IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, IsDateString, Min, Max
 import { TipoMarea } from '../mareas.constants';
 import { Type } from 'class-transformer';
 import { MareaEtapaDto } from './marea-etapa.dto';
+import { ObservadorSecundarioPlanificadoDto } from './observador-secundario-planificado.dto';
 
 export class CreateMareaDto {
     @IsUUID()
@@ -66,4 +67,11 @@ export class CreateMareaDto {
     @ValidateNested({ each: true })
     @Type(() => MareaEtapaDto)
     etapas?: MareaEtapaDto[];
+
+    /** Borrador de observadores secundarios planificados (se almacena en mareas.metadata). */
+    @IsArray()
+    @IsOptional()
+    @ValidateNested({ each: true })
+    @Type(() => ObservadorSecundarioPlanificadoDto)
+    observadoresSecundariosPlanificados?: ObservadorSecundarioPlanificadoDto[];
 }

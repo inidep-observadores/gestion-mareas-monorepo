@@ -50,6 +50,8 @@ export interface Buque {
     armadorNombre?: string | null;
     armadorTelefono?: string | null;
     agenciaMaritimaNombre?: string | null;
+    habitabilidadFemeninaApta?: boolean;
+    calificacion?: number;
     activo: boolean;
     fechaAlta?: string | null;
     fechaBaja?: string | null;

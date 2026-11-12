@@ -7,6 +7,181 @@
         {{ error }}
       </div>
 
+      <!-- Alerta y Comparador de Rectificación si es corrección -->
+      <div v-if="editData?.metadata?.esCorreccion" class="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3.5 space-y-3 shadow-theme-xs">
+        <div class="flex items-start gap-2.5">
+          <span class="text-base leading-none">🔄</span>
+          <div>
+            <h3 class="text-xs font-black text-amber-700 dark:text-amber-400 uppercase tracking-wide">
+              Solicitud de Rectificación
+            </h3>
+            <p class="text-[11px] text-text-muted mt-0.5">
+              Esta novedad modifica una novedad previamente aprobada.
+            </p>
+          </div>
+        </div>
+
+        <!-- Comparación Antes / Después -->
+        <div class="grid grid-cols-2 gap-2 text-xs pt-1">
+          <!-- Vigente Aprobada -->
+          <div class="p-2.5 rounded-lg bg-surface border border-border">
+            <div class="flex items-center gap-1 mb-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-success"></span>
+              <span class="text-[10px] font-black uppercase text-text-muted">Aprobada Vigente</span>
+            </div>
+            <p class="font-mono font-bold text-text text-[11px]">
+              {{ formatPeriodo(editData.novedadOriginal?.fechaInicio, editData.novedadOriginal?.fechaFin) }}
+            </p>
+            <p v-if="editData.novedadOriginal?.motivo" class="text-[10px] text-text-muted truncate mt-1" :title="editData.novedadOriginal.motivo">
+              {{ editData.novedadOriginal.motivo }}
+            </p>
+          </div>
+
+          <!-- Nueva Propuesta -->
+          <div class="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30">
+            <div class="flex items-center gap-1 mb-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+              <span class="text-[10px] font-black uppercase text-amber-700 dark:text-amber-400">Nueva Propuesta</span>
+            </div>
+            <p class="font-mono font-bold text-text text-[11px]">
+              {{ formatPeriodo(editData.fechaInicio, editData.fechaFin) }}
+            </p>
+            <p v-if="editData.motivo" class="text-[10px] text-text-muted truncate mt-1" :title="editData.motivo">
+              {{ editData.motivo }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alerta y Comparador de Ajuste de Período si es ajuste -->
+      <div v-if="editData?.metadata?.esAjustePeriodo" class="rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-3.5 space-y-3 shadow-theme-xs">
+        <div class="flex items-start gap-2.5">
+          <span class="text-base leading-none">⚡</span>
+          <div>
+            <h3 class="text-xs font-black text-indigo-700 dark:text-indigo-400 uppercase tracking-wide">
+              {{ editData.metadata?.tipoAjuste === 'ADELANTO_DISPONIBILIDAD' ? 'Adelanto de Disponibilidad' : 'Ajuste de Período Vigente' }}
+            </h3>
+            <p class="text-[11px] text-text-muted mt-0.5">
+              Esta solicitud intersecta con un período previo. Al aprobarla, la novedad vigente se acotará automáticamente.
+            </p>
+          </div>
+        </div>
+
+        <!-- Comparación Período Previo vs Nuevo -->
+        <div class="grid grid-cols-2 gap-2 text-xs pt-1">
+          <!-- Período Afectado -->
+          <div class="p-2.5 rounded-lg bg-surface border border-border">
+            <div class="flex items-center gap-1 mb-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-warning"></span>
+              <span class="text-[10px] font-black uppercase text-text-muted">Período Afectado</span>
+            </div>
+            <p class="text-[10px] font-bold text-text-muted truncate mb-0.5">
+              {{ editData.novedadAjustar?.tipoNovedad?.descripcion || 'Novedad Vigente' }}
+            </p>
+            <p class="font-mono text-text-muted line-through text-[10px]">
+              {{ formatPeriodo(editData.novedadAjustar?.fechaInicio, editData.novedadAjustar?.fechaFin) }}
+            </p>
+            <p class="font-mono font-bold text-indigo-600 dark:text-indigo-400 text-[11px] mt-0.5">
+              ✂️ Hasta {{ editData.metadata?.fechaCortePropuesta || '-' }}
+            </p>
+          </div>
+
+          <!-- Nueva Propuesta -->
+          <div class="p-2.5 rounded-lg bg-indigo-500/10 border border-indigo-500/30">
+            <div class="flex items-center gap-1 mb-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+              <span class="text-[10px] font-black uppercase text-indigo-700 dark:text-indigo-400">Nueva Propuesta</span>
+            </div>
+            <p class="font-mono font-bold text-text text-[11px]">
+              {{ formatPeriodo(editData.fechaInicio, editData.fechaFin) }}
+            </p>
+            <p v-if="editData.motivo" class="text-[10px] text-text-muted truncate mt-1" :title="editData.motivo">
+              {{ editData.motivo }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alerta y Cotejador si es Actualización de Cédula de Embarque -->
+      <div v-if="isActualizacionCedula" class="rounded-xl border border-sky-500/30 bg-sky-500/5 p-3.5 space-y-3 shadow-theme-xs">
+        <div class="flex items-start justify-between gap-2.5">
+          <div class="flex items-start gap-2.5">
+            <span class="text-base leading-none">🪪</span>
+            <div>
+              <h3 class="text-xs font-black text-sky-700 dark:text-sky-400 uppercase tracking-wide">
+                Actualización Documental: Cédula de Embarco NIDO
+              </h3>
+              <p class="text-[11px] text-text-muted mt-0.5">
+                Revise los datos extraídos por la IA y coteje con el documento adjunto antes de aprobar.
+              </p>
+            </div>
+          </div>
+          <span v-if="datosCedulaForm.nuevoVencimientoAptoMedico" class="px-2 py-0.5 text-[9px] font-black rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0 uppercase tracking-wider">
+            Renovación Médica
+          </span>
+        </div>
+
+        <!-- Campos Editables de la Cédula -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+          <div class="space-y-1">
+            <label class="block text-[10px] font-black uppercase text-text-muted tracking-wider">N° Registro / Cédula</label>
+            <input 
+              type="number" 
+              v-model.number="datosCedulaForm.numeroCedula" 
+              placeholder="Ej: 500228"
+              class="w-full px-3 py-2 bg-surface border border-border rounded-lg text-xs font-mono font-bold text-text focus:border-primary outline-none shadow-theme-xs"
+            />
+          </div>
+          <div class="space-y-1">
+            <label class="block text-[10px] font-black uppercase text-text-muted tracking-wider">Vto. Cédula</label>
+            <DatePicker 
+              v-model="datosCedulaForm.vencimientoCedula" 
+              :show-time="false"
+              placeholder="YYYY-MM-DD"
+            />
+          </div>
+          <div class="space-y-1">
+            <label class="block text-[10px] font-black uppercase text-text-muted tracking-wider">Vto. Apto Médico</label>
+            <DatePicker 
+              v-model="datosCedulaForm.vencimientoAptoMedico" 
+              :show-time="false"
+              placeholder="YYYY-MM-DD"
+            />
+          </div>
+        </div>
+
+        <p v-if="datosCedulaForm.nuevoVencimientoAptoMedico" class="text-[10px] text-emerald-600 dark:text-emerald-400 italic">
+          ℹ️ Se aplicó la fecha de renovación del recuadro inferior de reconocimiento médico ({{ formatDate(datosCedulaForm.nuevoVencimientoAptoMedico) }}).
+        </p>
+
+        <!-- Comparador Antes vs Después -->
+        <div v-if="valoresPreviosObservador" class="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-sky-500/20">
+          <div class="p-2.5 rounded-lg bg-surface border border-border">
+            <div class="flex items-center gap-1 mb-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-text-muted"></span>
+              <span class="text-[10px] font-black uppercase text-text-muted">Datos Registrados Previamente</span>
+            </div>
+            <div class="space-y-0.5 text-[11px] font-mono">
+              <p><span class="text-text-muted font-sans text-[10px]">Cédula:</span> {{ valoresPreviosObservador.numeroCedula || 'No registrada' }}</p>
+              <p><span class="text-text-muted font-sans text-[10px]">Vto. Cédula:</span> {{ formatDate(valoresPreviosObservador.vencimientoCedula) }}</p>
+              <p><span class="text-text-muted font-sans text-[10px]">Vto. Médico:</span> {{ formatDate(valoresPreviosObservador.vencimientoAptoMedico) }}</p>
+            </div>
+          </div>
+
+          <div class="p-2.5 rounded-lg bg-sky-500/10 border border-sky-500/30">
+            <div class="flex items-center gap-1 mb-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
+              <span class="text-[10px] font-black uppercase text-sky-700 dark:text-sky-400">Nuevos Valores a Impactar</span>
+            </div>
+            <div class="space-y-0.5 text-[11px] font-mono font-bold text-sky-900 dark:text-sky-200">
+              <p><span class="text-text-muted font-sans font-normal text-[10px]">Cédula:</span> {{ datosCedulaForm.numeroCedula || 'Sin especificar' }}</p>
+              <p><span class="text-text-muted font-sans font-normal text-[10px]">Vto. Cédula:</span> {{ formatDate(datosCedulaForm.vencimientoCedula) }}</p>
+              <p><span class="text-text-muted font-sans font-normal text-[10px]">Vto. Médico:</span> {{ formatDate(datosCedulaForm.vencimientoAptoMedico) }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 gap-6">
         <!-- Observador -->
         <div class="space-y-1.5">
@@ -43,22 +218,19 @@
         <!-- Rango de Fechas -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div class="space-y-1.5">
-            <label class="block text-sm font-medium text-text-muted">{{ isViajeNovedad ? 'Fecha' : 'Fecha de Inicio' }}</label>
+            <label class="block text-sm font-medium text-text-muted">Fecha de Inicio</label>
             <DatePicker 
               v-model="form.fechaInicio" 
-              :icon="CalenderIcon" 
               :show-time="false"
               :error="fieldErrors.fechaInicio" 
             />
           </div>
-          <div class="space-y-1.5" :class="{'opacity-50 pointer-events-none': isViajeNovedad}">
+          <div class="space-y-1.5">
             <label class="block text-sm font-medium text-text-muted">Fecha de Fin (Opcional)</label>
             <DatePicker 
               v-model="form.fechaFin" 
-              :icon="CalenderIcon" 
               :show-time="false"
               :error="fieldErrors.fechaFin" 
-              :disabled="isViajeNovedad"
             />
           </div>
         </div>
@@ -81,6 +253,58 @@
             placeholder="Ingrese el motivo de la novedad si es necesario..."
             class="w-full px-4 py-2.5 bg-surface border border-border rounded-lg text-sm text-text outline-none focus:border-primary focus:ring-3 focus:ring-primary/10 transition-all shadow-theme-xs resize-none"
           ></textarea>
+        </div>
+
+        <!-- Archivo Adjunto -->
+        <div v-if="!isEdit || editData?.origen === 'MANUAL'" class="space-y-1.5">
+          <label class="block text-sm font-medium text-text-muted">Archivo Adjunto</label>
+          <div v-if="isEdit && editData?.archivos?.length && !eliminarArchivoViejo" class="flex items-center gap-3 p-3 bg-surface border border-border rounded-lg shadow-theme-xs">
+             <DocsIcon class="w-5 h-5 text-primary" />
+             <div class="flex-1 overflow-hidden">
+                <p class="text-sm font-medium text-text truncate">{{ editData.archivos[0].nombreOriginal || 'Archivo adjunto' }}</p>
+             </div>
+             <button @click.prevent="eliminarArchivoViejo = true" class="text-xs font-bold text-error hover:underline px-2">Eliminar / Reemplazar</button>
+          </div>
+          <div v-else>
+            <div
+              @click="triggerFileInput"
+              @dragover.prevent="isDragging = true"
+              @dragleave.prevent="isDragging = false"
+              @drop.prevent="handleDrop"
+              class="group relative border-2 border-dashed rounded-2xl p-6 transition-all duration-300 text-center cursor-pointer"
+              :class="[
+                isDragging
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border hover:border-primary/30 hover:bg-surface-muted/50'
+              ]"
+            >
+              <input 
+                type="file" 
+                ref="fileInput"
+                accept="image/*,application/pdf"
+                class="hidden"
+                @change="e => selectedFile = (e.target as HTMLInputElement).files?.[0] || null"
+              />
+              
+              <div v-if="!selectedFile" class="flex flex-col items-center">
+                <div class="w-10 h-10 mb-3 bg-surface-muted rounded-full flex items-center justify-center text-text-muted group-hover:text-primary transition-colors">
+                  <PlusIcon class="w-5 h-5" />
+                </div>
+                <p class="text-sm font-bold text-text">Haga clic o arrastre archivos aquí</p>
+                <p class="text-[10px] text-text-muted mt-1 font-medium italic">Formatos permitidos: .pdf, .jpg, .png</p>
+              </div>
+              
+              <div v-else class="flex items-center justify-center gap-3">
+                <DocsIcon class="w-6 h-6 text-primary" />
+                <div class="text-left overflow-hidden">
+                   <p class="text-sm font-bold text-text truncate max-w-[200px]">{{ selectedFile.name }}</p>
+                   <p class="text-[10px] text-text-muted font-medium mt-0.5">Clic o arrastrar para cambiar</p>
+                </div>
+              </div>
+            </div>
+            
+            <button v-if="isEdit && eliminarArchivoViejo && editData?.archivos?.length" @click.prevent="restaurarArchivoViejo" class="mt-2 text-[10px] font-bold text-primary uppercase hover:underline">Deshacer (Mantener original)</button>
+          </div>
         </div>
       </div>
 
@@ -134,6 +358,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatDateUI, formatDateTimeUI, formatTimeUI } from '@/utils/date.utils';
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import BaseModal from '@/components/common/BaseModal.vue'
 import SearchableSelect from '@/components/common/SearchableSelect.vue'
@@ -143,10 +368,11 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import AttachmentViewer from '@/components/common/AttachmentViewer.vue'
 import catalogosService from '@/modules/mareas/services/catalogos.service'
 import tiposNovedadApi from '../services/tipos-novedad.service'
+import { novedadesService } from '../services/novedades.service'
 import {
   UserGroupIcon,
-  CalenderIcon,
-  DocsIcon
+  DocsIcon,
+  PlusIcon
 } from '@/icons'
 import type { Novedad } from '../interfaces/novedad.interface'
 import type { TipoNovedad } from '../interfaces/tipo-novedad.interface'
@@ -157,6 +383,15 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits(['close', 'save'])
+
+const formatDate = (isoStr: string) => formatDateUI(isoStr)
+
+const formatPeriodo = (inicio?: string | Date | null, fin?: string | Date | null) => {
+  if (!inicio) return '-'
+  const startStr = formatDate(inicio as string)
+  if (!fin) return `${startStr} en adelante`
+  return `${startStr} - ${formatDate(fin as string)}`
+}
 
 const observadorSelect = ref<any>(null)
 
@@ -174,6 +409,57 @@ const fieldErrors = ref<Record<string, string>>({})
 const error = ref('')
 const loading = ref(false)
 const isEdit = computed(() => !!props.editData)
+
+const datosCedulaForm = ref({
+  numeroCedula: null as number | null,
+  vencimientoCedula: '',
+  vencimientoAptoMedico: '',
+  nuevoVencimientoAptoMedico: ''
+})
+
+const isActualizacionCedula = computed(() => {
+  const codigo = props.editData?.tipoNovedad?.codigo || tiposNovedad.value.find(t => t.id === form.value.tipoNovedadId)?.codigo
+  return codigo === 'ACTUALIZACION_CEDULA' || !!props.editData?.metadata?.datosCedula
+})
+
+const valoresPreviosObservador = computed(() => {
+  if (props.editData?.metadata?.valoresPrevios) {
+    return props.editData.metadata.valoresPrevios
+  }
+  if (selectedObservador.value) {
+    return {
+      numeroCedula: selectedObservador.value.numeroCedula,
+      vencimientoCedula: selectedObservador.value.vencimientoCedula,
+      vencimientoAptoMedico: selectedObservador.value.vencimientoAptoMedico
+    }
+  }
+  return null
+})
+
+const selectedFile = ref<File | null>(null)
+const fileInput = ref<HTMLInputElement | null>(null)
+const eliminarArchivoViejo = ref(false)
+const isDragging = ref(false)
+
+const triggerFileInput = () => {
+  fileInput.value?.click()
+}
+
+const handleDrop = (event: DragEvent) => {
+  isDragging.value = false
+  if (event.dataTransfer?.files?.length) {
+    const file = event.dataTransfer.files[0]
+    if (file.type.startsWith('image/') || file.type === 'application/pdf') {
+      selectedFile.value = file
+    }
+  }
+}
+
+const restaurarArchivoViejo = () => {
+  eliminarArchivoViejo.value = false
+  selectedFile.value = null
+  if (fileInput.value) fileInput.value.value = ''
+}
 
 const tiposNovedad = ref<TipoNovedad[]>([])
 
@@ -241,10 +527,37 @@ watch(() => props.show, (newVal) => {
         motivo: props.editData.motivo || '',
         permiteUrgencia: props.editData.permiteUrgencia || false
       }
+
+      if (props.editData.metadata?.datosCedula) {
+        const dc = props.editData.metadata.datosCedula
+        datosCedulaForm.value = {
+          numeroCedula: dc.numeroCedula !== undefined && dc.numeroCedula !== null ? Number(dc.numeroCedula) : null,
+          vencimientoCedula: dc.vencimientoCedula ? String(dc.vencimientoCedula).split('T')[0] : '',
+          vencimientoAptoMedico: dc.vencimientoAptoMedico ? String(dc.vencimientoAptoMedico).split('T')[0] : '',
+          nuevoVencimientoAptoMedico: dc.nuevoVencimientoAptoMedico ? String(dc.nuevoVencimientoAptoMedico).split('T')[0] : ''
+        }
+      } else {
+        datosCedulaForm.value = {
+          numeroCedula: null,
+          vencimientoCedula: '',
+          vencimientoAptoMedico: '',
+          nuevoVencimientoAptoMedico: ''
+        }
+      }
     } else {
       form.value = getInitialForm()
+      datosCedulaForm.value = {
+        numeroCedula: null,
+        vencimientoCedula: '',
+        vencimientoAptoMedico: '',
+        nuevoVencimientoAptoMedico: ''
+      }
     }
     
+    selectedFile.value = null
+    eliminarArchivoViejo.value = false
+    if (fileInput.value) fileInput.value.value = ''
+
     nextTick(() => {
       observadorSelect.value?.focus()
     })
@@ -264,11 +577,6 @@ watch(() => form.value.observadorId, (val) => {
 })
 watch(() => form.value.tipoNovedadId, (val) => { 
   if (val) delete fieldErrors.value.tipoNovedadId 
-  
-  if (isViajeNovedad.value) {
-    form.value.fechaFin = ''
-    delete fieldErrors.value.fechaFin
-  }
 })
 watch(() => form.value.fechaInicio, (val) => { if (val) delete fieldErrors.value.fechaInicio })
 
@@ -291,16 +599,48 @@ const validate = () => {
   return Object.keys(fieldErrors.value).length === 0
 }
 
-const submit = () => {
+const submit = async () => {
   if (!validate()) return
 
   loading.value = true
-  const payload = {
-    ...form.value,
-    fechaFin: form.value.fechaFin || null
+  try {
+    const payload: any = {
+      ...form.value,
+      fechaFin: form.value.fechaFin || null
+    }
+
+    if (isActualizacionCedula.value) {
+      payload.metadata = {
+        ...(props.editData?.metadata || {}),
+        datosCedula: {
+          ...(props.editData?.metadata?.datosCedula || {}),
+          numeroCedula: datosCedulaForm.value.numeroCedula,
+          vencimientoCedula: datosCedulaForm.value.vencimientoCedula || null,
+          vencimientoAptoMedico: datosCedulaForm.value.vencimientoAptoMedico || null,
+        }
+      }
+    }
+
+    if (eliminarArchivoViejo.value) {
+      payload.eliminarArchivoViejo = true
+    }
+
+    if (selectedFile.value) {
+      const fileInfo = await novedadesService.uploadFile(selectedFile.value)
+      payload.archivo = {
+        nombreOriginal: fileInfo.originalName,
+        rutaArchivo: fileInfo.secureUrl,
+        tipoArchivo: fileInfo.mimetype,
+        driveFileId: fileInfo.driveFileId
+      }
+    }
+    
+    emit('save', payload)
+  } catch (err: any) {
+    error.value = err.response?.data?.message || 'Error al procesar el archivo o guardar la novedad'
+    console.error(err)
+  } finally {
+    loading.value = false
   }
-  
-  emit('save', payload)
-  loading.value = false
 }
 </script>

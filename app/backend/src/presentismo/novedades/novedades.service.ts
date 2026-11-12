@@ -4,19 +4,23 @@ import { CreateNovedadDto } from './dto/create-novedad.dto';
 import { UpdateNovedadDto } from './dto/update-novedad.dto';
 import { User } from '@prisma/client';
 import { DateUtils } from '../../common/utils/date.utils';
+import { DriveStorageService } from '../../files/drive-storage.service';
 
 @Injectable()
 export class NovedadesService {
-  private readonly logger = new Logger(NovedadesService.name);
+    private readonly logger = new Logger(NovedadesService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly driveStorageService: DriveStorageService
+    ) {}
 
   async findAll(observadorId?: string, estadoAprobacion?: string) {
-    const where: any = { activo: true };
+    const where: any = {};
     if (observadorId) where.observadorId = observadorId;
     if (estadoAprobacion) where.estadoAprobacion = estadoAprobacion;
 
-    return this.prisma.observadorNovedad.findMany({
+    const novedades = await this.prisma.observadorNovedad.findMany({
       where,
       include: {
         observador: true,
@@ -34,6 +38,8 @@ export class NovedadesService {
       },
       orderBy: { fechaInicio: 'desc' },
     });
+
+    return this.enrichNovedadesConOriginal(novedades);
   }
 
   async findOne(id: string) {
@@ -56,7 +62,48 @@ export class NovedadesService {
     });
 
     if (!novedad || !novedad.activo) throw new NotFoundException(`Novedad con ID ${id} no encontrada`);
-    return novedad;
+    const [enriched] = await this.enrichNovedadesConOriginal([novedad]);
+    return enriched;
+  }
+
+  private async enrichNovedadesConOriginal(novedades: any[]) {
+    const idsOriginales = novedades
+      .map(n => (n.metadata as any)?.novedadOriginalId)
+      .filter((id): id is string => typeof id === 'string' && !!id);
+
+    const idsAjustar = novedades
+      .map(n => (n.metadata as any)?.novedadAjustarId)
+      .filter((id): id is string => typeof id === 'string' && !!id);
+
+    const allRelatedIds = Array.from(new Set([...idsOriginales, ...idsAjustar]));
+
+    if (allRelatedIds.length === 0) return novedades;
+
+    const related = await this.prisma.observadorNovedad.findMany({
+      where: { id: { in: allRelatedIds } },
+      include: {
+        observador: true,
+        tipoNovedad: true,
+        archivos: true,
+        creadoPor: {
+          select: { id: true, email: true, fullName: true }
+        }
+      }
+    });
+
+    const relatedMap = new Map(related.map(o => [o.id, o]));
+
+    for (const n of novedades) {
+      const origId = (n.metadata as any)?.novedadOriginalId;
+      if (origId) {
+        n.novedadOriginal = relatedMap.get(origId) || null;
+      }
+      const ajustId = (n.metadata as any)?.novedadAjustarId;
+      if (ajustId) {
+        n.novedadAjustar = relatedMap.get(ajustId) || null;
+      }
+    }
+    return novedades;
   }
 
   async create(createNovedadDto: CreateNovedadDto, user?: User) {
@@ -91,8 +138,9 @@ export class NovedadesService {
     let end: Date | null = createNovedadDto.fechaFin ? DateUtils.parseToAppZone(createNovedadDto.fechaFin) : null;
     let isInfinite = false;
 
-    // Autocierre para eventos de un solo día conocidos
-    if (['VIAJE_INICIO', 'VIAJE_FIN'].includes(tipoNovedad.codigo)) {
+    // Autocierre para eventos de un solo día o tipos puntuales conocidos
+    const tiposPuntuales = ['VIAJE_INICIO', 'VIAJE_FIN', 'FC', 'RP', 'DONACION_SANGRE', 'EXAMEN', 'NACIMIENTO', 'FALLECIMIENTO', 'ACTUALIZACION_CEDULA'];
+    if (tiposPuntuales.includes(tipoNovedad.codigo)) {
       if (!end) end = start;
     } else {
       if (!end) isInfinite = true;
@@ -122,7 +170,19 @@ export class NovedadesService {
     });
 
     if (overlaps) {
-      throw new BadRequestException('El observador ya tiene una novedad de este tipo registrada en estas fechas');
+      let esSolapamientoReal = true;
+      const esCicloDisponibilidad = ['DISPONIBLE', 'NO_DISPONIBLE'].includes(tipoNovedad.codigo);
+
+      if (esCicloDisponibilidad) {
+        const mareaIntermedia = await this.huboMareaIntermedia(createNovedadDto.observadorId, overlaps.fechaInicio, start);
+        if (mareaIntermedia) {
+          esSolapamientoReal = false; // Pertenecen a descansos separados por marea
+        }
+      }
+
+      if (esSolapamientoReal) {
+        throw new BadRequestException('El observador ya tiene una novedad de este tipo registrada en estas fechas');
+      }
     }
 
     const created = await this.prisma.observadorNovedad.create({
@@ -142,7 +202,15 @@ export class NovedadesService {
             estadoNuevo: 'APROBADA',
             usuarioId: user?.id,
           }
-        }
+        },
+        archivos: createNovedadDto.archivo ? {
+          create: {
+            rutaArchivo: createNovedadDto.archivo.rutaArchivo,
+            tipoArchivo: createNovedadDto.archivo.tipoArchivo,
+            nombreOriginal: createNovedadDto.archivo.nombreOriginal,
+            driveFileId: createNovedadDto.archivo.driveFileId,
+          }
+        } : undefined
       },
       include: { observador: true, tipoNovedad: true, archivos: true }
     });
@@ -155,7 +223,16 @@ export class NovedadesService {
     const existing = await this.findOne(id);
     
     const data: any = { ...updateNovedadDto };
-    delete data.comentarioMovimiento; // No es parte de la entidad principal
+    delete data.comentarioMovimiento;
+    delete data.archivo;
+    delete data.eliminarArchivoViejo;
+
+    if (updateNovedadDto.metadata) {
+      data.metadata = {
+        ...((existing.metadata as any) || {}),
+        ...updateNovedadDto.metadata,
+      };
+    }
 
     if (updateNovedadDto.fechaInicio) data.fechaInicio = DateUtils.parseToAppZone(updateNovedadDto.fechaInicio);
     if (updateNovedadDto.fechaFin !== undefined) {
@@ -166,8 +243,9 @@ export class NovedadesService {
     let end = data.fechaFin !== undefined ? data.fechaFin : existing.fechaFin;
     let isInfinite = false;
 
-    // Autocierre para eventos de un solo día en update
-    if (['VIAJE_INICIO', 'VIAJE_FIN'].includes(existing.tipoNovedad.codigo)) {
+    // Autocierre para eventos de un solo día o tipos puntuales en update
+    const tiposPuntuales = ['VIAJE_INICIO', 'VIAJE_FIN', 'FC', 'RP', 'DONACION_SANGRE', 'EXAMEN', 'NACIMIENTO', 'FALLECIMIENTO', 'ACTUALIZACION_CEDULA'];
+    if (tiposPuntuales.includes(existing.tipoNovedad.codigo)) {
       if (!end) {
         end = start;
         data.fechaFin = end;
@@ -176,8 +254,13 @@ export class NovedadesService {
       if (!end) isInfinite = true;
     }
 
-    // Si no estamos rechazando la novedad, verificar solapamiento
-    if (updateNovedadDto.estadoAprobacion !== 'RECHAZADA') {
+    let esCorreccion = !!(existing.metadata as any)?.esCorreccion;
+    let novedadOriginalId = (existing.metadata as any)?.novedadOriginalId;
+    let esAjustePeriodo = !!(existing.metadata as any)?.esAjustePeriodo;
+    let novedadAjustarId = (existing.metadata as any)?.novedadAjustarId;
+
+    // Si no estamos rechazando la novedad y no es actualización de cédula, verificar solapamiento
+    if (updateNovedadDto.estadoAprobacion !== 'RECHAZADA' && existing.tipoNovedad.codigo !== 'ACTUALIZACION_CEDULA') {
       const overlapConditions: any[] = [
         {
           OR: [
@@ -191,9 +274,17 @@ export class NovedadesService {
         overlapConditions.push({ fechaInicio: { lte: end } });
       }
 
+      const excludeIds = [id];
+      if (esCorreccion && novedadOriginalId) {
+        excludeIds.push(novedadOriginalId);
+      }
+      if (esAjustePeriodo && novedadAjustarId) {
+        excludeIds.push(novedadAjustarId);
+      }
+
       const overlaps = await this.prisma.observadorNovedad.findFirst({
         where: {
-          id: { not: id },
+          id: { notIn: excludeIds },
           observadorId: existing.observadorId,
           tipoNovedadId: data.tipoNovedadId !== undefined ? data.tipoNovedadId : existing.tipoNovedadId,
           estadoAprobacion: { not: 'RECHAZADA' },
@@ -203,14 +294,172 @@ export class NovedadesService {
       });
 
       if (overlaps) {
-        throw new BadRequestException('Las nuevas fechas se solapan con otra novedad del mismo tipo');
+        let esSolapamientoReal = true;
+        const tipoCodigo = existing.tipoNovedad?.codigo;
+        const esCicloDisponibilidad = ['DISPONIBLE', 'NO_DISPONIBLE'].includes(tipoCodigo);
+
+        if (esCicloDisponibilidad) {
+          const mareaIntermedia = await this.huboMareaIntermedia(existing.observadorId, overlaps.fechaInicio, start);
+          if (mareaIntermedia) {
+            esSolapamientoReal = false; // Pertenecen a descansos separados por marea
+          }
+        }
+
+        if (esSolapamientoReal) {
+          // Auto-detección: Si la novedad que se edita está PENDIENTE y solapa con una APROBADA existente
+          if (existing.estadoAprobacion === 'PENDIENTE' && overlaps.estadoAprobacion === 'APROBADA') {
+            esCorreccion = true;
+            novedadOriginalId = overlaps.id;
+            const currentMeta = (existing.metadata as any) || {};
+            data.metadata = {
+              ...currentMeta,
+              esCorreccion: true,
+              novedadOriginalId: overlaps.id,
+              requiereRevision: true,
+            };
+          } else {
+            throw new BadRequestException('Las nuevas fechas se solapan con otra novedad del mismo tipo');
+          }
+        }
+      }
+    }
+
+    if (updateNovedadDto.estadoAprobacion === 'APROBADA' && esCorreccion && novedadOriginalId) {
+      const original = await this.prisma.observadorNovedad.findUnique({
+        where: { id: novedadOriginalId }
+      });
+      const mareaEntreMedio = original ? await this.huboMareaIntermedia(existing.observadorId, original.fechaInicio, start) : false;
+
+      if (!mareaEntreMedio) {
+        await this.prisma.observadorNovedad.update({
+          where: { id: novedadOriginalId },
+          data: {
+            activo: true,
+            estadoAprobacion: 'RECTIFICADA',
+            movimientos: {
+              create: {
+                tipoEvento: 'REEMPLAZADA_POR_CORRECCION',
+                estadoAnterior: original?.estadoAprobacion || 'APROBADA',
+                estadoNuevo: 'RECTIFICADA',
+                comentarios: `Rectificada por aprobación de nueva novedad (nuevo período: del ${DateUtils.formatDate(start)} ${end ? 'al ' + DateUtils.formatDate(end) : 'en adelante'})`,
+                usuarioId: user?.id,
+              }
+            }
+          }
+        });
+      }
+    }
+
+    if (updateNovedadDto.estadoAprobacion === 'APROBADA' && esAjustePeriodo && novedadAjustarId) {
+      const novedadAjustar = await this.prisma.observadorNovedad.findUnique({
+        where: { id: novedadAjustarId },
+        include: { tipoNovedad: true }
+      });
+
+      if (novedadAjustar && novedadAjustar.activo) {
+        const mareaEntreMedio = await this.huboMareaIntermedia(existing.observadorId, novedadAjustar.fechaInicio, start);
+        if (!mareaEntreMedio) {
+          const fechaInicioAjustar = new Date(novedadAjustar.fechaInicio);
+          const tipoNovedadActual = await this.prisma.tipoNovedad.findUnique({
+            where: { id: data.tipoNovedadId !== undefined ? data.tipoNovedadId : existing.tipoNovedadId }
+          });
+
+          if (start > fechaInicioAjustar) {
+            const fechaCorte = new Date(start.getTime() - 24 * 60 * 60 * 1000);
+            await this.prisma.observadorNovedad.update({
+              where: { id: novedadAjustarId },
+              data: {
+                fechaFin: fechaCorte,
+                movimientos: {
+                  create: {
+                    tipoEvento: 'AJUSTE_POR_DISPONIBILIDAD',
+                    estadoAnterior: novedadAjustar.estadoAprobacion,
+                    estadoNuevo: novedadAjustar.estadoAprobacion,
+                    comentarios: `Fecha fin ajustada al ${DateUtils.formatDate(fechaCorte)} por inicio de nuevo período (${tipoNovedadActual?.descripcion || 'Novedad'} a partir del ${DateUtils.formatDate(start)})`,
+                    usuarioId: user?.id,
+                  }
+                }
+              }
+            });
+          } else {
+            await this.prisma.observadorNovedad.update({
+              where: { id: novedadAjustarId },
+              data: {
+                activo: true,
+                estadoAprobacion: 'RECTIFICADA',
+                movimientos: {
+                  create: {
+                    tipoEvento: 'REEMPLAZADA_POR_DISPONIBILIDAD',
+                    estadoAnterior: novedadAjustar.estadoAprobacion,
+                    estadoNuevo: 'RECTIFICADA',
+                    comentarios: `Rectificada y reemplazada por inicio de nuevo período de ${tipoNovedadActual?.descripcion || 'Novedad'} a partir del ${DateUtils.formatDate(start)}`,
+                    usuarioId: user?.id,
+                  }
+                }
+              }
+            });
+          }
+        }
+      }
+    }
+
+    let esActualizacionCedula = existing.tipoNovedad.codigo === 'ACTUALIZACION_CEDULA';
+    let comentarioGeneradoCedula: string | null = null;
+
+    if (updateNovedadDto.estadoAprobacion === 'APROBADA' && esActualizacionCedula) {
+      const metaFinal = data.metadata || existing.metadata || {};
+      const datosCedula = (metaFinal as any)?.datosCedula;
+
+      if (datosCedula) {
+        let numeroCedula: number | null = null;
+        if (datosCedula.numeroCedula !== undefined && datosCedula.numeroCedula !== null && String(datosCedula.numeroCedula).trim() !== '') {
+          const parsed = parseInt(String(datosCedula.numeroCedula), 10);
+          if (!isNaN(parsed)) {
+            numeroCedula = parsed;
+          }
+        }
+
+        const vencimientoCedula = datosCedula.vencimientoCedula ? DateUtils.parseToAppZone(datosCedula.vencimientoCedula) : null;
+        const vencimientoAptoMedico = datosCedula.vencimientoAptoMedico ? DateUtils.parseToAppZone(datosCedula.vencimientoAptoMedico) : null;
+
+        if (numeroCedula !== null) {
+          const cedulaExistente = await this.prisma.observador.findFirst({
+            where: {
+              numeroCedula,
+              id: { not: existing.observadorId },
+            }
+          });
+          if (cedulaExistente) {
+            throw new BadRequestException(`El número de cédula ${numeroCedula} ya se encuentra registrado en otro observador (${cedulaExistente.apellido}, ${cedulaExistente.nombre})`);
+          }
+        }
+
+        await this.prisma.observador.update({
+          where: { id: existing.observadorId },
+          data: {
+            ...(numeroCedula !== null ? { numeroCedula } : {}),
+            ...(vencimientoCedula ? { vencimientoCedula } : {}),
+            ...(vencimientoAptoMedico ? { vencimientoAptoMedico } : {}),
+            fechaActualizacionDocumentacion: new Date(),
+          }
+        });
+
+        const vtoCedulaStr = datosCedula.vencimientoCedula ? DateUtils.formatDate(vencimientoCedula) : 'S/D';
+        const vtoMedicoStr = datosCedula.vencimientoAptoMedico ? DateUtils.formatDate(vencimientoAptoMedico) : 'S/D';
+        comentarioGeneradoCedula = `Actualización de cédula aplicada: N° ${numeroCedula || 'S/N'}, Venc. Cédula: ${vtoCedulaStr}, Venc. Médico: ${vtoMedicoStr}.`;
       }
     }
 
     let tipoEvento = 'EDICION';
     if (updateNovedadDto.estadoAprobacion && updateNovedadDto.estadoAprobacion !== existing.estadoAprobacion) {
-      if (updateNovedadDto.estadoAprobacion === 'APROBADA') tipoEvento = 'APROBACION';
-      if (updateNovedadDto.estadoAprobacion === 'RECHAZADA') tipoEvento = 'RECHAZO';
+      if (updateNovedadDto.estadoAprobacion === 'APROBADA') {
+        tipoEvento = esActualizacionCedula
+          ? 'APROBACION_ACTUALIZACION_CEDULA'
+          : (esCorreccion ? 'APROBACION_CORRECCION' : (esAjustePeriodo ? 'APROBACION_AJUSTE_PERIODO' : 'APROBACION'));
+      }
+      if (updateNovedadDto.estadoAprobacion === 'RECHAZADA') {
+        tipoEvento = esCorreccion ? 'RECHAZO_CORRECCION' : (esAjustePeriodo ? 'RECHAZO_AJUSTE_PERIODO' : 'RECHAZO');
+      }
     }
 
     data.movimientos = {
@@ -218,10 +467,42 @@ export class NovedadesService {
         tipoEvento,
         estadoAnterior: existing.estadoAprobacion,
         estadoNuevo: updateNovedadDto.estadoAprobacion || existing.estadoAprobacion,
-        comentarios: updateNovedadDto.comentarioMovimiento || null,
+        comentarios: updateNovedadDto.comentarioMovimiento || comentarioGeneradoCedula || null,
         usuarioId: user?.id,
       }
     };
+
+    // Manejo de archivos
+    const archivoActual = existing.archivos?.[0];
+    const tieneArchivoNuevo = !!updateNovedadDto.archivo;
+    const debeEliminar = updateNovedadDto.eliminarArchivoViejo === true;
+
+    if (tieneArchivoNuevo || debeEliminar) {
+      if (existing.origen !== 'MANUAL') {
+        throw new BadRequestException('No se pueden modificar los archivos adjuntos de novedades autogeneradas');
+      }
+
+      if (archivoActual) {
+        // Borrar el archivo viejo de la base de datos
+        data.archivos = { deleteMany: { id: archivoActual.id } };
+        // Borrar físicamente de Google Drive
+        if (archivoActual.driveFileId) {
+          await this.driveStorageService.deleteFile(archivoActual.driveFileId);
+        }
+      }
+
+      if (tieneArchivoNuevo && updateNovedadDto.archivo) {
+        data.archivos = {
+          ...data.archivos, // Por si se agregó deleteMany arriba
+          create: {
+            rutaArchivo: updateNovedadDto.archivo.rutaArchivo,
+            tipoArchivo: updateNovedadDto.archivo.tipoArchivo,
+            nombreOriginal: updateNovedadDto.archivo.nombreOriginal,
+            driveFileId: updateNovedadDto.archivo.driveFileId,
+          }
+        };
+      }
+    }
 
     const updated = await this.prisma.observadorNovedad.update({
       where: { id },
@@ -285,6 +566,33 @@ export class NovedadesService {
         }
       }
     }
+  }
+
+  async huboMareaIntermedia(observadorId: string, fechaA: Date, fechaB: Date): Promise<boolean> {
+    const inicioRango = fechaA < fechaB ? fechaA : fechaB;
+    const finRango = fechaA < fechaB ? fechaB : fechaA;
+
+    const marea = await this.prisma.marea.findFirst({
+      where: {
+        activo: true,
+        OR: [
+          { observadorPrincipalId: observadorId },
+          { etapas: { some: { observadores: { some: { observadorId: observadorId } } } } }
+        ],
+        AND: [
+          {
+            OR: [
+              { fechaInicioObservador: { gte: inicioRango, lte: finRango } },
+              { fechaZarpadaEstimada: { gte: inicioRango, lte: finRango } },
+              { etapas: { some: { fechaZarpada: { gte: inicioRango, lte: finRango } } } }
+            ]
+          }
+        ]
+      },
+      select: { id: true }
+    });
+
+    return !!marea;
   }
 
   async remove(id: string, user?: User) {

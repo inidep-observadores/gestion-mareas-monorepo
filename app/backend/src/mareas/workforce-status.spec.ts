@@ -6,6 +6,8 @@ import { BusinessRulesService } from '../common/business-rules/business-rules.se
 import { MailService } from '../mail/mail.service';
 import { AlertsService } from '../alerts/alerts.service';
 import { ConfigService } from '@nestjs/config';
+import { DriveStorageService } from '../files/drive-storage.service';
+import { JobQueueService } from '../jobs/job-queue.service';
 
 describe('MareasService - getWorkforceStatus', () => {
     let service: MareasService;
@@ -36,6 +38,12 @@ describe('MareasService - getWorkforceStatus', () => {
             alerta: {
                 findMany: jest.fn().mockResolvedValue([]),
             },
+            observadorNovedad: {
+                findMany: jest.fn().mockResolvedValue([]),
+            },
+            escenarioSimulacion: {
+                findMany: jest.fn().mockResolvedValue([]),
+            },
             seguimientoPostMarea: {
                 findMany: jest.fn().mockResolvedValue([]),
                 updateMany: jest.fn(),
@@ -50,6 +58,8 @@ describe('MareasService - getWorkforceStatus', () => {
                 { provide: MailService, useValue: {} },
                 { provide: AlertsService, useValue: {} },
                 { provide: ConfigService, useValue: { get: jest.fn().mockReturnValue('60') } },
+                { provide: DriveStorageService, useValue: {} },
+                { provide: JobQueueService, useValue: {} },
             ],
         }).compile();
 
@@ -145,6 +155,285 @@ describe('MareasService - getWorkforceStatus', () => {
 
         const obs = result.listDesignados[0];
         expect(obs.fishery).toBe('PESQUERIA ETAPA');
+
+        jest.useRealTimers();
+    });
+
+    it('debe incluir en listDesignados a un observador designado aunque en el padrón tenga disponible false', async () => {
+        const now = new Date('2026-03-28T12:00:00Z');
+        jest.useFakeTimers().setSystemTime(now);
+
+        const obsObj = {
+            id: 'obs-no-disp',
+            apellido: 'Alvarez',
+            nombre: 'Pedro',
+            activo: true,
+            disponible: false, // Marcado como no disponible en padrón
+            sexo: 'Masculino',
+            eventual: false,
+            tipoObservador: 'OBSERVADOR',
+            tipoContrato: 'TITULAR'
+        };
+        mockPrismaService.observador.findMany.mockResolvedValue([obsObj]);
+
+        mockPrismaService.marea.findMany.mockResolvedValue([
+            {
+                id: 'marea-desig',
+                nroMarea: 20,
+                anioMarea: 2026,
+                observadorPrincipalId: 'obs-no-disp',
+                buque: { nombreBuque: 'BUQUE ALPHA' },
+                pesqueria: { nombre: 'MERLUZA' },
+                estadoActual: { codigo: 'DESIGNADA' }
+            }
+        ]);
+
+        mockPrismaService.mareaEtapa.findMany.mockResolvedValue([]);
+        mockPrismaService.systemStatus.findUnique.mockResolvedValue({ key: 'LAST_ALERT_CHECK', lastUpdate: now });
+
+        const result = await service.getWorkforceStatus(2026);
+
+        expect(result.designados).toBe(1);
+        expect(result.listDesignados).toHaveLength(1);
+        expect(result.listDesignados[0].id).toBe('obs-no-disp');
+        expect(result.listDesignados[0].disponible).toBe(false);
+        expect(result.impedidos).toBe(0);
+
+        jest.useRealTimers();
+    });
+
+    it('debe clasificar disponibilidad confirmada y asociar la planificación simulada más próxima', async () => {
+        const now = new Date('2026-10-31T12:00:00Z');
+        jest.useFakeTimers().setSystemTime(now);
+
+        const obsConfirmado = { id: 'obs-1', apellido: 'Gomez', nombre: 'Juan', activo: true, sexo: 'Masculino', eventual: false, tipoObservador: 'OBSERVADOR', tipoContrato: 'TITULAR' };
+        const obsNoConfirmado = { id: 'obs-2', apellido: 'Perez', nombre: 'Carlos', activo: true, sexo: 'Masculino', eventual: false, tipoObservador: 'OBSERVADOR', tipoContrato: 'TITULAR' };
+        const obsPlanificado = { id: 'obs-3', apellido: 'Lopez', nombre: 'Ana', activo: true, sexo: 'Femenino', eventual: false, tipoObservador: 'OBSERVADOR', tipoContrato: 'TITULAR' };
+        const obsFlexible = { id: 'obs-4', apellido: 'Rodriguez', nombre: 'Estanislao', activo: true, sexo: 'Masculino', eventual: false, tipoObservador: 'OBSERVADOR', tipoContrato: 'TITULAR' };
+
+        mockPrismaService.observador.findMany.mockResolvedValue([obsConfirmado, obsNoConfirmado, obsPlanificado, obsFlexible]);
+        mockPrismaService.mareaEtapa.findMany.mockResolvedValue([]);
+        mockPrismaService.marea.findMany.mockResolvedValue([]);
+
+        // Novedad de disponibilidad para obs-1 y obs-3, y licencia con urgencia para obs-4
+        mockPrismaService.observadorNovedad.findMany.mockImplementation((args: any) => {
+            if (args?.where?.fechaInicio?.gt) {
+                return Promise.resolve([]);
+            }
+            return Promise.resolve([
+                {
+                    id: 'nov-1',
+                    observadorId: 'obs-1',
+                    fechaInicio: new Date('2026-10-15T00:00:00Z'),
+                    fechaFin: null,
+                    activo: true,
+                    estadoAprobacion: 'APROBADA',
+                    tipoNovedad: { codigo: 'DISPONIBLE', descripcion: 'Disponible para embarque' }
+                },
+                {
+                    id: 'nov-3',
+                    observadorId: 'obs-3',
+                    fechaInicio: new Date('2026-10-20T00:00:00Z'),
+                    fechaFin: null,
+                    activo: true,
+                    estadoAprobacion: 'APROBADA',
+                    tipoNovedad: { codigo: 'DISPONIBLE', descripcion: 'Disponible para embarque' }
+                },
+                {
+                    id: 'nov-4',
+                    observadorId: 'obs-4',
+                    fechaInicio: new Date('2026-10-19T00:00:00Z'),
+                    fechaFin: new Date('2026-11-02T00:00:00Z'),
+                    permiteUrgencia: true,
+                    activo: true,
+                    estadoAprobacion: 'APROBADA',
+                    tipoNovedad: { codigo: 'LICENCIA_VACACIONES', descripcion: 'Licencia / Vacaciones', afectaPresentismo: true }
+                }
+            ]);
+        });
+
+        // Escenario de simulación con obs-3 asignado en dos mareas (una el 10/11 y otra el 05/11)
+        mockPrismaService.escenarioSimulacion.findMany.mockResolvedValue([
+            {
+                id: 'esc-1',
+                nombre: 'Escenario A',
+                items: [
+                    {
+                        tipoBloque: 'MAREA_SIMULADA',
+                        observadorId: 'obs-3',
+                        buqueNombre: 'BUQUE LEJANO',
+                        fechaZarpada: '2026-11-10T00:00:00.000Z'
+                    }
+                ]
+            },
+            {
+                id: 'esc-2',
+                nombre: 'Escenario B',
+                items: [
+                    {
+                        tipoBloque: 'MAREA_SIMULADA',
+                        observadorId: 'obs-3',
+                        buqueNombre: 'BUQUE PROXIMO',
+                        fechaZarpada: '2026-11-05T00:00:00.000Z'
+                    },
+                    {
+                        tipoBloque: 'MAREA_SIMULADA',
+                        observadorId: 'obs-4',
+                        fechaZarpada: '2026-11-08T00:00:00.000Z',
+                        comentario: 'Reserva para zafra de langostino'
+                    }
+                ]
+            }
+        ]);
+
+        const result = await service.getWorkforceStatus(2026);
+
+        expect(result.listDisponibles).toHaveLength(4);
+
+        const item1 = result.listDisponibles.find(o => o.id === 'obs-1');
+        expect(item1?.disponibilidadConfirmada).toBe(true);
+        expect(item1?.planificacionFutura).toBeNull();
+
+        const item2 = result.listDisponibles.find(o => o.id === 'obs-2');
+        expect(item2?.disponibilidadConfirmada).toBe(false);
+        expect(item2?.planificacionFutura).toBeNull();
+
+        const item3 = result.listDisponibles.find(o => o.id === 'obs-3');
+        expect(item3?.disponibilidadConfirmada).toBe(true);
+        expect(item3?.planificacionFutura).toEqual({
+            escenarioId: 'esc-2',
+            escenarioNombre: 'Escenario B',
+            buqueNombre: 'BUQUE PROXIMO',
+            fechaZarpada: new Date('2026-11-05T00:00:00.000Z').toISOString(),
+            observaciones: null
+        });
+
+        const item4 = result.listDisponibles.find(o => o.id === 'obs-4');
+        expect(item4?.disponibilidadConfirmada).toBe(true);
+        expect(item4?.esFlexible).toBe(true);
+        expect(item4?.motivoFlexibilidad).toBe('Licencia / Vacaciones');
+        expect(item4?.planificacionFutura).toEqual({
+            escenarioId: 'esc-2',
+            escenarioNombre: 'Escenario B',
+            buqueNombre: 'Sin buque',
+            fechaZarpada: new Date('2026-11-08T00:00:00.000Z').toISOString(),
+            observaciones: 'Reserva para zafra de langostino'
+        });
+
+        jest.useRealTimers();
+    });
+
+    it('debe inhabilitar a IMPEDIDO a un observador con documentación vencida aunque tenga Franco Compensatorio', async () => {
+        const now = new Date('2026-11-04T12:00:00Z');
+        jest.useFakeTimers().setSystemTime(now);
+
+        const obsConDocVencida = {
+            id: 'obs-vencido',
+            apellido: 'Bargas Peña',
+            nombre: 'Raul Bernardo',
+            activo: true,
+            sexo: 'Masculino',
+            eventual: false,
+            tipoObservador: 'OBSERVADOR',
+            tipoContrato: 'TITULAR',
+            disponible: true,
+            conImpedimento: false,
+            vencimientoCedula: new Date('2026-10-15T00:00:00Z'), // Vencida
+            vencimientoAptoMedico: new Date('2027-05-20T00:00:00Z'),
+        };
+
+        mockPrismaService.observador.findMany.mockResolvedValue([obsConDocVencida]);
+        mockPrismaService.mareaEtapa.findMany.mockResolvedValue([]);
+        mockPrismaService.marea.findMany.mockResolvedValue([]);
+        mockPrismaService.systemStatus.findUnique.mockResolvedValue({ key: 'LAST_ALERT_CHECK', lastUpdate: now });
+
+        // Novedad activa de Franco Compensatorio (FC)
+        mockPrismaService.observadorNovedad.findMany.mockResolvedValue([
+            {
+                id: 'nov-fc',
+                observadorId: 'obs-vencido',
+                fechaInicio: new Date('2026-11-01T00:00:00Z'),
+                fechaFin: new Date('2026-11-08T00:00:00Z'),
+                activo: true,
+                estadoAprobacion: 'APROBADA',
+                tipoNovedad: { codigo: 'FC', descripcion: 'Franco Compensatorio', afectaPresentismo: true }
+            }
+        ]);
+
+        const result = await service.getWorkforceStatus(2026);
+
+        // No debe figurar en disponibles
+        expect(result.disponibles).toBe(0);
+        expect(result.listDisponibles).toHaveLength(0);
+
+        // Debe figurar como impedido con motivo de documentación vencida
+        expect(result.impedidos).toBe(1);
+        expect(result.listImpedidos).toHaveLength(1);
+        expect(result.listImpedidos[0].id).toBe('obs-vencido');
+        expect(result.listImpedidos[0].motivo).toContain('Documentación vencida: Cédula');
+
+        jest.useRealTimers();
+    });
+
+    it('debe priorizar aviso de disponibilidad futura sobre Franco Compensatorio en el período previo', async () => {
+        const now = new Date('2026-11-04T12:00:00Z');
+        jest.useFakeTimers().setSystemTime(now);
+
+        const obsConDispFutura = {
+            id: 'obs-futuro',
+            apellido: 'Perez',
+            nombre: 'Juan',
+            activo: true,
+            sexo: 'Masculino',
+            eventual: false,
+            tipoObservador: 'OBSERVADOR',
+            tipoContrato: 'TITULAR',
+            disponible: true,
+            conImpedimento: false,
+            vencimientoCedula: new Date('2027-10-15T00:00:00Z'),
+            vencimientoAptoMedico: new Date('2027-05-20T00:00:00Z'),
+        };
+
+        mockPrismaService.observador.findMany.mockResolvedValue([obsConDispFutura]);
+        mockPrismaService.mareaEtapa.findMany.mockResolvedValue([]);
+        mockPrismaService.marea.findMany.mockResolvedValue([]);
+        mockPrismaService.systemStatus.findUnique.mockResolvedValue({ key: 'LAST_ALERT_CHECK', lastUpdate: now });
+
+        // Novedad activa de FC hoy y aviso de disponibilidad a futuro para el 20/11
+        mockPrismaService.observadorNovedad.findMany.mockImplementation((args: any) => {
+            if (args?.where?.fechaInicio?.gt) {
+                return Promise.resolve([
+                    {
+                        id: 'nov-disp-futura',
+                        observadorId: 'obs-futuro',
+                        fechaInicio: new Date('2026-11-20T00:00:00Z'),
+                        fechaFin: null,
+                        activo: true,
+                        estadoAprobacion: 'APROBADA',
+                        tipoNovedad: { codigo: 'DISPONIBLE', descripcion: 'Disponible para embarque' }
+                    }
+                ]);
+            }
+            return Promise.resolve([
+                {
+                    id: 'nov-fc',
+                    observadorId: 'obs-futuro',
+                    fechaInicio: new Date('2026-11-01T00:00:00Z'),
+                    fechaFin: new Date('2026-11-08T00:00:00Z'),
+                    activo: true,
+                    estadoAprobacion: 'APROBADA',
+                    tipoNovedad: { codigo: 'FC', descripcion: 'Franco Compensatorio', afectaPresentismo: true }
+                }
+            ]);
+        });
+
+        const result = await service.getWorkforceStatus(2026);
+
+        // El período previo a la disponibilidad declarada a futuro es NO DISPONIBLE
+        expect(result.disponibles).toBe(0);
+        expect(result.listDisponibles).toHaveLength(0);
+        expect(result.impedidos).toBe(1);
+        expect(result.listImpedidos[0].motivo).toContain('Disponible a partir del 20/11/2026');
 
         jest.useRealTimers();
     });

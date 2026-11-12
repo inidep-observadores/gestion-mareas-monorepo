@@ -28,6 +28,11 @@ const mareasService = {
         return data;
     },
 
+    getMareasByObservador: async (id: string): Promise<any[]> => {
+        const { data } = await httpClient.get<any[]>(`/mareas/por-observador/${id}`);
+        return data;
+    },
+
     search: async (q: string): Promise<any[]> => {
         const { data } = await httpClient.get<any[]>(`/mareas/search?q=${q}`);
         return data;
@@ -145,7 +150,49 @@ const mareasService = {
     getProtocolizacionLoteDetalle: async (id: string): Promise<any> => {
         const { data } = await httpClient.get<any>(`/mareas/protocolizacion/lotes/${id}`);
         return data;
+    },
+
+    uploadPasajes: async (mareaId: string, files: File[]): Promise<any> => {
+        const formData = new FormData();
+        files.forEach(file => formData.append('files', file));
+        const { data } = await httpClient.post(`/mareas/${mareaId}/archivos/pasajes`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return data;
+    },
+
+    deleteArchivo: async (mareaId: string, archivoId: string): Promise<any> => {
+        const { data } = await httpClient.delete(`/mareas/${mareaId}/archivos/${archivoId}`);
+        return data;
+    },
+
+    updateObservadoresSecundarios: async (mareaId: string, observadoresSecundariosPlanificados: any[]): Promise<any> => {
+        const { data } = await httpClient.patch(`/mareas/${mareaId}/observadores-secundarios`, {
+            observadoresSecundariosPlanificados
+        });
+        return data;
+    },
+
+    addObservadorEtapa: async (mareaId: string, etapaId: string, observadorId: string, aplicarASiguientesEtapas: boolean = false): Promise<any> => {
+        const { data } = await httpClient.patch(`/mareas/${mareaId}/etapas/${etapaId}/observadores`, {
+            observadorId,
+            aplicarASiguientesEtapas
+        });
+        return data;
+    },
+
+    removeObservadorEtapa: async (mareaId: string, etapaId: string, observadorId: string): Promise<any> => {
+        const { data } = await httpClient.delete(`/mareas/${mareaId}/etapas/${etapaId}/observadores/${observadorId}`);
+        return data;
+    },
+
+    updateObservadorEtapa: async (mareaId: string, etapaId: string, observadorId: string, nuevoObservadorId: string): Promise<any> => {
+        const { data } = await httpClient.patch(`/mareas/${mareaId}/etapas/${etapaId}/observadores/${observadorId}`, {
+            nuevoObservadorId
+        });
+        return data;
     }
 };
 
 export default mareasService;
+

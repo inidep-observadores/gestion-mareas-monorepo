@@ -10,6 +10,7 @@
         @keydown="handleKeyDown"
         :placeholder="showTime ? 'DD/MM/YYYY HH:MM' : 'DD/MM/YYYY'"
         :disabled="disabled"
+        autocomplete="off"
         class="w-full px-4 py-2.5 bg-background border rounded-lg text-sm text-text outline-none focus:border-primary transition-all cursor-text placeholder:text-text-muted caret-primary disabled:opacity-50 disabled:bg-surface-muted disabled:cursor-not-allowed"
         style="color-scheme: light dark;"
         :class="[
@@ -126,6 +127,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatDateUI, formatDateTimeUI, formatTimeUI } from '@/utils/date.utils';
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { 
   ArrowLeftIcon, 
@@ -178,18 +180,7 @@ const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Juli
 const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
 
 // Helpers
-const formatDate = (date: Date | null) => {
-  if (!date) return ''
-  const d = date.getDate().toString().padStart(2, '0')
-  const m = (date.getMonth() + 1).toString().padStart(2, '0')
-  const y = date.getFullYear()
-  if (props.showTime) {
-    const hh = date.getHours().toString().padStart(2, '0')
-    const mm = date.getMinutes().toString().padStart(2, '0')
-    return `${d}/${m}/${y} ${hh}:${mm}`
-  }
-  return `${d}/${m}/${y}`
-}
+const formatDate = (date: Date | null) => formatDateUI(date)
 
 const parseDate = (str: string) => {
   const parts = str.split(/[/\s:]/)

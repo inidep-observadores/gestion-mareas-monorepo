@@ -9,6 +9,7 @@ allowBuilds:
   '@prisma/engines': true
   bcrypt: true
   canvas: true
+  core-js: true
   esbuild: true
   msgpackr-extract: true
   prisma: true
@@ -23,3 +24,16 @@ onlyBuiltDependencies:
   - esbuild
   - prisma
   - unrs-resolver
+
+overrides:
+  '@types/pg': '8.11.11'
+  '@types/mjml-core': '5.1.0'
+
+peerDependencyRules:
+  ignoreMissing:
+    - chokidar
+    - express
+  allowAny:
+    - '@nestjs/common'
+    - '@nestjs/core'
+    - apexcharts

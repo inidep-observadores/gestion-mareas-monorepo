@@ -1,0 +1,1599 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SIGMA — Presentación para el Cuerpo de Observadores a Bordo | INIDEP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #1e40af;
+      --primary-dark: #1e3a8a;
+      --primary-light: #3b82f6;
+      --accent: #0284c7;
+      --cyan: #06b6d4;
+      --dark-navy: #070f1e;
+      --card-dark: #0f1c34;
+      --bg-light: #f8fafc;
+      --text-dark: #0f172a;
+      --text-muted: #64748b;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --border: #e2e8f0;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.05);
+      --font-heading: 'Space Grotesk', sans-serif;
+      --font-body: 'Inter', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background-color: #0b1329;
+      color: var(--text-dark);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      user-select: none;
+    }
+
+    /* Contenedor Principal de Presentación */
+    .deck-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      background: #f1f5f9;
+    }
+
+    /* Barra Superior de Progreso */
+    .top-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 52px;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 50;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+      transition: background 0.3s ease;
+    }
+
+    .top-bar.dark-mode-top {
+      background: rgba(7, 15, 30, 0.85);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+
+    .logo-badge {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 1.15rem;
+      letter-spacing: 0.05em;
+      color: var(--primary);
+    }
+
+    .dark-mode-top .logo-badge {
+      color: #38bdf8;
+    }
+
+    .logo-badge .pill {
+      font-size: 0.72rem;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      background: #e0f2fe;
+      color: #0369a1;
+      font-weight: 600;
+      letter-spacing: normal;
+    }
+
+    .dark-mode-top .logo-badge .pill {
+      background: rgba(56, 189, 248, 0.2);
+      color: #7dd3fc;
+    }
+
+    .slide-meta {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .dark-mode-top .slide-meta {
+      color: #94a3b8;
+    }
+
+    .progress-track {
+      position: absolute;
+      top: 51px;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: rgba(0,0,0,0.06);
+      z-index: 51;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #2563eb, #06b6d4);
+      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Área de Slides */
+    .slides-wrapper {
+      position: relative;
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      padding-top: 52px;
+      padding-bottom: 60px;
+    }
+
+    .slide {
+      position: absolute;
+      top: 52px;
+      left: 0;
+      width: 100%;
+      height: calc(100% - 112px);
+      padding: 36px 64px;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(30px);
+      transition: opacity 0.35s ease, transform 0.35s ease;
+      overflow-y: auto;
+    }
+
+    .slide.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(0);
+    }
+
+    /* Tipografía y Encabezados de Slide */
+    .slide-header {
+      margin-bottom: 24px;
+    }
+
+    .slide-kicker {
+      text-transform: uppercase;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .slide-title {
+      font-family: var(--font-heading);
+      font-size: 2.1rem;
+      font-weight: 700;
+      color: #0f172a;
+      line-height: 1.2;
+    }
+
+    .slide-subtitle {
+      font-size: 1.05rem;
+      color: #475569;
+      margin-top: 6px;
+      max-width: 900px;
+      line-height: 1.45;
+    }
+
+    /* Estilos Especiales para Slide 1 (Portada) y Slide 15 (Cierre) */
+    .slide-cover {
+      background: radial-gradient(circle at 80% 20%, #1e3a8a 0%, #070f1e 65%, #030712 100%);
+      color: #ffffff;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 0 100px;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+    }
+
+    .slide-cover .cover-content {
+      max-width: 880px;
+      z-index: 2;
+    }
+
+    .slide-cover .inidep-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 8px 16px;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #38bdf8;
+      margin-bottom: 24px;
+      letter-spacing: 0.05em;
+    }
+
+    .slide-cover h1 {
+      font-family: var(--font-heading);
+      font-size: 3.8rem;
+      font-weight: 700;
+      line-height: 1.1;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #ffffff 30%, #7dd3fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .slide-cover .cover-desc {
+      font-size: 1.35rem;
+      line-height: 1.5;
+      color: #cbd5e1;
+      margin-bottom: 36px;
+      font-weight: 300;
+    }
+
+    .slide-cover .cover-meta {
+      display: flex;
+      gap: 32px;
+      border-top: 1px solid rgba(255, 255, 255, 0.15);
+      padding-top: 24px;
+    }
+
+    .slide-cover .meta-item h4 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #94a3b8;
+      margin-bottom: 4px;
+    }
+
+    .slide-cover .meta-item p {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #f1f5f9;
+    }
+
+    .cover-wave {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      width: 45%;
+      height: 80%;
+      opacity: 0.22;
+      pointer-events: none;
+    }
+
+    /* Grillas y Componentes de Contenido */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      align-items: stretch;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      align-items: stretch;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+
+    .card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+
+    .card-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      margin-bottom: 16px;
+      background: #eff6ff;
+      color: var(--primary);
+    }
+
+    .card h3 {
+      font-family: var(--font-heading);
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #0f172a;
+      margin-bottom: 10px;
+    }
+
+    .card p {
+      font-size: 0.95rem;
+      color: #475569;
+      line-height: 1.5;
+    }
+
+    /* Componente de Línea de Tiempo (Ciclo de Marea) */
+    .timeline-container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-top: 10px;
+    }
+
+    .timeline-track {
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+      padding: 20px 0;
+    }
+
+    .timeline-track::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 3%;
+      right: 3%;
+      height: 4px;
+      background: #cbd5e1;
+      transform: translateY(-50%);
+      z-index: 1;
+    }
+
+    .timeline-step {
+      position: relative;
+      z-index: 2;
+      background: #ffffff;
+      border: 2px solid #94a3b8;
+      border-radius: 50%;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #475569;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .timeline-step.completed {
+      background: #2563eb;
+      border-color: #1d4ed8;
+      color: #ffffff;
+    }
+
+    .timeline-step.active-step {
+      background: #0284c7;
+      border-color: #0369a1;
+      color: #ffffff;
+      box-shadow: 0 0 0 6px rgba(2, 132, 199, 0.2);
+    }
+
+    .timeline-cards-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .state-badge {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+
+    .badge-pending { background: #fef3c7; color: #92400e; }
+    .badge-exec { background: #dcfce7; color: #166534; }
+    .badge-review { background: #e0f2fe; color: #075985; }
+    .badge-done { background: #ede9fe; color: #5b21b6; }
+
+    /* Componente de Mapa de Seguimiento */
+    .map-presentation {
+      background: #091326;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.1);
+      position: relative;
+      height: 440px;
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+    }
+
+    .map-svg-canvas {
+      flex: 1;
+      height: 100%;
+    }
+
+    .map-sidebar-info {
+      width: 320px;
+      background: rgba(15, 28, 52, 0.88);
+      backdrop-filter: blur(8px);
+      border-left: 1px solid rgba(255,255,255,0.1);
+      padding: 20px;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .map-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.85rem;
+      color: #cbd5e1;
+    }
+
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    /* Mini Matriz de Presentismo */
+    .presentismo-preview {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .presentismo-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+
+    .presentismo-table th {
+      background: #f8fafc;
+      padding: 10px 8px;
+      border-bottom: 2px solid var(--border);
+      font-weight: 600;
+      color: #475569;
+      text-align: center;
+    }
+
+    .presentismo-table td {
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--border);
+      text-align: center;
+      font-weight: 500;
+    }
+
+    .cell-nav { background: #dcfce7; color: #15803d; font-weight: 700; border-radius: 4px; }
+    .cell-puerto { background: #e0f2fe; color: #0369a1; border-radius: 4px; }
+    .cell-lic { background: #fef3c7; color: #b45309; border-radius: 4px; }
+    .cell-libre { background: #f1f5f9; color: #64748b; }
+    .cell-franco { background: #fce7f3; color: #be185d; border: 1.5px dashed #f472b6; font-weight: 700; }
+
+    /* Barra Inferior de Navegación */
+    .bottom-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: #ffffff;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      z-index: 50;
+    }
+
+    .nav-btn-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+      font-family: var(--font-body);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: #f1f5f9;
+      color: #334155;
+      border-color: #cbd5e1;
+    }
+
+    .btn-secondary:hover {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+
+    .dots-indicator {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #cbd5e1;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .dot.active {
+      width: 24px;
+      border-radius: 4px;
+      background: var(--primary);
+    }
+
+    .btn-icon {
+      padding: 8px 12px;
+      font-size: 1.1rem;
+    }
+
+    /* Animación de pulso para satélite / radar */
+    @keyframes pulse-ring {
+      0% { transform: scale(0.9); opacity: 0.9; }
+      50% { transform: scale(1.6); opacity: 0.2; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+
+    .beacon {
+      position: relative;
+    }
+
+    .beacon::after {
+      content: '';
+      position: absolute;
+      top: -6px;
+      left: -6px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #38bdf8;
+      animation: pulse-ring 2s infinite ease-out;
+    }
+
+    /* Destacado / Callouts */
+    .callout {
+      background: #eff6ff;
+      border-left: 4px solid var(--primary);
+      border-radius: 8px;
+      padding: 16px 20px;
+      font-size: 0.95rem;
+      color: #1e3a8a;
+      line-height: 1.5;
+    }
+
+    .callout-success {
+      background: #ecfdf5;
+      border-left-color: var(--success);
+      color: #065f46;
+    }
+
+    .callout-warning {
+      background: #fffbeb;
+      border-left-color: var(--warning);
+      color: #92400e;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .slide {
+        padding: 24px 32px;
+      }
+      .slide-title {
+        font-size: 1.7rem;
+      }
+      .grid-2, .grid-3, .grid-4 {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+      .slide-cover h1 {
+        font-size: 2.6rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="deck-container">
+  
+  <!-- Barra Superior -->
+  <header class="top-bar" id="topBar">
+    <div class="logo-badge">
+      <span>SIGMA</span>
+      <span class="pill">INIDEP</span>
+      <span style="font-size: 0.85rem; font-weight: 400; color: #64748b; margin-left: 8px;">Gestión de Mareas</span>
+    </div>
+    <div class="slide-meta">
+      <span id="slideIndicator">1 / 15</span>
+      <button class="btn btn-secondary btn-icon" id="fullscreenBtn" title="Pantalla completa" onclick="toggleFullScreen()">⛶</button>
+    </div>
+  </header>
+
+  <!-- Pista de Progreso -->
+  <div class="progress-track">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+
+  <!-- Contenedor de Slides -->
+  <main class="slides-wrapper">
+
+    <!-- SLIDE 1: PORTADA -->
+    <section class="slide slide-cover active" data-slide="1">
+      <div class="cover-content">
+        <div class="inidep-tag">
+          <span>🏛️ INSTITUTO NACIONAL DE INVESTIGACIÓN Y DESARROLLO PESQUERO</span>
+        </div>
+        <h1>SIGMA</h1>
+        <p style="font-size: 1.6rem; font-weight: 500; color: #7dd3fc; margin-bottom: 8px; font-family: var(--font-heading);">
+          Sistema Integral de Gestión de Mareas
+        </p>
+        <p class="cover-desc">
+          Presentación institucional para el <strong>Cuerpo de Observadores a Bordo</strong>: cómo se organiza cada embarque, cómo se monitorean las mareas y cómo se protege el valor del dato científico.
+        </p>
+        <div class="cover-meta">
+          <!-- <div class="meta-item">
+            <h4>Lema Institucional</h4>
+            <p>"Rigor científico en cada registro"</p>
+          </div> -->
+          <div class="meta-item">
+            <h4>Destinatarios</h4>
+            <p>Observadores a Bordo</p>
+          </div>
+          <div class="meta-item">
+            <h4>Período</h4>
+            <p>Noviembre 2026</p>
+          </div>
+        </div>
+      </div>
+      <!-- SVG Gráfico Marítimo de Fondo -->
+      <svg class="cover-wave" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0 250C150 200 250 350 500 250L500 500L0 500Z" fill="url(#grad1)"/>
+        <path d="M0 320C180 280 320 420 500 320L500 500L0 500Z" fill="url(#grad2)" opacity="0.6"/>
+        <defs>
+          <linearGradient id="grad1" x1="0" y1="0" x2="500" y2="500" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#38bdf8"/>
+            <stop offset="1" stop-color="#1e3a8a"/>
+          </linearGradient>
+          <linearGradient id="grad2" x1="0" y1="0" x2="500" y2="500" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#0284c7"/>
+            <stop offset="1" stop-color="#030712"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </section>
+
+    <!-- SLIDE 2: ¿QUÉ ES SIGMA? -->
+    <section class="slide" data-slide="2">
+      <div class="slide-header">
+        <div class="slide-kicker">01 • Visión General</div>
+        <h2 class="slide-title">¿Qué es el Sistema SIGMA?</h2>
+        <p class="slide-subtitle">
+          Es la plataforma tecnológica central desarrollada para modernizar, agilizar y transparentar la administración de las mareas del INIDEP.
+        </p>
+      </div>
+      <div class="grid-3" style="margin-top: 10px;">
+        <div class="card">
+          <div class="card-icon">🧭</div>
+          <h3>Planificación y Embarques</h3>
+          <p>Organiza las designaciones en buques comerciales y de investigación, registrando fechas tentativas, pesquerías o buques, y puertos operativos.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🛰️</div>
+          <h3>Monitoreo Satelital</h3>
+          <p>Conexión directa con Prefectura Naval Argentina para registrar zarpadas, arribos y trayectorias de buques en el mar en tiempo real.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">📅</div>
+          <h3>Gestión del Personal</h3>
+          <p>Administra en forma transparente las disponibilidades, partes médicos, licencias y cálculo exacto de presentismo y francos compensatorios.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">📁</div>
+          <h3>Expediente Digital</h3>
+          <p>Centraliza la entrega de datos (DBF, Excel), carpetas escaneadas y control de muestras físicas (como otolitos) en un único historial.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🛡️</div>
+          <h3>Garantía de Derechos</h3>
+          <p>Asegura el reconocimiento fiel de cada día trabajado, días en viaje, esperas en puertos lejanos y francos ganados en fines de semana o feriados.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🔬</div>
+          <h3>Del Mar a la Ciencia</h3>
+          <p>Permite que el informe de marea avance de forma ágil desde el desembarque hasta su protocolización y entrega a los programas de investigación.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 3: EL OBSERVADOR EN EL CENTRO -->
+    <section class="slide" data-slide="3">
+      <div class="slide-header">
+        <div class="slide-kicker">02 • El Protagonista</div>
+        <h2 class="slide-title">El Observador: Corazón y Fuente de Datos</h2>
+        <p class="slide-subtitle">
+          Aunque los observadores no son los operadores del software en tierra, <strong>todo el sistema existe por y para su labor en el mar</strong>.
+        </p>
+      </div>
+      
+      <div class="grid-2" style="align-items: center; margin-top: 10px;">
+        <div>
+          <div class="callout" style="margin-bottom: 20px;">
+            <h4 style="font-weight: 700; margin-bottom: 6px; color: #1e3a8a;">🌊 Trabajo Científico Insustituible</h4>
+            <p>Cada lance de pesca muestreado, cada registro biométrico de tallas, sexado, madurez y cada toma de otolitos constituye la base de las decisiones pesqueras de la Argentina.</p>
+          </div>
+          <div class="card" style="margin-bottom: 16px;">
+            <h3 style="display: flex; align-items: center; gap: 8px;">
+              <span>🎯</span> ¿Qué resuelve SIGMA para el Observador?
+            </h3>
+            <ul style="padding-left: 20px; color: #475569; font-size: 0.95rem; line-height: 1.8;">
+              <li><strong>Se terminan las dudas sobre días navegados:</strong> los cálculos son matemáticos y automáticos.</li>
+              <li><strong>Reconocimiento de traslados:</strong> los días de viaje hacia puertos lejanos quedan asentados desde el minuto uno.</li>
+              <li><strong>Trazabilidad de la entrega:</strong> comprobante digital de los archivos DBF y muestras entregadas.</li>
+              <li><strong>Protección de francos:</strong> conteo exacto de sábados, domingos y feriados trabajados.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Diagrama Visual de Flujo de Valor -->
+        <div style="background: #ffffff; border: 1px solid var(--border); border-radius: 16px; padding: 28px; text-align: center; box-shadow: var(--shadow-sm);">
+          <h4 style="font-family: var(--font-heading); color: #0f172a; margin-bottom: 20px;">Cadena de Valor del Dato Pesquero</h4>
+          
+          <div style="display: flex; flex-direction: column; gap: 14px; align-items: center;">
+            <div style="background: #eff6ff; border: 1.5px solid #3b82f6; border-radius: 10px; padding: 12px 24px; width: 85%; font-weight: 600; color: #1d4ed8;">
+              🧑‍🔬 OBSERVADOR EN EL BUQUE<br>
+              <span style="font-size: 0.8rem; font-weight: 400; color: #64748b;">Muestreo de lances, tallas, capturas y otolitos</span>
+            </div>
+            <div style="font-size: 1.2rem; color: #0284c7;">⬇️</div>
+            <div style="background: #f0fdf4; border: 1.5px solid #22c55e; border-radius: 10px; padding: 12px 24px; width: 85%; font-weight: 600; color: #15803d;">
+              💾 DATOS & CARPETAS DE BITÁCORA<br>
+              <span style="font-size: 0.8rem; font-weight: 400; color: #64748b;">Planillas crudas, DBF, fotos y cuadernos</span>
+            </div>
+            <div style="font-size: 1.2rem; color: #0284c7;">⬇️</div>
+            <div style="background: #faf5ff; border: 1.5px solid #a855f7; border-radius: 10px; padding: 12px 24px; width: 85%; font-weight: 600; color: #7e22ce;">
+              ⚙️ PLATAFORMA SIGMA (INIDEP)<br>
+              <span style="font-size: 0.8rem; font-weight: 400; color: #64748b;">Validación, auditoría, cálculo de días y seguimiento</span>
+            </div>
+            <div style="font-size: 1.2rem; color: #0284c7;">⬇️</div>
+            <div style="background: #fef2f2; border: 1.5px solid #ef4444; border-radius: 10px; padding: 12px 24px; width: 85%; font-weight: 600; color: #b91c1c;">
+              📊 INFORMES Y EVALUACIÓN CIENTÍFICA<br>
+              <span style="font-size: 0.8rem; font-weight: 400; color: #64748b;">Protocolización y asesoramiento a la administración</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 4: EL CICLO COMPLETO DE UNA MAREA -->
+    <section class="slide" data-slide="4">
+      <div class="slide-header">
+        <div class="slide-kicker">03 • Ciclo de Vida</div>
+        <h2 class="slide-title">El Recorrido de una Marea: Paso a Paso</h2>
+        <p class="slide-subtitle">
+          Cada marea atraviesa etapas claramente definidas para garantizar orden, trazabilidad y que ningún informe quede en el olvido.
+        </p>
+      </div>
+
+      <div class="timeline-container">
+        <!-- Pista de Pasos -->
+        <div class="timeline-track">
+          <div class="timeline-step completed" title="Designada">1</div>
+          <div class="timeline-step completed" title="En Ejecución">2</div>
+          <div class="timeline-step completed" title="Esperando Entrega">3</div>
+          <div class="timeline-step active-step" title="Entregada">4</div>
+          <div class="timeline-step" title="Verificación">5</div>
+          <div class="timeline-step" title="En Corrección">6</div>
+          <div class="timeline-step" title="Pendiente Informe">7</div>
+          <div class="timeline-step" title="Protocolizada">8</div>
+        </div>
+
+        <div class="timeline-cards-row">
+          <div class="card" style="padding: 16px;">
+            <span class="state-badge badge-pending">Etapa 1</span>
+            <h4 style="font-size: 1rem; color: #0f172a; margin-bottom: 6px;">DESIGNADA</h4>
+            <p style="font-size: 0.82rem; color: #475569;">Se asigna el buque, el observador y la fecha estimada de salida. Todo listo antes de zarpar.</p>
+          </div>
+          <div class="card" style="padding: 16px;">
+            <span class="state-badge badge-exec">Etapa 2</span>
+            <h4 style="font-size: 1rem; color: #0f172a; margin-bottom: 6px;">EN EJECUCIÓN</h4>
+            <p style="font-size: 0.82rem; color: #475569;">El buque zarpa. El observador está a bordo realizando tareas de muestreo científico.</p>
+          </div>
+          <div class="card" style="padding: 16px;">
+            <span class="state-badge badge-pending">Etapa 3</span>
+            <h4 style="font-size: 1rem; color: #0f172a; margin-bottom: 6px;">ESPERANDO ENTREGA</h4>
+            <p style="font-size: 0.82rem; color: #475569;">El buque ya arribó a puerto. Se aguarda la recepción de los archivos y la carpeta física.</p>
+          </div>
+          <div class="card" style="padding: 16px;">
+            <span class="state-badge badge-review">Etapa 4</span>
+            <h4 style="font-size: 1rem; color: #0f172a; margin-bottom: 6px;">RECIBIDA / VERIFICANDO</h4>
+            <p style="font-size: 0.82rem; color: #475569;">Los técnicos del INIDEP revisan la integridad de las planillas y formato de datos.</p>
+          </div>
+        </div>
+
+        <div class="timeline-cards-row" style="margin-top: 10px;">
+          <div class="card" style="padding: 16px;">
+            <span class="state-badge badge-review">Etapa 5</span>
+            <h4 style="font-size: 1rem; color: #0f172a; margin-bottom: 6px;">EN CORRECCIÓN</h4>
+            <p style="font-size: 0.82rem; color: #475569;">Se abren sesiones de análisis para sanear posibles inconsistencias en lances o capturas.</p>
+          </div>
+          <div class="card" style="padding: 16px;">
+            <span class="state-badge badge-review">Etapa 6</span>
+            <h4 style="font-size: 1rem; color: #0f172a; margin-bottom: 6px;">PENDIENTE INFORME</h4>
+            <p style="font-size: 0.82rem; color: #475569;">Los datos están validados. Se redacta el informe técnico de resultados científicos.</p>
+          </div>
+          <div class="card" style="padding: 16px;">
+            <span class="state-badge badge-review">Etapa 7</span>
+            <h4 style="font-size: 1rem; color: #0f172a; margin-bottom: 6px;">PARA REVISIÓN</h4>
+            <p style="font-size: 0.82rem; color: #475569;">El informe final es auditado por los coordinadores o jefes de programa.</p>
+          </div>
+          <div class="card" style="padding: 16px; background: #faf5ff; border-color: #d8b4fe;">
+            <span class="state-badge badge-done">Etapa 8</span>
+            <h4 style="font-size: 1rem; color: #581c87; margin-bottom: 6px;">PROTOCOLIZADA</h4>
+            <p style="font-size: 0.82rem; color: #6b21a8;">Marea finalizada formalmente con número de expediente oficial. Resguardo permanente.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 5: ZARPADAS, ARRIBOS Y ETAPAS -->
+    <section class="slide" data-slide="5">
+      <div class="slide-header">
+        <div class="slide-kicker">04 • Operatoria Satelital</div>
+        <h2 class="slide-title">¿Cómo se Registran Zarpadas y Arribos?</h2>
+        <p class="slide-subtitle">
+          SIGMA cruza de forma automática el movimiento satelital con los despachos de Prefectura: valida de inmediato si coinciden y alerta solo ante discrepancias.
+        </p>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-icon">📡</div>
+          <h3>Cruce Automático de Señales (PNA)</h3>
+          <p style="margin-bottom: 12px;">El sistema cruza en tiempo real dos fuentes independientes de Prefectura Naval Argentina: el <strong>monitoreo satelital</strong> de buques y el <strong>sistema de avisos de zarpadas y arribos</strong>:</p>
+          <ul style="padding-left: 20px; color: #475569; font-size: 0.9rem; line-height: 1.7;">
+            <li><strong>Validación Automática:</strong> Si ambas señales coinciden, la zarpada o el arribo se confirma y registra automáticamente, sin requerir intervención humana.</li>
+            <li><strong>Alerta por Discrepancia:</strong> Si solo se detecta una de las dos señales (ej. zarpada en sistema sin salida satelital, o movimiento fuera de puerto sin aviso previo), se emite una alerta preventiva.</li>
+            <li><strong>Revisión y Confirmación Manual:</strong> El operador o coordinador audita el caso particular y confirma manualmente solo cuando corresponde.</li>
+            <li>Esto evita que movimientos de rada o demoras administrativas distorsionen el cómputo real de la marea.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">⚓</div>
+          <h3>El Concepto Clave de "Etapa"</h3>
+          <p style="margin-bottom: 12px;">Una marea no siempre es un viaje único. A menudo el buque entra a puerto intermedio y vuelve a salir:</p>
+          <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+            <strong style="color: #0369a1;">Cada ciclo "Zarpada ➔ Arribo" es una ETAPA</strong>
+            <p style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">
+              Una misma marea puede tener 1, 2 o más etapas sin que el observador sea desvinculado.
+            </p>
+          </div>
+          <p style="font-size: 0.9rem; color: #475569;">
+            <strong>¿Por qué es importante para el observador?</strong><br>
+            Porque si la estadía intermedia ocurre en un puerto lejano (ej. Puerto Madryn o Ushuaia), <strong>esos días se computan como días de marea</strong>.
+          </p>
+        </div>
+      </div>
+
+      <div class="callout callout-success" style="margin-top: 20px;">
+        💡 <strong>Trazabilidad total:</strong> Todo cambio queda registrado con fecha, hora y usuario responsable en la bitácora administrativa de la marea. Nadie puede alterar una fecha sin dejar constancia.
+      </div>
+    </section>
+
+    <!-- SLIDE 6: EL MAPA INTERACTIVO -->
+    <section class="slide" data-slide="6">
+      <div class="slide-header">
+        <div class="slide-kicker">05 • Monitor en Vivo</div>
+        <h2 class="slide-title">El Mapa Interactivo: Seguimiento en Tiempo Real</h2>
+        <p class="slide-subtitle">
+          Una ventana visual en directo sobre el Atlántico Sudoccidental. Conozca dónde navega cada colega y el contexto ambiental.
+        </p>
+      </div>
+
+      <div class="map-presentation">
+        <!-- SVG Esquemático del Mapa Argentino y Flota -->
+        <svg class="map-svg-canvas" viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+          <!-- Fondo Marino -->
+          <rect width="600" height="400" fill="#071224" />
+          
+          <!-- Costa Argentina Esquemática -->
+          <path d="M 120 20 Q 150 80 180 120 Q 220 160 210 200 Q 190 240 230 280 Q 220 330 250 380 L 0 380 L 0 20 Z" fill="#13233d" stroke="#253858" stroke-width="2" />
+          
+          <!-- Zonas de Pesca / Vedan (Polígonos delimitados) -->
+          <polygon points="320,110 440,110 420,190 300,180" fill="rgba(6, 182, 212, 0.15)" stroke="#06b6d4" stroke-dasharray="4" stroke-width="1.5" />
+          <text x="330" y="145" fill="#38bdf8" font-size="11" font-family="sans-serif" font-weight="bold">SUBÁREA LANGOSTINO</text>
+          
+          <polygon points="340,240 460,250 440,320 320,310" fill="rgba(245, 158, 11, 0.15)" stroke="#f59e0b" stroke-dasharray="4" stroke-width="1.5" />
+          <text x="350" y="280" fill="#fbbf24" font-size="11" font-family="sans-serif" font-weight="bold">ZONA DE VEDA / MERLUZA</text>
+
+          <!-- Puertos Principales -->
+          <circle cx="215" cy="195" r="4" fill="#ffffff" />
+          <text x="140" y="198" fill="#e2e8f0" font-size="10" font-family="sans-serif">Mar del Plata</text>
+          
+          <circle cx="210" cy="275" r="4" fill="#ffffff" />
+          <text x="135" y="278" fill="#e2e8f0" font-size="10" font-family="sans-serif">Puerto Madryn</text>
+          
+          <circle cx="245" cy="370" r="4" fill="#ffffff" />
+          <text x="195" y="373" fill="#e2e8f0" font-size="10" font-family="sans-serif">Ushuaia</text>
+
+          <!-- Buques Navegando con Señal Radar -->
+          <!-- Buque 1 -->
+          <g transform="translate(360, 150)">
+            <circle cx="0" cy="0" r="16" fill="rgba(56, 189, 248, 0.2)" class="beacon" />
+            <circle cx="0" cy="0" r="6" fill="#38bdf8" />
+            <!-- Derrota / Trayectoria -->
+            <path d="M -60 25 Q -30 15 0 0" stroke="#38bdf8" stroke-width="2" fill="none" stroke-linecap="round" />
+            <text x="10" y="-8" fill="#ffffff" font-size="11" font-family="sans-serif" font-weight="600">B/P ATLÁNTICO (Obs: García)</text>
+            <text x="10" y="6" fill="#94a3b8" font-size="9" font-family="sans-serif">Vel: 3.8 kn • Calando red</text>
+          </g>
+
+          <!-- Buque 2 -->
+          <g transform="translate(380, 270)">
+            <circle cx="0" cy="0" r="14" fill="rgba(34, 197, 94, 0.2)" />
+            <circle cx="0" cy="0" r="6" fill="#22c55e" />
+            <path d="M -40 -30 Q -15 -10 0 0" stroke="#22c55e" stroke-width="2" fill="none" />
+            <text x="10" y="-8" fill="#ffffff" font-size="11" font-family="sans-serif" font-weight="600">B/P MAR DEL SUR (Obs: Rossi)</text>
+            <text x="10" y="6" fill="#94a3b8" font-size="9" font-family="sans-serif">En derrota a zona sur</text>
+          </g>
+        </svg>
+
+        <!-- Barra Lateral de Datos del Mapa -->
+        <div class="map-sidebar-info">
+          <h4 style="font-family: var(--font-heading); color: #38bdf8; font-size: 1.05rem;">Capas Disponibles</h4>
+          
+          <div class="map-legend-item">
+            <span class="legend-dot" style="background: #38bdf8;"></span>
+            <span>Buques con Observador Activo</span>
+          </div>
+          <div class="map-legend-item">
+            <span class="legend-dot" style="background: #06b6d4;"></span>
+            <span>Subáreas y Límites de Manejo</span>
+          </div>
+          <div class="map-legend-item">
+            <span class="legend-dot" style="background: #f59e0b;"></span>
+            <span>Zonas de Veda y Protección</span>
+          </div>
+          <div class="map-legend-item">
+            <span class="legend-dot" style="background: #818cf8;"></span>
+            <span>Viento y Condiciones de Olas</span>
+          </div>
+
+          <div style="margin-top: auto; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px;">
+            <p style="font-size: 0.8rem; color: #94a3b8; line-height: 1.4;">
+              🛡️ <strong>Seguridad y Apoyo:</strong> El mapa permite a la Coordinación saber al instante dónde se encuentra cada observador ante alertas meteorológicas o emergencias de navegación.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 7: EL CENTRO DE COMANDO OPERATIVO -->
+    <section class="slide" data-slide="7">
+      <div class="slide-header">
+        <div class="slide-kicker">06 • Panel Operativo</div>
+        <h2 class="slide-title">El Centro de Comando: Visión del Día a Día</h2>
+        <p class="slide-subtitle">
+          Inspirado en las pantallas de control de aeropuertos, muestra el estado actual de cada marea sin mezclar datos históricos.
+        </p>
+      </div>
+
+      <div class="grid-4" style="margin-bottom: 20px;">
+        <div class="card" style="padding: 16px; border-left: 4px solid #22c55e;">
+          <span style="font-size: 0.8rem; font-weight: 600; color: #64748b;">EN NAVEGACIÓN</span>
+          <div style="font-size: 2.2rem; font-weight: 700; color: #15803d; font-family: var(--font-heading);">18</div>
+          <span style="font-size: 0.75rem; color: #16a34a;">Observadores en el mar</span>
+        </div>
+        <div class="card" style="padding: 16px; border-left: 4px solid #3b82f6;">
+          <span style="font-size: 0.8rem; font-weight: 600; color: #64748b;">DESIGNADAS</span>
+          <div style="font-size: 2.2rem; font-weight: 700; color: #1d4ed8; font-family: var(--font-heading);">6</div>
+          <span style="font-size: 0.75rem; color: #2563eb;">Próximas zarpadas</span>
+        </div>
+        <div class="card" style="padding: 16px; border-left: 4px solid #f59e0b;">
+          <span style="font-size: 0.8rem; font-weight: 600; color: #64748b;">ESPERANDO ENTREGA</span>
+          <div style="font-size: 2.2rem; font-weight: 700; color: #b45309; font-family: var(--font-heading);">4</div>
+          <span style="font-size: 0.75rem; color: #d97706;">Arribadas recientemente</span>
+        </div>
+        <div class="card" style="padding: 16px; border-left: 4px solid #ef4444;">
+          <span style="font-size: 0.8rem; font-weight: 600; color: #64748b;">ALERTAS ACTIVAS</span>
+          <div style="font-size: 2.2rem; font-weight: 700; color: #b91c1c; font-family: var(--font-heading);">2</div>
+          <span style="font-size: 0.75rem; color: #dc2626;">Zarpadas a validar</span>
+        </div>
+      </div>
+
+      <div class="card" style="padding: 0; overflow: hidden;">
+        <div style="padding: 14px 20px; background: #f8fafc; border-bottom: 1px solid var(--border); font-weight: 600; font-size: 0.9rem; color: #334155; display: flex; justify-content: space-between;">
+          <span>TABLA OPERATIVA DE MAREAS ACTIVAS</span>
+          <span style="color: #64748b; font-weight: 400; font-size: 0.8rem;">Actualizado automáticamente</span>
+        </div>
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem;">
+          <thead>
+            <tr style="text-align: left; background: #f1f5f9; color: #475569;">
+              <th style="padding: 10px 16px;">Marea</th>
+              <th style="padding: 10px 16px;">Buque</th>
+              <th style="padding: 10px 16px;">Observador</th>
+              <th style="padding: 10px 16px;">Estado</th>
+              <th style="padding: 10px 16px;">Puerto / Fecha</th>
+              <th style="padding: 10px 16px;">Días</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 16px; font-weight: 600;">2026-042</td>
+              <td style="padding: 10px 16px;">B/P Mar del Sur</td>
+              <td style="padding: 10px 16px;">García, Martín</td>
+              <td style="padding: 10px 16px;"><span class="state-badge badge-exec">Navegando</span></td>
+              <td style="padding: 10px 16px;">Zarpó: 18/10 (Madryn)</td>
+              <td style="padding: 10px 16px; font-weight: 700; color: #15803d;">15 d</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 16px; font-weight: 600;">2026-045</td>
+              <td style="padding: 10px 16px;">B/P Don Pedro</td>
+              <td style="padding: 10px 16px;">Fernández, Laura</td>
+              <td style="padding: 10px 16px;"><span class="state-badge badge-pending">Esperando Entrega</span></td>
+              <td style="padding: 10px 16px;">Arribó: 30/10 (MdP)</td>
+              <td style="padding: 10px 16px; font-weight: 700; color: #475569;">22 d</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 16px; font-weight: 600;">2026-049</td>
+              <td style="padding: 10px 16px;">B/P Antártida I</td>
+              <td style="padding: 10px 16px;">López, Carlos</td>
+              <td style="padding: 10px 16px;"><span class="state-badge badge-review">Designada</span></td>
+              <td style="padding: 10px 16px;">Est. Zarpada: 05/11</td>
+              <td style="padding: 10px 16px; color: #94a3b8;">—</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SLIDE 8: DISPONIBILIDAD, NOVEDADES E IA -->
+    <section class="slide" data-slide="8">
+      <div class="slide-header">
+        <div class="slide-kicker">07 • Gestión de Personas</div>
+        <h2 class="slide-title">Disponibilidad y Novedades: Asistido por IA</h2>
+        <p class="slide-subtitle">
+          El proceso para avisar licencias, partes médicos o descansos ahora es más ágil, seguro y digital.
+        </p>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-icon">🤖</div>
+          <h3>Lector Inteligente de Correos</h3>
+          <p style="margin-bottom: 12px;">Cuando un observador envía un correo electrónico informando una novedad (ej. parte médico de reposo, solicitud de días de estudio o francos):</p>
+          <ul style="padding-left: 20px; color: #475569; font-size: 0.9rem; line-height: 1.7;">
+            <li>El sistema extrae el remitente, detecta las fechas de inicio y fin, y clasifica el motivo.</li>
+            <li>Si el correo adjunta un <strong>pasaje, certificado, cédula de embarque, aviso de disponibilidad</strong>, se almacena en la nube institucional de Google Drive.</li>
+            <li>La novedad queda cargada en estado <strong>Pendiente</strong> con todo el respaldo documental listo para que el coordinador lo revise.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">🛡️</div>
+          <h3>Aprobación y Criterio Humano</h3>
+          <p style="margin-bottom: 12px;">La Inteligencia Artificial solo organiza y procesa el texto preliminar; <strong>la decisión siempre es humana</strong>:</p>
+          <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 12px;">
+            <p style="font-size: 0.88rem; color: #334155;">
+              ✔️ El coordinador abre la novedad, visualiza el certificado con un clic y confirma con <strong>"Aprobar"</strong>.
+            </p>
+            <p style="font-size: 0.85rem; color: #64748b; margin-top: 6px;">
+              Solo las novedades formalmente aprobadas impactan en el cálculo del presentismo mensual.
+            </p>
+          </div>
+          <p style="font-size: 0.9rem; color: #475569;">
+            Esto evita pérdidas de certificados, papeles traspapelados y asegura que nadie sea convocado a un embarque si se encuentra cursando una licencia.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 9: LA PLANILLA MENSUAL DE PRESENTISMO -->
+    <section class="slide" data-slide="9">
+      <div class="slide-header">
+        <div class="slide-kicker">08 • Asistencia & Francos</div>
+        <h2 class="slide-title">La Planilla de Presentismo: Cálculo Transparente</h2>
+        <p class="slide-subtitle">
+          El presentismo no se carga a mano día por día. Se calcula dinámicamente cruzando mareas, etapas de viaje, novedades y feriados.
+        </p>
+      </div>
+
+      <div class="grid-2" style="margin-bottom: 16px;">
+        <div class="presentismo-preview">
+          <table class="presentismo-table">
+            <thead>
+              <tr>
+                <th style="text-align: left;">Observador</th>
+                <th>Lun 12</th>
+                <th>Mar 13</th>
+                <th>Mié 14</th>
+                <th>Jue 15</th>
+                <th style="color: #dc2626;">Sáb 17</th>
+                <th style="color: #dc2626;">Dom 18</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="text-align: left; font-weight: 600;">García, M.</td>
+                <td class="cell-nav">NAV</td>
+                <td class="cell-nav">NAV</td>
+                <td class="cell-nav">NAV</td>
+                <td class="cell-nav">NAV</td>
+                <td class="cell-franco" title="Navegando en fin de semana genera Franco">FRANCO*</td>
+                <td class="cell-franco">FRANCO*</td>
+              </tr>
+              <tr>
+                <td style="text-align: left; font-weight: 600;">Rossi, C.</td>
+                <td class="cell-puerto">PTO</td>
+                <td class="cell-nav">NAV</td>
+                <td class="cell-nav">NAV</td>
+                <td class="cell-nav">NAV</td>
+                <td class="cell-franco">FRANCO*</td>
+                <td class="cell-nav">NAV</td>
+              </tr>
+              <tr>
+                <td style="text-align: left; font-weight: 600;">Pérez, J.</td>
+                <td class="cell-lic">LIC</td>
+                <td class="cell-lic">LIC</td>
+                <td class="cell-libre"></td>
+                <td class="cell-libre"></td>
+                <td class="cell-libre">F.SEM</td>
+                <td class="cell-libre">F.SEM</td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="padding: 10px 16px; background: #f8fafc; font-size: 0.78rem; color: #64748b; border-top: 1px solid var(--border);">
+            * Celdas con borde rosa: Días no laborables navegados ➔ <strong>Computan Franco Compensatorio</strong>
+          </div>
+        </div>
+
+        <div>
+          <h4 style="font-family: var(--font-heading); color: #0f172a; margin-bottom: 10px;">Reglas Claras y Predecibles</h4>
+          <ul style="padding-left: 20px; color: #475569; font-size: 0.9rem; line-height: 1.7;">
+            <li><strong>Verde (NAV):</strong> Buque en alta mar entre zarpada y arribo oficial.</li>
+            <li><strong>Azul (PTO/VIAJE):</strong> Traslados a puertos lejanos o estadías obligadas entre etapas fuera de residencia habitual.</li>
+            <li><strong>Rosa / Bordó:</strong> Sábados, domingos o feriados nacionales navegando ➔ suman automáticamente a la bolsa de francos compensatorios.</li>
+            <li><strong>Detección de Conflictos:</strong> Si hubiera una superposición errónea (ej. figurar de licencia y embarcado el mismo día), la celda se pinta de rojo para subsanar el error de inmediato.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout callout-success">
+        📄 <strong>Exportación a RRHH:</strong> A fin de mes, el sistema genera la planilla Excel oficial formateada con leyendas explicativas, garantizando la liquidación justa y exacta de haberes y francos.
+      </div>
+    </section>
+
+    <!-- SLIDE 10: CONTROL DE DOCUMENTACIÓN Y MUESTRAS -->
+    <section class="slide" data-slide="10">
+      <div class="slide-header">
+        <div class="slide-kicker">09 • Expediente Digital</div>
+        <h2 class="slide-title">Entrega de Datos, Documentos y Muestras</h2>
+        <p class="slide-subtitle">
+          El fin de la marea en el mar da inicio a la preservación del patrimonio científico en tierra.
+        </p>
+      </div>
+
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-icon">💾</div>
+          <h3>Archivos Digitales de Datos</h3>
+          <p>Recepción y resguardo de las planillas crudas entregadas por el observador (DBF de lances, capturas y muestreos biométricos, planillas Excel).</p>
+          <div style="margin-top: auto; padding-top: 12px; font-size: 0.8rem; color: #0284c7; font-weight: 600;">
+            Versión Original Intacta
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">📑</div>
+          <h3>Carpeta Física Digitalizada</h3>
+          <p>Escaneo completo de la carpeta de marea, bitácoras manuscritas, notas y actas de desembarque. El PDF queda archivado para consulta permanente.</p>
+          <div style="margin-top: auto; padding-top: 12px; font-size: 0.8rem; color: #16a34a; font-weight: 600;">
+            Cero Pérdida de Documentos
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">🧪</div>
+          <h3>Muestras Biológicas (Otolitos)</h3>
+          <p>Registro formal del conteo de sobres o recipientes de otolitos entregados, garantizando la custodia del material biológico para los laboratorios de edad y crecimiento.</p>
+          <div style="margin-top: auto; padding-top: 12px; font-size: 0.8rem; color: #7e22ce; font-weight: 600;">
+            Control de Material Físico
+          </div>
+        </div>
+      </div>
+
+      <div class="callout" style="margin-top: 24px;">
+        🔒 <strong>Seguridad del Dato:</strong> Los archivos originales nunca se sobrescriben. Cuando un técnico realiza una corrección, se guarda como "Versión Corregida", preservando siempre la versión que trajo el observador desde el barco.
+      </div>
+    </section>
+
+    <!-- SLIDE 11: CÁLCULO DE DÍAS NAVEGADOS VS DÍAS DE MAREA -->
+    <section class="slide" data-slide="11">
+      <div class="slide-header">
+        <div class="slide-kicker">10 • Criterios Normativos</div>
+        <h2 class="slide-title">Días Navegados vs. Días de Marea</h2>
+        <p class="slide-subtitle">
+          Una distinción fundamental para la liquidación administrativa y el historial laboral.
+        </p>
+      </div>
+
+      <div class="grid-2">
+        <div class="card" style="border-top: 4px solid #0284c7;">
+          <h3 style="color: #0369a1;">🌊 Días Navegados (Efectivos)</h3>
+          <p style="margin-bottom: 12px;">Son los días calendario transcurridos entre la zarpada y el arribo del buque, <strong>incluyendo ambos extremos</strong>:</p>
+          <div style="background: #f0f9ff; padding: 12px; border-radius: 8px; margin-bottom: 12px; font-size: 0.9rem;">
+            Ejemplo: Zarpada 02/05 ➔ Arribo 04/05<br>
+            <strong>Cálculo:</strong> Días 2, 3 y 4 = <strong>3 Días Navegados</strong>
+          </div>
+          <p style="font-size: 0.88rem; color: #475569;">
+            Si hay etapas sucesivas solapadas o continuas, el sistema une los intervalos sin duplicar días.
+          </p>
+        </div>
+
+        <div class="card" style="border-top: 4px solid #10b981;">
+          <h3 style="color: #065f46;">⚓ Días de Marea del Observador</h3>
+          <p style="margin-bottom: 12px;">Representan el período total de afectación del observador al servicio del buque:</p>
+          <div style="background: #ecfdf5; padding: 12px; border-radius: 8px; margin-bottom: 12px; font-size: 0.9rem;">
+            <strong>Incluye:</strong> Días en alta mar + Días de viaje de ida/vuelta + Estadías en puertos no locales.
+          </div>
+          <p style="font-size: 0.88rem; color: #475569;">
+            <strong>Regla de Puerto Local (Mar del Plata):</strong><br>
+            Si un buque arriba y vuelve a zarpar desde Mar del Plata, los días intermedios en casa no cuentan como marea. Pero si la escala es en Madryn, Deseado o Ushuaia, <strong>todos esos días computan para el observador</strong>.
+          </p>
+        </div>
+      </div>
+
+      <div class="callout callout-warning" style="margin-top: 20px;">
+        ⚖️ <strong>Cálculo Automático e Imparcial:</strong> Las reglas están programadas en el núcleo del sistema, eliminando interpretaciones subjetivas o errores de cálculo manual.
+      </div>
+    </section>
+
+    <!-- SLIDE 12: LOGÍSTICA Y AVISOS DE VIAJE -->
+    <section class="slide" data-slide="12">
+      <div class="slide-header">
+        <div class="slide-kicker">11 • Logística de Embarque</div>
+        <h2 class="slide-title">Avisos de Viaje y Planificación Anticipada</h2>
+        <p class="slide-subtitle">
+          El proceso previo al embarque coordinado con agencias marítimas, armadores y observadores.
+        </p>
+      </div>
+
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-icon">📋</div>
+          <h3>La Designación Previa</h3>
+          <p>Al crearse la marea se registra el buque, la pesquería objetivo, el arte de pesca habitual y la fecha tentativa de zarpada informada por la empresa armadora.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🚌</div>
+          <h3>Traslados y Viajes</h3>
+          <p>Si el buque opera en puertos patagónicos, se asienta la fecha de inicio de viaje terrestre o aéreo. Desde ese momento el observador ya se encuentra en servicio formal para el Instituto.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🔔</div>
+          <h3>Monitoreo de Demoras</h3>
+          <p>Si la empresa pospone la zarpada por reparaciones o mal tiempo, la fecha estimada se actualiza en el sistema, reprogramando las alertas sin desarmar la asignación.</p>
+        </div>
+      </div>
+
+      <div class="callout" style="margin-top: 24px;">
+        🤝 <strong>Mayor previsibilidad:</strong> El sistema permite a la coordinación visualizar con anticipación quiénes finalizan marea próximamente para armar el rol de guardias y relevos de forma equitativa.
+      </div>
+    </section>
+
+    <!-- SLIDE 13: ESTADÍSTICAS E INDICADORES ANUALES -->
+    <section class="slide" data-slide="13">
+      <div class="slide-header">
+        <div class="slide-kicker">12 • Información Agregada</div>
+        <h2 class="slide-title">Estadísticas: El Impacto de Su Trabajo</h2>
+        <p class="slide-subtitle">
+          SIGMA recopila indicadores que ponen en valor ante las autoridades nacionales todo el esfuerzo realizado a bordo.
+        </p>
+      </div>
+
+      <div class="grid-3" style="margin-bottom: 20px;">
+        <div class="card" style="text-align: center;">
+          <div style="font-size: 2.4rem; font-weight: 700; color: var(--primary); font-family: var(--font-heading);">+2.800</div>
+          <div style="font-weight: 600; color: #1e293b; margin-top: 4px;">Días Navegados por Año</div>
+          <p style="font-size: 0.85rem; color: #64748b; margin-top: 6px;">Consolidado de todo el cuerpo de observadores en el Mar Argentino.</p>
+        </div>
+        <div class="card" style="text-align: center;">
+          <div style="font-size: 2.4rem; font-weight: 700; color: var(--accent); font-family: var(--font-heading);">+120</div>
+          <div style="font-weight: 600; color: #1e293b; margin-top: 4px;">Mareas Realizadas</div>
+          <p style="font-size: 0.85rem; color: #64748b; margin-top: 6px;">En flotas fresqueras, congeladoras, tangoneras y poteras.</p>
+        </div>
+        <div class="card" style="text-align: center;">
+          <div style="font-size: 2.4rem; font-weight: 700; color: var(--success); font-family: var(--font-heading);">100%</div>
+          <div style="font-weight: 600; color: #1e293b; margin-top: 4px;">Trazabilidad Científica</div>
+          <p style="font-size: 0.85rem; color: #64748b; margin-top: 6px;">Desde la posición de cada lance hasta el informe final protocolizado.</p>
+        </div>
+      </div>
+
+      <div class="card" style="background: #f8fafc;">
+        <h4 style="font-family: var(--font-heading); color: #0f172a; margin-bottom: 8px;">Métricas para la Gestión del Cuerpo de Observadores:</h4>
+        <div style="display: flex; gap: 24px; flex-wrap: wrap; font-size: 0.9rem; color: #475569;">
+          <span>📊 Promedio de días navegados por observador</span>
+          <span>🐟 Distribución de cobertura por pesquería</span>
+          <span>⏱️ Tiempos promedio de redacción de informes</span>
+          <span>🚢 Historial operativo por buque y empresa armadora</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 14: SÍNTESIS DE BENEFICIOS PARA EL OBSERVADOR -->
+    <section class="slide" data-slide="14">
+      <div class="slide-header">
+        <div class="slide-kicker">13 • Conclusiones Operativas</div>
+        <h2 class="slide-title">¿Qué Gana el Observador con SIGMA?</h2>
+        <p class="slide-subtitle">
+          Un resumen de cómo este sistema cuida el trabajo y la trayectoria de cada miembro del cuerpo científico.
+        </p>
+      </div>
+
+      <div class="grid-2">
+        <div class="card" style="border-left: 4px solid #10b981;">
+          <h3>✅ Claridad y Justicia Administrativa</h3>
+          <p>Cálculo de días navegados, días de viaje, días en Zona Austral y francos compensatorios sin margen para arbitrariedades ni errores de planilla manual.</p>
+        </div>
+        <div class="card" style="border-left: 4px solid #3b82f6;">
+          <h3>✅ Mayor Seguridad y Respaldo en el Mar</h3>
+          <p>Monitoreo de posiciones satelitales en vivo. Ante temporales o contingencias, el Instituto sabe exactamente la situación del buque.</p>
+        </div>
+        <div class="card" style="border-left: 4px solid #06b6d4;">
+          <h3>✅ Gestión Ágil de Licencias y Reposos</h3>
+          <p>Avisos por correo interpretados por el sistema y almacenamiento seguro de certificados médicos sin trámites burocráticos engorrosos.</p>
+        </div>
+        <div class="card" style="border-left: 4px solid #8b5cf6;">
+          <h3>✅ Protección del Legado Científico</h3>
+          <p>Cada dato recolectado con esfuerzo en la cubierta de un barco queda digitalizado, protegido y respaldado en el expediente oficial del INIDEP.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 15: CIERRE INSTITUCIONAL -->
+    <section class="slide slide-cover" data-slide="15" style="text-align: center; align-items: center; justify-content: center;">
+      <div class="cover-content" style="max-width: 820px; text-align: center; margin: auto;">
+        <div style="font-size: 3.2rem; margin-bottom: 14px;">🌊 🔬 ⚓</div>
+        <h1 style="font-size: 3.4rem; font-weight: 700; margin-bottom: 12px; background: linear-gradient(135deg, #ffffff 40%, #7dd3fc 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+          ¡Muchas Gracias!
+        </h1>
+        <p style="font-size: 1.5rem; font-weight: 500; color: #38bdf8; margin-bottom: 20px; font-family: var(--font-heading);">
+          "Rigor científico en cada registro"
+        </p>
+        <p style="font-size: 1.15rem; color: #cbd5e1; line-height: 1.6; margin-bottom: 32px; font-weight: 300;">
+          Gracias por su dedicación y compromiso constante en el mar. Su trabajo es el cimiento insustituible sobre el cual la ciencia del INIDEP preserva y administra nuestros recursos pesqueros.
+        </p>
+
+        <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px;">
+          <div style="background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 12px; padding: 16px 24px; text-align: left; max-width: 380px;">
+            <div style="font-size: 1.1rem; font-weight: 600; color: #7dd3fc; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+              <span>💬</span> Espacio para Consultas
+            </div>
+            <p style="font-size: 0.88rem; color: #94a3b8; line-height: 1.45;">
+              ¿Dudas o sugerencias sobre el cálculo de mareas, novedades o entregas? Abrimos el espacio para preguntas.
+            </p>
+          </div>
+          <div style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px; padding: 16px 24px; text-align: left; max-width: 380px;">
+            <div style="font-size: 1.1rem; font-weight: 600; color: #f1f5f9; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+              <span>🏛️</span> Coordinación de Observadores
+            </div>
+            <p style="font-size: 0.88rem; color: #94a3b8; line-height: 1.45;">
+              Instituto Nacional de Investigación y Desarrollo Pesquero (INIDEP) • Mar del Plata, Argentina
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Barra Inferior de Navegación -->
+  <footer class="bottom-bar">
+    <div class="nav-btn-group">
+      <button class="btn btn-secondary" id="prevBtn" onclick="prevSlide()">◀ Anterior</button>
+      <button class="btn btn-primary" id="nextBtn" onclick="nextSlide()">Siguiente ▶</button>
+    </div>
+
+    <!-- Indicador de Puntos (Dots) -->
+    <div class="dots-indicator" id="dotsContainer"></div>
+
+    <div style="font-size: 0.82rem; color: #64748b; font-weight: 500;">
+      Use las flechas <kbd style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-family: monospace;">◀</kbd> <kbd style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-family: monospace;">▶</kbd> del teclado
+    </div>
+  </footer>
+
+</div>
+
+<script>
+  let currentSlide = 1;
+  const totalSlides = 15;
+
+  const slides = document.querySelectorAll('.slide');
+  const slideIndicator = document.getElementById('slideIndicator');
+  const progressFill = document.getElementById('progressFill');
+  const dotsContainer = document.getElementById('dotsContainer');
+  const topBar = document.getElementById('topBar');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+
+  // Inicializar Puntos (Dots)
+  function initDots() {
+    dotsContainer.innerHTML = '';
+    for (let i = 1; i <= totalSlides; i++) {
+      const dot = document.createElement('div');
+      dot.className = `dot ${i === 1 ? 'active' : ''}`;
+      dot.title = `Ir a la diapositiva ${i}`;
+      dot.onclick = () => goToSlide(i);
+      dotsContainer.appendChild(dot);
+    }
+  }
+
+  // Actualizar la diapositiva visible
+  function updateSlideView() {
+    slides.forEach(slide => {
+      const slideNum = parseInt(slide.getAttribute('data-slide'));
+      if (slideNum === currentSlide) {
+        slide.classList.add('active');
+      } else {
+        slide.classList.remove('active');
+      }
+    });
+
+    // Actualizar indicador textual
+    slideIndicator.textContent = `${currentSlide} / ${totalSlides}`;
+
+    // Actualizar barra de progreso
+    const progress = ((currentSlide - 1) / (totalSlides - 1)) * 100;
+    progressFill.style.width = `${progress}%`;
+
+    // Actualizar dots
+    const dots = document.querySelectorAll('.dot');
+    dots.forEach((dot, index) => {
+      dot.classList.toggle('active', index + 1 === currentSlide);
+    });
+
+    // Cambiar estilo de top bar si es slide de portada o cierre
+    if (currentSlide === 1 || currentSlide === 15) {
+      topBar.classList.add('dark-mode-top');
+    } else {
+      topBar.classList.remove('dark-mode-top');
+    }
+
+    // Estado de botones de navegación
+    prevBtn.disabled = currentSlide === 1;
+    prevBtn.style.opacity = currentSlide === 1 ? '0.5' : '1';
+    
+    if (currentSlide === totalSlides) {
+      nextBtn.textContent = 'Reiniciar ↺';
+    } else {
+      nextBtn.textContent = 'Siguiente ▶';
+    }
+  }
+
+  function nextSlide() {
+    if (currentSlide < totalSlides) {
+      currentSlide++;
+    } else {
+      currentSlide = 1;
+    }
+    updateSlideView();
+  }
+
+  function prevSlide() {
+    if (currentSlide > 1) {
+      currentSlide--;
+      updateSlideView();
+    }
+  }
+
+  function goToSlide(slideNum) {
+    if (slideNum >= 1 && slideNum <= totalSlides) {
+      currentSlide = slideNum;
+      updateSlideView();
+    }
+  }
+
+  // Navegación por Teclado
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+      e.preventDefault();
+      nextSlide();
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      e.preventDefault();
+      prevSlide();
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      goToSlide(1);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      goToSlide(totalSlides);
+    }
+  });
+
+  // Pantalla Completa
+  function toggleFullScreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.error(`Error al intentar pantalla completa: ${err.message}`);
+      });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+  }
+
+  // Inicializar al cargar
+  initDots();
+  updateSlideView();
+</script>
+
+</body>
+</html>

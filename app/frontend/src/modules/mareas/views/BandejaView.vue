@@ -450,6 +450,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatDateUI, formatDateTimeUI, formatTimeUI } from '@/utils/date.utils';
 import { ref, shallowRef, computed, onMounted, markRaw } from 'vue'
 import { useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
@@ -642,12 +643,7 @@ const filteredHistoryAlerts = computed(() => {
   return result
 })
 
-const formatDate = (dateStr?: string) => {
-  if (!dateStr) return 'N/A'
-  return new Date(dateStr).toLocaleDateString('es-AR', {
-    day: '2-digit', month: '2-digit', year: 'numeric'
-  })
-}
+const formatDate = (dateString?: string) => formatDateUI(dateString)
 
 const resolveActions = (task: any) => {
   if (task.tab === 'urgentes') {

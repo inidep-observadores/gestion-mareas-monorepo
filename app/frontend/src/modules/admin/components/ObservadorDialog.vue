@@ -1,7 +1,7 @@
 <template>
     <BaseModal :show="show"
         :title="readOnly ? 'Detalle del Observador' : (isEditing ? 'Editar Observador' : 'Nuevo Observador')"
-        @close="closeModal" maxWidth="3xl" variant="danger">
+        @close="closeModal" maxWidth="3xl" variant="default">
         <form v-form-nav @submit.prevent="handleSubmit" class="space-y-6" novalidate>
             <fieldset :disabled="readOnly" class="space-y-6">
                 <!-- Sección: Datos Personales -->
@@ -11,25 +11,37 @@
                     <!-- Foto Preview/Upload -->
                     <div class="flex flex-col items-center mb-6">
                         <div class="relative group">
-                            <div class="w-24 h-24 overflow-hidden rounded-full ring-4 ring-surface-muted bg-surface-muted">
+                            <div class="w-24 h-24 overflow-hidden rounded-full ring-4 ring-surface-muted bg-surface-muted shadow-inner">
                                 <img :src="getFullImageUrl(previewUrl || form.fotoUrl)" alt="Foto"
                                     class="object-cover w-full h-full"
                                     @error="(e: any) => e.target.src = '/placeholder-avatar.png'" />
                             </div>
-                            <label v-if="!readOnly"
-                                class="absolute bottom-0 right-0 p-1.5 bg-primary rounded-full cursor-pointer hover:bg-primary-hover transition-all active:scale-95 shadow-lg text-primary-fg"
-                                title="Cambiar foto">
-                                <input type="file" class="hidden" accept="image/*" @change="handleFileChange" />
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                </svg>
-                            </label>
+                            <div v-if="!readOnly" class="absolute bottom-0 right-0 flex items-center gap-1">
+                                <label
+                                    class="p-1.5 bg-primary rounded-full cursor-pointer hover:bg-primary-hover transition-all active:scale-95 shadow-lg text-primary-fg"
+                                    title="Cambiar foto">
+                                    <input type="file" class="hidden" accept="image/jpeg,image/png,image/webp,image/jpg" @change="handleFileChange" />
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                    </svg>
+                                </label>
+                                <button
+                                    v-if="form.fotoUrl || previewUrl"
+                                    type="button"
+                                    @click="quitarFoto"
+                                    class="p-1.5 bg-error text-white rounded-full hover:bg-error-hover transition-all active:scale-95 shadow-lg"
+                                    title="Quitar foto"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                         <p v-if="isUploading"
-                            class="text-center text-[10px] font-black uppercase tracking-widest text-primary mt-2">Subiendo
-                            imagen...</p>
+                            class="text-center text-[10px] font-black uppercase tracking-widest text-primary mt-2 animate-pulse">Subiendo y procesando imagen...</p>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -210,6 +222,50 @@
                             class="w-full rounded-lg border border-border bg-surface px-4 py-2.5 text-sm text-text shadow-theme-xs placeholder:text-text-muted/40 focus:border-primary focus:outline-hidden focus:ring-3 focus:ring-primary/10 transition-all font-sans"></textarea>
                     </div>
                 </div>
+
+                <!-- Sección: Documentación de Embarque -->
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between border-b border-border pb-2">
+                        <h3 class="text-sm font-bold uppercase tracking-widest text-primary">Documentación de Embarque</h3>
+                        <span v-if="form.fechaActualizacionDocumentacion" class="text-[11px] text-text-muted font-medium">
+                            Última actualización: {{ formatDateTimeUI(form.fechaActualizacionDocumentacion) }}
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-black uppercase tracking-widest text-text-muted mb-1.5">Nº Cédula de Embarque</label>
+                            <input v-model.number="form.numeroCedula" type="number" placeholder="Ej: 123456" :class="[
+                                'h-11 w-full rounded-lg border bg-surface px-4 py-2.5 text-sm transition-all outline-none',
+                                fieldErrors.numeroCedula ? 'border-error bg-error/5' : 'border-border focus:border-primary focus:ring-3 focus:ring-primary/10'
+                            ]" />
+                            <p v-if="fieldErrors.numeroCedula" class="text-[10px] text-error font-bold uppercase mt-1">{{
+                                fieldErrors.numeroCedula }}</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-black uppercase tracking-widest text-text-muted mb-1.5">Vencimiento Cédula</label>
+                            <DatePicker 
+                                v-model="form.vencimientoCedula" 
+                                :disabled="readOnly"
+                                :error="fieldErrors.vencimientoCedula"
+                            />
+                            <p v-if="fieldErrors.vencimientoCedula" class="text-[10px] text-error font-bold uppercase mt-1">{{
+                                fieldErrors.vencimientoCedula }}</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-black uppercase tracking-widest text-text-muted mb-1.5">Vencimiento Apto Médico</label>
+                            <DatePicker 
+                                v-model="form.vencimientoAptoMedico" 
+                                :disabled="readOnly"
+                                :error="fieldErrors.vencimientoAptoMedico"
+                            />
+                            <p v-if="fieldErrors.vencimientoAptoMedico" class="text-[10px] text-error font-bold uppercase mt-1">{{
+                                fieldErrors.vencimientoAptoMedico }}</p>
+                        </div>
+                    </div>
+                </div>
             </fieldset>
 
             <div class="mt-8 flex flex-col-reverse sm:grid sm:grid-cols-2 sm:gap-3">
@@ -243,6 +299,7 @@ import { toast } from 'vue-sonner'
 import BaseModal from '@/components/common/BaseModal.vue'
 import SearchableSelect from '@/components/common/SearchableSelect.vue'
 import DatePicker from '@/components/common/DatePicker.vue'
+import { formatDateTimeUI } from '@/utils/date.utils'
 import { TIPO_OBSERVADOR, TIPO_CONTRATO, SEXO } from '../constants/observador.constants'
 
 const props = defineProps<{
@@ -260,6 +317,7 @@ const emit = defineEmits(['close', 'save'])
 
 const isEditing = computed(() => !!props.observador)
 const previewUrl = ref('')
+const selectedFotoFile = ref<File | null>(null)
 const isUploading = ref(false)
 const fieldErrors = ref<Record<string, string>>({})
 
@@ -280,7 +338,11 @@ const initialForm = {
     cuil: '',
     telefonoPrincipal: '',
     fotoUrl: undefined as string | undefined,
-    observaciones: ''
+    observaciones: '',
+    numeroCedula: null as number | null,
+    vencimientoCedula: null as string | null,
+    vencimientoAptoMedico: null as string | null,
+    fechaActualizacionDocumentacion: null as string | null,
 }
 
 const form = ref({ ...initialForm })
@@ -289,7 +351,9 @@ const firstInput = ref<HTMLInputElement | null>(null)
 watch(
     () => props.observador,
     (newObservador) => {
+        if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
         previewUrl.value = ''
+        selectedFotoFile.value = null
         fieldErrors.value = {}
         if (newObservador) {
             form.value = {
@@ -309,7 +373,11 @@ watch(
                 cuil: newObservador.cuil || '',
                 telefonoPrincipal: newObservador.telefonoPrincipal || '',
                 fotoUrl: newObservador.fotoUrl,
-                observaciones: newObservador.observaciones || ''
+                observaciones: newObservador.observaciones || '',
+                numeroCedula: newObservador.numeroCedula ?? null,
+                vencimientoCedula: newObservador.vencimientoCedula || null,
+                vencimientoAptoMedico: newObservador.vencimientoAptoMedico || null,
+                fechaActualizacionDocumentacion: newObservador.fechaActualizacionDocumentacion || null,
             }
         } else {
             form.value = { ...initialForm }
@@ -347,11 +415,13 @@ watch(() => form.value.conImpedimento, (val) => {
 
 const closeModal = () => {
     if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
+    previewUrl.value = ''
+    selectedFotoFile.value = null
     fieldErrors.value = {}
     emit('close')
 }
 
-const handleFileChange = async (event: Event) => {
+const handleFileChange = (event: Event) => {
     const target = event.target as HTMLInputElement
     if (target.files && target.files[0]) {
         const file = target.files[0]
@@ -362,17 +432,15 @@ const handleFileChange = async (event: Event) => {
 
         if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
         previewUrl.value = URL.createObjectURL(file)
-
-        isUploading.value = true
-        try {
-            const url = await observadoresApi.uploadFoto(file)
-            form.value.fotoUrl = url
-        } catch (error) {
-            toast.error('Error al subir la imagen')
-        } finally {
-            isUploading.value = false
-        }
+        selectedFotoFile.value = file
     }
+}
+
+const quitarFoto = () => {
+    if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
+    previewUrl.value = ''
+    selectedFotoFile.value = null
+    form.value.fotoUrl = ''
 }
 
 const validate = () => {
@@ -412,17 +480,44 @@ const handleSubmit = async () => {
         toast.error('Por favor, revise los errores en el formulario')
         return
     }
-    const data = { ...form.value, id: props.observador?.id }
+
+    if (selectedFotoFile.value) {
+        isUploading.value = true
+        try {
+            const url = await observadoresApi.uploadFoto(selectedFotoFile.value)
+            form.value.fotoUrl = url
+        } catch (error) {
+            toast.error('Error al subir y procesar la foto de perfil')
+            isUploading.value = false
+            return
+        } finally {
+            isUploading.value = false
+        }
+    }
+
+    const { fechaActualizacionDocumentacion, ...payloadData } = form.value
+    const data: any = { ...payloadData, id: props.observador?.id }
     
-    // Set empty strings to null for optional string fields
-    const optionalStringFields: (keyof typeof form.value)[] = ['email', 'dni', 'cuil', 'telefonoPrincipal', 'motivoImpedimento'];
+    // Set empty strings or undefined to null for optional string fields
+    const optionalStringFields = ['email', 'dni', 'cuil', 'telefonoPrincipal', 'motivoImpedimento'];
     optionalStringFields.forEach(field => {
         if (data[field] && typeof data[field] === 'string' && (data[field] as string).trim() === '') {
-            (data[field] as any) = null;
+            data[field] = null;
         } else if (data[field] === '') {
-            (data[field] as any) = null;
+            data[field] = null;
         }
     });
+
+    // Normalizar campos de documentación de embarque para permitir nulos explícitos
+    if (data.numeroCedula === '' || data.numeroCedula === undefined || Number.isNaN(data.numeroCedula)) {
+        data.numeroCedula = null;
+    }
+    if (data.vencimientoCedula === '' || data.vencimientoCedula === undefined) {
+        data.vencimientoCedula = null;
+    }
+    if (data.vencimientoAptoMedico === '' || data.vencimientoAptoMedico === undefined) {
+        data.vencimientoAptoMedico = null;
+    }
 
     emit('save', data)
 }

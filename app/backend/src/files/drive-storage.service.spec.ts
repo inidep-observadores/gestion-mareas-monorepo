@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DriveStorageService } from './drive-storage.service';
 import { ConfigService } from '@nestjs/config';
+import { ErrorLogsService } from '../common/error-logs/error-logs.service';
 import { google } from 'googleapis';
 
 // Mockeamos la API de Google Drive
@@ -14,6 +15,7 @@ jest.mock('googleapis', () => ({
         drive: jest.fn().mockReturnValue({
             files: {
                 create: jest.fn(),
+                delete: jest.fn(),
             },
             permissions: {
                 create: jest.fn().mockResolvedValue({}),
@@ -25,6 +27,11 @@ jest.mock('googleapis', () => ({
 describe('DriveStorageService', () => {
     let service: DriveStorageService;
     let configService: ConfigService;
+    let errorLogsService: ErrorLogsService;
+
+    const mockErrorLogsService = {
+        create: jest.fn().mockResolvedValue({ id: 'log-123' }),
+    };
 
     beforeEach(async () => {
         jest.clearAllMocks();
@@ -36,17 +43,24 @@ describe('DriveStorageService', () => {
                     provide: ConfigService,
                     useValue: {
                         get: jest.fn((key: string) => {
-                            if (key === 'GOOGLE_APPLICATION_CREDENTIALS') return './dummy-path.json';
-                            if (key === 'GOOGLE_DRIVE_FOLDER_ID') return 'folder-123';
+                            if (key === 'GOOGLE_CLIENT_ID') return undefined;
+                            if (key === 'GOOGLE_CLIENT_SECRET') return undefined;
+                            if (key === 'GOOGLE_REFRESH_TOKEN') return undefined;
+                            if (key === 'GOOGLE_DRIVE_NOVEDADES_FOLDER_ID') return 'folder-123';
                             return null;
                         }),
                     },
+                },
+                {
+                    provide: ErrorLogsService,
+                    useValue: mockErrorLogsService,
                 },
             ],
         }).compile();
 
         service = module.get<DriveStorageService>(DriveStorageService);
         configService = module.get<ConfigService>(ConfigService);
+        errorLogsService = module.get<ErrorLogsService>(ErrorLogsService);
     });
 
     it('debería estar definido', () => {
@@ -55,11 +69,9 @@ describe('DriveStorageService', () => {
 
     describe('uploadFile', () => {
         it('debería subir un archivo a Google Drive y devolver el ID y link', async () => {
-            // Obtener el mock de la función 'create' de drive.files
             const driveMock = google.drive({ version: 'v3' });
             const mockCreate = driveMock.files.create as jest.Mock;
 
-            // Simular respuesta exitosa de la API de Google Drive
             mockCreate.mockResolvedValue({
                 data: {
                     id: 'fake-file-id-456',
@@ -74,18 +86,111 @@ describe('DriveStorageService', () => {
             expect(result.fileId).toBe('fake-file-id-456');
             expect(result.webViewLink).toBe('https://drive.google.com/file/d/fake-file-id-456/view');
             
-            // Verificar que drive.files.create fue llamado con los parámetros correctos
             expect(mockCreate).toHaveBeenCalledWith({
                 requestBody: {
                     name: 'pasaje.pdf',
-                    parents: ['folder-123'], // Debe usar la carpeta definida en config
+                    parents: ['folder-123'],
                 },
                 media: {
                     mimeType: 'application/pdf',
-                    body: expect.any(Object), // Debe ser un stream del buffer
+                    body: expect.any(Object),
                 },
                 fields: 'id, webViewLink',
             });
+        });
+
+        it('debería registrar en ErrorLog y relanzar la excepción si falla la subida', async () => {
+            const driveMock = google.drive({ version: 'v3' });
+            const mockCreate = driveMock.files.create as jest.Mock;
+
+            mockCreate.mockRejectedValue(new Error('Google API Error 500'));
+
+            const buffer = Buffer.from('contenido del pdf');
+
+            await expect(service.uploadFile('pasaje.pdf', 'application/pdf', buffer)).rejects.toThrow('Google API Error 500');
+
+            expect(mockErrorLogsService.create).toHaveBeenCalledWith(expect.objectContaining({
+                level: 'ERROR',
+                source: 'GOOGLE_DRIVE',
+                context: 'DriveStorageService.uploadFile',
+                message: expect.stringContaining('Google API Error 500'),
+            }));
+        });
+    });
+
+    describe('deleteFile', () => {
+        it('debería eliminar el archivo de Google Drive exitosamente', async () => {
+            const driveMock = google.drive({ version: 'v3' });
+            const mockDelete = driveMock.files.delete as jest.Mock;
+            mockDelete.mockResolvedValue({});
+
+            await service.deleteFile('file-to-delete');
+
+            expect(mockDelete).toHaveBeenCalledWith({ fileId: 'file-to-delete' });
+            expect(mockErrorLogsService.create).not.toHaveBeenCalled();
+        });
+
+        it('debería ignorar errores 404 al borrar', async () => {
+            const driveMock = google.drive({ version: 'v3' });
+            const mockDelete = driveMock.files.delete as jest.Mock;
+            mockDelete.mockRejectedValue({ code: 404, message: 'File not found' });
+
+            await service.deleteFile('file-not-found');
+
+            expect(mockDelete).toHaveBeenCalledWith({ fileId: 'file-not-found' });
+            expect(mockErrorLogsService.create).not.toHaveBeenCalled();
+        });
+
+        it('debería registrar en ErrorLog errores que no sean 404 al borrar', async () => {
+            const driveMock = google.drive({ version: 'v3' });
+            const mockDelete = driveMock.files.delete as jest.Mock;
+            mockDelete.mockRejectedValue(new Error('Unauthorized 401'));
+
+            await service.deleteFile('file-unauthorized');
+
+            expect(mockDelete).toHaveBeenCalledWith({ fileId: 'file-unauthorized' });
+            expect(mockErrorLogsService.create).toHaveBeenCalledWith(expect.objectContaining({
+                level: 'ERROR',
+                source: 'GOOGLE_DRIVE',
+                context: 'DriveStorageService.deleteFile',
+                message: expect.stringContaining('Unauthorized 401'),
+            }));
+        });
+    });
+
+    describe('obtenerUrlDescargaDirecta', () => {
+        it('debería transformar un enlace de Google Drive /file/d/ a URL directa de descarga', () => {
+            const url = 'https://drive.google.com/file/d/1O0VmqY0N-btTeS920pJpPXAPjxSdo8q1/view?usp=drivesdk';
+            const res = service.obtenerUrlDescargaDirecta(url);
+            expect(res).toBe('https://drive.usercontent.google.com/download?id=1O0VmqY0N-btTeS920pJpPXAPjxSdo8q1&export=download');
+        });
+
+        it('debería transformar un enlace de docs.google.com a URL directa de descarga', () => {
+            const url = 'https://docs.google.com/document/d/DOC_12345/edit';
+            const res = service.obtenerUrlDescargaDirecta(url);
+            expect(res).toBe('https://drive.usercontent.google.com/download?id=DOC_12345&export=download');
+        });
+
+        it('debería generar URL de descarga para un fileId plano', () => {
+            const res = service.obtenerUrlDescargaDirecta('SIMPLE_ID');
+            expect(res).toBe('https://drive.usercontent.google.com/download?id=SIMPLE_ID&export=download');
+        });
+
+        it('debería devolver la misma URL si es de otro servicio HTTP', () => {
+            const url = 'https://ejemplo.com/archivo.docx';
+            const res = service.obtenerUrlDescargaDirecta(url);
+            expect(res).toBe(url);
+        });
+    });
+
+    describe('downloadFromUrl y downloadFile', () => {
+        it('debería descargar el archivo directamente vía HTTP sin credenciales', async () => {
+            const bufferEsperado = Buffer.from('contenido del docx');
+            jest.spyOn(service, 'downloadFromUrl').mockResolvedValue(bufferEsperado);
+
+            const res = await service.downloadFile('https://drive.google.com/file/d/FILE_ID/view');
+            expect(res).toBe(bufferEsperado);
+            expect(service.downloadFromUrl).toHaveBeenCalledWith('https://drive.usercontent.google.com/download?id=FILE_ID&export=download');
         });
     });
 });

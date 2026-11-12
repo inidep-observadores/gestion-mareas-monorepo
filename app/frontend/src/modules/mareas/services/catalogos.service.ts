@@ -21,9 +21,13 @@ export interface Observador {
     apellido: string;
     fullName?: string;
     conImpedimento?: boolean;
-    codigoInterno?: string;
+    codigoInterno?: string | number;
     tipoContrato?: string;
     disponible?: boolean;
+    numeroCedula?: number | null;
+    vencimientoCedula?: string | null;
+    vencimientoAptoMedico?: string | null;
+    fechaActualizacionDocumentacion?: string | null;
 }
 
 export interface ArtePesca {

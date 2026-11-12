@@ -6,6 +6,8 @@ import { BusinessRulesService } from '../common/business-rules/business-rules.se
 import { MailService } from '../mail/mail.service';
 import { AlertsService } from '../alerts/alerts.service';
 import { ConfigService } from '@nestjs/config';
+import { DriveStorageService } from '../files/drive-storage.service';
+import { JobQueueService } from '../jobs/job-queue.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { TipoEtapa } from './mareas.constants';
 
@@ -55,6 +57,9 @@ describe('MareasService', () => {
         alerta: {
             findMany: jest.fn(),
         },
+        mareaArchivo: {
+            findMany: jest.fn().mockResolvedValue([]),
+        },
         $transaction: jest.fn((cb) => cb(mockPrismaService)),
     });
 
@@ -80,6 +85,8 @@ describe('MareasService', () => {
                 { provide: MailService, useValue: mockMailService },
                 { provide: AlertsService, useValue: mockAlertsService },
                 { provide: ConfigService, useValue: { get: jest.fn() } },
+                { provide: DriveStorageService, useValue: {} },
+                { provide: JobQueueService, useValue: {} },
             ],
         }).compile();
 
@@ -374,6 +381,128 @@ describe('MareasService', () => {
 
             await expect(service.executeAction(mareaId, 'FINALIZAR_PROTOCOLIZACION', user, payload))
                 .rejects.toThrow(BadRequestException);
+        });
+    });
+
+    describe('validateObservadoresSecundariosPlanificados', () => {
+        it('should throw BadRequestException if a secondary observer is the same as the principal observer', async () => {
+            const secundarios = [{ observadorId: 'obs-1', etapaDesde: 1, etapaHasta: null }];
+            await expect(
+                (service as any).validateObservadoresSecundariosPlanificados(secundarios, 'obs-1')
+            ).rejects.toThrow(/Un observador secundario no puede ser el mismo que el observador principal/);
+        });
+
+        it('should throw BadRequestException if there are duplicate secondary observers', async () => {
+            mockPrismaService.observador.findUnique.mockResolvedValue({
+                id: 'obs-2',
+                nombre: 'Juan',
+                apellido: 'Perez',
+                activo: true,
+                conImpedimento: false,
+                motivoImpedimento: null
+            });
+            mockPrismaService.marea.findFirst.mockResolvedValue(null);
+
+            const secundarios = [
+                { observadorId: 'obs-2', etapaDesde: 1, etapaHasta: 2 },
+                { observadorId: 'obs-2', etapaDesde: 3, etapaHasta: 4 }
+            ];
+            await expect(
+                (service as any).validateObservadoresSecundariosPlanificados(secundarios, 'obs-1')
+            ).rejects.toThrow(/No se puede asignar el mismo observador secundario más de una vez/);
+        });
+
+        it('should throw BadRequestException if secondary observer has active impediment', async () => {
+            mockPrismaService.observador.findUnique.mockResolvedValue({
+                id: 'obs-2',
+                nombre: 'Juan',
+                apellido: 'Perez',
+                activo: true,
+                conImpedimento: true,
+                motivoImpedimento: 'Licencia médica'
+            });
+
+            const secundarios = [{ observadorId: 'obs-2', etapaDesde: 1, etapaHasta: null }];
+            await expect(
+                (service as any).validateObservadoresSecundariosPlanificados(secundarios, 'obs-1')
+            ).rejects.toThrow(/posee un impedimento activo: Licencia médica/);
+        });
+
+        it('should throw BadRequestException if secondary observer is designated as principal on another active marea', async () => {
+            mockPrismaService.observador.findUnique.mockResolvedValue({
+                id: 'obs-2',
+                nombre: 'Juan',
+                apellido: 'Perez',
+                activo: true,
+                conImpedimento: false,
+                motivoImpedimento: null
+            });
+            mockPrismaService.marea.findFirst.mockResolvedValue({
+                id: 'marea-otra',
+                nroMarea: 45,
+                anioMarea: 2026,
+                tipoMarea: 'MC',
+                estadoActual: { codigo: 'DESIGNADA' }
+            });
+
+            const secundarios = [{ observadorId: 'obs-2', etapaDesde: 1, etapaHasta: null }];
+            await expect(
+                (service as any).validateObservadoresSecundariosPlanificados(secundarios, 'obs-1')
+            ).rejects.toThrow(/ya tiene una marea designada para el futuro/);
+        });
+
+        it('should pass if all secondary observers are valid and available', async () => {
+            mockPrismaService.observador.findUnique.mockResolvedValue({
+                id: 'obs-2',
+                nombre: 'Juan',
+                apellido: 'Perez',
+                activo: true,
+                conImpedimento: false,
+                motivoImpedimento: null
+            });
+            mockPrismaService.marea.findFirst.mockResolvedValue(null);
+
+            const secundarios = [{ observadorId: 'obs-2', etapaDesde: 1, etapaHasta: null }];
+            await expect(
+                (service as any).validateObservadoresSecundariosPlanificados(secundarios, 'obs-1')
+            ).resolves.not.toThrow();
+        });
+    });
+
+    describe('getObserverStatus - Reglas de Disponibilidad', () => {
+        const now = new Date('2026-11-01T12:00:00Z');
+
+        it('debería priorizar NAVEGANDO si está en navegación activa aunque obs.disponible sea false', () => {
+            const obs = { id: 'obs-1', disponible: false, conImpedimento: false };
+            const status = (service as any).getObserverStatus(obs, true, false, undefined, now);
+            expect(status).toBe('NAVEGANDO');
+        });
+
+        it('debería priorizar DESIGNADO si tiene designación activa aunque obs.disponible sea false', () => {
+            const obs = { id: 'obs-1', disponible: false, conImpedimento: false };
+            const status = (service as any).getObserverStatus(obs, false, true, undefined, now);
+            expect(status).toBe('DESIGNADO');
+        });
+
+        it('debería priorizar DESCANSO si está en descanso post-marea aunque obs.disponible sea false', () => {
+            const obs = { id: 'obs-1', disponible: false, conImpedimento: false };
+            // Arribo hace 2 días (menos del límite de descanso)
+            const lastArrival = new Date('2026-10-30T12:00:00Z');
+            const status = (service as any).getObserverStatus(obs, false, false, lastArrival, now);
+            expect(status).toBe('DESCANSO');
+        });
+
+        it('debería prevalecer novedad bloqueante como IMPEDIDO si no está navegando, ni designado ni descansando', () => {
+            const obs = { id: 'obs-1', disponible: true, conImpedimento: false };
+            const novedadBloqueante = { tipoNovedad: { descripcion: 'Licencia Médica' } };
+            const status = (service as any).getObserverStatus(obs, false, false, undefined, now, novedadBloqueante);
+            expect(status).toBe('IMPEDIDO');
+        });
+
+        it('debería retornar DISPONIBLE si no tiene designación, descanso ni impedimentos (la no disponibilidad se filtra en frontend)', () => {
+            const obs = { id: 'obs-1', disponible: false, conImpedimento: false };
+            const status = (service as any).getObserverStatus(obs, false, false, undefined, now);
+            expect(status).toBe('DISPONIBLE');
         });
     });
 });

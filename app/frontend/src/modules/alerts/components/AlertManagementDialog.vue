@@ -318,11 +318,12 @@
         @close="showMareaQuickDetail = false" />
 
     <ObservadorTimelineDialog :show="showObservadorTimeline" :observadorId="localAlert.referenciaId || null"
-        :observadorName="localAlert.metadata?.observerName || 'Observador'" :year="configStore.selectedYear"
+        :observadorName="localAlert.metadata?.observerName || 'Observador'"
         @close="showObservadorTimeline = false" />
 </template>
 
 <script setup lang="ts">
+import { formatDateUI, formatDateTimeUI, formatTimeUI } from '@/utils/date.utils';
 import { ref, computed, watch, onMounted, markRaw, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
@@ -1299,12 +1300,7 @@ watch(() => props.isOpen, (isOpen) => {
     }
 })
 
-const formatDate = (dateStr?: string) => {
-    if (!dateStr) return 'N/A'
-    return new Date(dateStr).toLocaleDateString('es-AR', {
-        day: '2-digit', month: '2-digit', year: 'numeric'
-    })
-}
+const formatDate = (dateStr?: string) => formatDateUI(dateStr)
 </script>
 
 <style scoped></style>

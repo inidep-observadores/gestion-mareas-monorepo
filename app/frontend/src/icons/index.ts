@@ -71,7 +71,10 @@ import ArrowRightIcon from './ArrowRightIcon.vue'
 
 import PhoneIcon from './PhoneIcon.vue'
 
+import AlertTriangleIcon from './AlertTriangleIcon.vue'
+
 export {
+  AlertTriangleIcon,
   WaveIcon,
   BellIcon,
   BarChartIcon,

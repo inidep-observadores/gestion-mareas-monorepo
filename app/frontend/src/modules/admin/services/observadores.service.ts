@@ -44,16 +44,20 @@ const observadoresApi = {
     uploadFoto: async (file: File): Promise<string> => {
         const formData = new FormData();
         formData.append('file', file);
-        // Note: Using the same file upload endpoint as users for now if it exists, 
-        // but backend has /files/user. Let's check if there is a generic one or if I should use /files/user
-        const { data } = await httpClient.post<{ secureUrl: string }>('/files/user', formData, {
+        const { data } = await httpClient.post<{ secureUrl: string }>('/files/observador', formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
         return data.secureUrl;
     },
 
-    getHistorial: async (id: string, year: number): Promise<any[]> => {
-        const { data } = await httpClient.get<any[]>(`/catalogos/observadores/${id}/historial/${year}`);
+    getHistorial: async (id: string, year?: number): Promise<any[]> => {
+        const url = year ? `/catalogos/observadores/${id}/historial/${year}` : `/catalogos/observadores/${id}/historial`;
+        const { data } = await httpClient.get<any[]>(url);
+        return data;
+    },
+
+    getArchivos: async (id: string): Promise<any[]> => {
+        const { data } = await httpClient.get<any[]>(`/catalogos/observadores/${id}/archivos`);
         return data;
     },
 

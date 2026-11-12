@@ -11,6 +11,7 @@ import { BusinessRulesModule } from '../common/business-rules/business-rules.mod
 import { ConfigModule } from '@nestjs/config';
 import { CommonModule } from '../common/common.module';
 import { EventCorrelationService } from '../common/services/event-correlation.service';
+import { ReportsModule } from '../reports/reports.module';
 
 @Module({
     controllers: [MareasController, TrackingController],
@@ -19,10 +20,11 @@ import { EventCorrelationService } from '../common/services/event-correlation.se
         PrismaModule,
         AuthModule,
         forwardRef(() => AlertsModule),
-        CatalogosModule,
+        forwardRef(() => CatalogosModule),
         BusinessRulesModule,
         ConfigModule,
-        CommonModule
+        CommonModule,
+        forwardRef(() => ReportsModule)
     ],
     exports: [MareasService, TrackingService],
 })

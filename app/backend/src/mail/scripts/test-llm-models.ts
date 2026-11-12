@@ -56,8 +56,8 @@ async function runTests() {
     const args = process.argv.slice(2);
     const model = args[0] || 'lfm2.5-1.2b-instruct:q5_k_m';
     
-    const baseURL = process.env.OPENAI_BASE_URL || 'http://localhost:11434/v1';
-    const apiKey = process.env.OPENROUTER_API_KEY || 'ollama';
+    const baseURL = process.env.LLM_BASE_URL || process.env.OPENAI_BASE_URL || 'http://localhost:11434/v1';
+    const apiKey = process.env.GEMINI_API_KEY || process.env.OPENROUTER_API_KEY || 'ollama';
 
     console.log(`\n==================================================`);
     console.log(`🧪 INICIANDO TEST DE MODELO LLM: ${model}`);
@@ -90,7 +90,7 @@ async function runTests() {
             console.log(`⏱️  Tiempo de respuesta: ${(durationMs / 1000).toFixed(2)}s`);
             console.log(`📦 Respuesta RAW:\n${rawContent}\n`);
 
-            const cleanContent = rawContent.replace(/```json/gi, '').replace(/```/g, '').trim();
+            const cleanContent = rawContent.replace(/<thought>[\s\S]*?<\/thought>/g, '').replace(/```json/gi, '').replace(/```/g, '').trim();
             
             try {
                 const parsed = JSON.parse(cleanContent);

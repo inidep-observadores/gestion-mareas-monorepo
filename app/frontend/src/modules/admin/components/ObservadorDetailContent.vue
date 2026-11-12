@@ -1,0 +1,78 @@
+<template>
+  <div class="flex flex-col h-full bg-surface text-text">
+    <!-- Header Fijo -->
+    <div class="px-6 py-4 border-b border-border bg-surface flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-3">
+        <img v-if="observador?.fotoUrl" :src="getFullImageUrl(observador.fotoUrl)" class="w-10 h-10 rounded-full object-cover border border-border" alt="Foto">
+        <div v-else class="w-10 h-10 rounded-full bg-surface-muted flex items-center justify-center border border-border">
+          <span class="text-text-muted font-bold">{{ observador?.nombre?.charAt(0) }}{{ observador?.apellido?.charAt(0) }}</span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="text-base font-extrabold text-text leading-tight">
+              {{ observador?.apellido }}, {{ observador?.nombre }}
+            </h2>
+            <ObservadorDocumentacionBadge :observador="observador" />
+          </div>
+          <div class="text-[11px] text-text-muted font-medium mt-0.5 uppercase tracking-wider">
+            Legajo: {{ observador?.codigoInterno }}
+          </div>
+        </div>
+      </div>
+      <button @click="$emit('close')" class="p-2 text-text-muted hover:text-text hover:bg-surface-muted rounded-full transition-colors focus:outline-none">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- TABS -->
+    <div class="flex border-b border-border shrink-0 bg-surface">
+      <button 
+        v-for="tab in ['historial', 'calendario', 'archivos']" 
+        :key="tab"
+        @click="activeTab = tab"
+        class="flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors relative"
+        :class="activeTab === tab ? 'text-primary' : 'text-text-muted hover:text-text'"
+      >
+        {{ tab === 'historial' ? 'Historial' : tab === 'calendario' ? 'Calendario' : 'Archivos' }}
+        <div v-if="activeTab === tab" class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"></div>
+      </button>
+    </div>
+
+    <!-- Content (Scrollable internally) -->
+    <div class="flex-1 overflow-hidden relative bg-surface-muted/30 flex flex-col">
+      <div v-show="activeTab === 'historial'" class="flex-1 min-h-0 flex flex-col">
+        <ObservadorTimeline :observador-id="observador?.id" />
+      </div>
+      <div v-if="activeTab === 'calendario'" class="flex-1 min-h-0 flex flex-col p-6">
+        <ObservadorCalendar :observador-id="observador?.id" />
+      </div>
+      <div v-if="activeTab === 'archivos'" class="flex-1 min-h-0 flex flex-col">
+        <ObservadorArchivos :observador-id="observador?.id" />
+      </div>
+    </div>
+    
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue';
+import { getFullImageUrl } from '@/helpers/image.helper';
+import type { Observador } from '../interfaces/observador.interface';
+import ObservadorDocumentacionBadge from './ObservadorDocumentacionBadge.vue';
+import ObservadorTimeline from './ObservadorTimeline.vue';
+import ObservadorCalendar from './ObservadorCalendar.vue';
+import ObservadorArchivos from './ObservadorArchivos.vue';
+
+const props = defineProps<{
+  observador: Observador;
+}>();
+
+defineEmits<{
+  (e: 'close'): void;
+}>();
+
+const activeTab = ref('historial');
+
+</script>

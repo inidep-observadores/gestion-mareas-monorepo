@@ -21,7 +21,171 @@
             <p class="text-[10px] uppercase font-black text-text-muted mb-1">Observador</p>
             <p class="text-sm font-bold text-text">{{ novedad.observador?.apellido }}, {{ novedad.observador?.nombre }}</p>
           </div>
+
+          <!-- Banner de Novedad Rectificada -->
+          <div v-if="novedad.estadoAprobacion === 'RECTIFICADA'" class="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 flex items-start gap-2.5">
+            <span class="text-base leading-none">🔄</span>
+            <div>
+              <h3 class="text-xs font-black text-amber-700 dark:text-amber-400 uppercase tracking-wide">
+                Novedad Rectificada
+              </h3>
+              <p class="text-[11px] text-text-muted mt-0.5">
+                Esta novedad fue reemplazada por una declaración posterior y se preserva en el historial con fines de trazabilidad.
+              </p>
+            </div>
+          </div>
           
+          <!-- Alerta y Comparador de Rectificación -->
+          <div v-if="novedad.metadata?.esCorreccion" class="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3.5 space-y-3">
+            <div class="flex items-start gap-2.5">
+              <span class="text-base leading-none">🔄</span>
+              <div>
+                <h3 class="text-xs font-black text-amber-700 dark:text-amber-400 uppercase tracking-wide">
+                  Solicitud de Rectificación
+                </h3>
+                <p class="text-[11px] text-text-muted mt-0.5">
+                  Esta solicitud modifica una novedad previamente aprobada.
+                </p>
+              </div>
+            </div>
+
+            <!-- Comparación Antes / Después -->
+            <div class="grid grid-cols-2 gap-2 text-xs pt-1">
+              <!-- Vigente Aprobada -->
+              <div class="p-2.5 rounded-lg bg-surface border border-border">
+                <div class="flex items-center gap-1 mb-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-success"></span>
+                  <span class="text-[10px] font-black uppercase text-text-muted">Aprobada Vigente</span>
+                </div>
+                <p class="font-mono font-bold text-text text-[11px]">
+                  {{ formatPeriodo(novedad.novedadOriginal?.fechaInicio, novedad.novedadOriginal?.fechaFin) }}
+                </p>
+                <p v-if="novedad.novedadOriginal?.motivo" class="text-[10px] text-text-muted truncate mt-1" :title="novedad.novedadOriginal.motivo">
+                  {{ novedad.novedadOriginal.motivo }}
+                </p>
+              </div>
+
+              <!-- Nueva Solicitud -->
+              <div class="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                <div class="flex items-center gap-1 mb-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                  <span class="text-[10px] font-black uppercase text-amber-700 dark:text-amber-400">Nueva Propuesta</span>
+                </div>
+                <p class="font-mono font-bold text-text text-[11px]">
+                  {{ formatPeriodo(novedad.fechaInicio, novedad.fechaFin) }}
+                </p>
+                <p v-if="novedad.motivo" class="text-[10px] text-text-muted truncate mt-1" :title="novedad.motivo">
+                  {{ novedad.motivo }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Alerta de Ajuste / Adelanto de Disponibilidad -->
+          <div v-if="novedad.metadata?.esAjustePeriodo" class="rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-3.5 space-y-3">
+            <div class="flex items-start gap-2.5">
+              <span class="text-base leading-none">⚡</span>
+              <div>
+                <h3 class="text-xs font-black text-indigo-700 dark:text-indigo-400 uppercase tracking-wide">
+                  {{ novedad.metadata?.tipoAjuste === 'ADELANTO_DISPONIBILIDAD' ? 'Adelanto de Disponibilidad' : 'Ajuste de Período Vigente' }}
+                </h3>
+                <p class="text-[11px] text-text-muted mt-0.5">
+                  Esta solicitud intersecta con un período activo previo. Al aprobarla, el período anterior se acotará automáticamente.
+                </p>
+              </div>
+            </div>
+
+            <!-- Comparación Período Previo vs Nuevo -->
+            <div class="grid grid-cols-2 gap-2 text-xs pt-1">
+              <!-- Novedad Vigente Previa -->
+              <div class="p-2.5 rounded-lg bg-surface border border-border">
+                <div class="flex items-center gap-1 mb-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-warning"></span>
+                  <span class="text-[10px] font-black uppercase text-text-muted">Período Afectado</span>
+                </div>
+                <p class="text-[10px] font-bold text-text-muted truncate mb-0.5">
+                  {{ novedad.novedadAjustar?.tipoNovedad?.descripcion || 'Novedad Vigente' }}
+                </p>
+                <p class="font-mono text-text-muted line-through text-[10px]">
+                  {{ formatPeriodo(novedad.novedadAjustar?.fechaInicio, novedad.novedadAjustar?.fechaFin) }}
+                </p>
+                <p class="font-mono font-bold text-indigo-600 dark:text-indigo-400 text-[11px] mt-0.5">
+                  ✂️ Hasta {{ novedad.metadata?.fechaCortePropuesta || '-' }}
+                </p>
+              </div>
+
+              <!-- Nueva Solicitud -->
+              <div class="p-2.5 rounded-lg bg-indigo-500/10 border border-indigo-500/30">
+                <div class="flex items-center gap-1 mb-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                  <span class="text-[10px] font-black uppercase text-indigo-700 dark:text-indigo-400">Nueva Vigencia</span>
+                </div>
+                <p class="text-[10px] font-bold text-indigo-700 dark:text-indigo-400 truncate mb-0.5">
+                  {{ novedad.tipoNovedad?.descripcion || 'Nueva' }}
+                </p>
+                <p class="font-mono font-bold text-text text-[11px]">
+                  {{ formatPeriodo(novedad.fechaInicio, novedad.fechaFin) }}
+                </p>
+                <p v-if="novedad.motivo" class="text-[10px] text-text-muted truncate mt-1" :title="novedad.motivo">
+                  {{ novedad.motivo }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Alerta y Cotejador si es Actualización de Cédula de Embarque -->
+          <div v-if="novedad.metadata?.datosCedula" class="rounded-xl border border-sky-500/30 bg-sky-500/5 p-3.5 space-y-3">
+            <div class="flex items-start justify-between gap-2.5">
+              <div class="flex items-start gap-2.5">
+                <span class="text-base leading-none">🪪</span>
+                <div>
+                  <h3 class="text-xs font-black text-sky-700 dark:text-sky-400 uppercase tracking-wide">
+                    Cédula de Embarco NIDO
+                  </h3>
+                  <p class="text-[11px] text-text-muted mt-0.5">
+                    Datos extraídos del documento adjunto para actualizar en la ficha del observador.
+                  </p>
+                </div>
+              </div>
+              <span v-if="novedad.metadata?.datosCedula?.nuevoVencimientoAptoMedico" class="px-2 py-0.5 text-[9px] font-black rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0 uppercase tracking-wider">
+                Renovación Médica
+              </span>
+            </div>
+
+            <!-- Comparación Antes vs Después -->
+            <div class="grid grid-cols-2 gap-2 text-xs pt-1">
+              <!-- Datos Previos -->
+              <div class="p-2.5 rounded-lg bg-surface border border-border">
+                <div class="flex items-center gap-1 mb-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-text-muted"></span>
+                  <span class="text-[10px] font-black uppercase text-text-muted">Datos Registrados Previamente</span>
+                </div>
+                <div class="space-y-0.5 text-[11px] font-mono">
+                  <p><span class="text-text-muted font-sans text-[10px]">Cédula:</span> {{ novedad.metadata?.valoresPrevios?.numeroCedula || novedad.observador?.numeroCedula || 'No registrada' }}</p>
+                  <p><span class="text-text-muted font-sans text-[10px]">Vto. Cédula:</span> {{ formatDate(novedad.metadata?.valoresPrevios?.vencimientoCedula || novedad.observador?.vencimientoCedula) }}</p>
+                  <p><span class="text-text-muted font-sans text-[10px]">Vto. Médico:</span> {{ formatDate(novedad.metadata?.valoresPrevios?.vencimientoAptoMedico || novedad.observador?.vencimientoAptoMedico) }}</p>
+                </div>
+              </div>
+
+              <!-- Nuevos Datos -->
+              <div class="p-2.5 rounded-lg bg-sky-500/10 border border-sky-500/30">
+                <div class="flex items-center gap-1 mb-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
+                  <span class="text-[10px] font-black uppercase text-sky-700 dark:text-sky-400">Nuevos Valores Documento</span>
+                </div>
+                <div class="space-y-0.5 text-[11px] font-mono font-bold text-sky-900 dark:text-sky-200">
+                  <p><span class="text-text-muted font-sans font-normal text-[10px]">Cédula:</span> {{ novedad.metadata?.datosCedula?.numeroCedula || 'Sin especificar' }}</p>
+                  <p><span class="text-text-muted font-sans font-normal text-[10px]">Vto. Cédula:</span> {{ formatDate(novedad.metadata?.datosCedula?.vencimientoCedula) }}</p>
+                  <p><span class="text-text-muted font-sans font-normal text-[10px]">Vto. Médico:</span> {{ formatDate(novedad.metadata?.datosCedula?.vencimientoAptoMedico) }}</p>
+                </div>
+              </div>
+            </div>
+
+            <p v-if="novedad.metadata?.datosCedula?.nuevoVencimientoAptoMedico" class="text-[10px] text-emerald-600 dark:text-emerald-400 italic">
+              ℹ️ Se aplicó la renovación del recuadro inferior de reconocimiento médico ({{ formatDate(novedad.metadata?.datosCedula?.nuevoVencimientoAptoMedico) }}).
+            </p>
+          </div>
+
           <div class="grid grid-cols-2 gap-4">
             <div>
               <p class="text-[10px] uppercase font-black text-text-muted mb-1">Tipo / Origen</p>
@@ -37,7 +201,9 @@
             
             <div>
               <p class="text-[10px] uppercase font-black text-text-muted mb-1">Estado</p>
-              <span v-if="novedad.estadoAprobacion === 'PENDIENTE'" class="bg-warning/10 text-warning text-xs font-black px-2 py-1 rounded-md uppercase border border-warning/20">PENDIENTE</span>
+              <span v-if="novedad.activo === false" class="bg-error/10 text-error text-xs font-black px-2 py-1 rounded-md uppercase border border-error/20">ELIMINADA</span>
+              <span v-else-if="novedad.metadata?.esCorreccion" class="bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-black px-2 py-1 rounded-md uppercase border border-amber-500/20">RECTIFICACIÓN</span>
+              <span v-else-if="novedad.estadoAprobacion === 'PENDIENTE'" class="bg-warning/10 text-warning text-xs font-black px-2 py-1 rounded-md uppercase border border-warning/20">PENDIENTE</span>
               <span v-else-if="novedad.estadoAprobacion === 'RECHAZADA'" class="bg-error/10 text-error text-xs font-black px-2 py-1 rounded-md uppercase border border-error/20">RECHAZADA</span>
               <span v-else class="bg-success/10 text-success text-xs font-black px-2 py-1 rounded-md uppercase border border-success/20">APROBADA</span>
             </div>
@@ -46,7 +212,7 @@
           <div>
             <p class="text-[10px] uppercase font-black text-text-muted mb-1">Período</p>
             <p class="text-sm font-mono font-bold text-text">
-              {{ formatDate(novedad.fechaInicio) }} - {{ novedad.fechaFin ? formatDate(novedad.fechaFin) : '...' }}
+              {{ formatPeriodo(novedad.fechaInicio, novedad.fechaFin) }}
             </p>
           </div>
           
@@ -122,51 +288,80 @@
     </div>
 
     <!-- Pie / Acciones -->
-    <div class="border-t border-border bg-surface-muted/50 p-4 flex flex-col gap-2">
-      <template v-if="novedad && novedad.estadoAprobacion === 'PENDIENTE'">
+    <div v-if="!readonly && novedad && novedad.activo !== false" class="border-t border-border bg-surface-muted/50 p-4 flex flex-col gap-2">
+      <template v-if="novedad.estadoAprobacion === 'PENDIENTE'">
         <button type="button" @click="$emit('approve', novedad)" class="w-full flex justify-center items-center gap-2 rounded-lg bg-success px-3 py-2 text-sm font-bold text-white shadow-sm hover:bg-success-hover transition-colors active:scale-[0.98]">
-          <CheckIcon class="w-4 h-4" /> Aprobar
+          <CheckIcon class="w-4 h-4" /> {{ novedad.metadata?.esCorreccion ? 'Aprobar Reemplazo' : (novedad.metadata?.esAjustePeriodo ? 'Aprobar Ajuste' : 'Aprobar') }}
         </button>
         <div class="flex gap-2">
           <button type="button" @click="$emit('reject', novedad)" class="flex-1 flex justify-center items-center gap-1 rounded-lg bg-error/10 px-3 py-2 text-sm font-bold text-error shadow-sm hover:bg-error/20 transition-colors active:scale-[0.98] border border-error/20">
-            Rechazar
+            {{ (novedad.metadata?.esCorreccion || novedad.metadata?.esAjustePeriodo) ? 'Descartar' : 'Rechazar' }}
           </button>
           <button type="button" @click="$emit('edit', novedad)" class="flex-1 flex justify-center items-center gap-1 rounded-lg bg-surface px-3 py-2 text-sm font-bold text-text shadow-sm ring-1 ring-inset ring-border hover:bg-surface-muted transition-colors active:scale-[0.98]">
             <EditIcon class="w-4 h-4" /> Editar
           </button>
+          <button type="button" @click="$emit('delete', novedad)" class="flex-1 flex justify-center items-center gap-1 rounded-lg bg-surface px-3 py-2 text-sm font-bold text-error shadow-sm ring-1 ring-inset ring-border hover:bg-surface-muted transition-colors active:scale-[0.98]">
+            <TrashIcon class="w-4 h-4" /> Borrar
+          </button>
         </div>
+      </template>
+      <template v-else-if="novedad.estadoAprobacion === 'RECTIFICADA'">
+        <div class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-center">
+          <p class="text-xs font-black text-amber-700 dark:text-amber-400 uppercase tracking-wide flex items-center justify-center gap-1.5">
+            <span>🔄</span> Novedad Rectificada
+          </p>
+          <p class="text-[11px] text-text-muted mt-1 leading-relaxed">
+            Esta novedad fue reemplazada por una posterior y se conserva activa con fines históricos y de trazabilidad.
+          </p>
+        </div>
+      </template>
+      <template v-else-if="novedad.estadoAprobacion !== 'RECHAZADA'">
+        <div class="flex gap-2">
+          <button type="button" @click="$emit('edit', novedad)" class="flex-1 flex justify-center items-center gap-1 rounded-lg bg-surface px-3 py-2 text-sm font-bold text-text shadow-sm ring-1 ring-inset ring-border hover:bg-surface-muted transition-colors active:scale-[0.98]">
+            <EditIcon class="w-4 h-4" /> Editar
+          </button>
+          <button type="button" @click="$emit('delete', novedad)" class="flex-1 flex justify-center items-center gap-1 rounded-lg bg-surface px-3 py-2 text-sm font-bold text-error shadow-sm ring-1 ring-inset ring-border hover:bg-surface-muted transition-colors active:scale-[0.98]">
+            <TrashIcon class="w-4 h-4" /> Borrar
+          </button>
+        </div>
+      </template>
+      <template v-else>
+        <button type="button" @click="$emit('delete', novedad)" class="w-full flex justify-center items-center gap-1 rounded-lg bg-surface px-3 py-2 text-sm font-bold text-error shadow-sm ring-1 ring-inset ring-border hover:bg-surface-muted transition-colors active:scale-[0.98]">
+          <TrashIcon class="w-4 h-4" /> Borrar
+        </button>
       </template>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { formatDateUI, formatDateTimeUI, formatTimeUI } from '@/utils/date.utils';
 import { computed } from 'vue';
 import type { Novedad } from '../interfaces/novedad.interface';
 
-import { XIcon, ArrowRightIcon as ExternalLinkIcon, CheckIcon, EditIcon, FileTextIcon, HistoryIcon } from '@/icons';
+import { XIcon, ArrowRightIcon as ExternalLinkIcon, CheckIcon, EditIcon, FileTextIcon, HistoryIcon, TrashIcon } from '@/icons';
 // Si tienes un icono Sparkles, lo importas, si no usamos otro
 import { SettingsIcon as SparklesIcon } from '@/icons';
 import AttachmentViewer from '@/components/common/AttachmentViewer.vue';
 
 const props = defineProps<{
   novedad: Novedad | null;
+  readonly?: boolean;
 }>();
 
-const emit = defineEmits(['close', 'approve', 'reject', 'edit']);
+const emit = defineEmits(['close', 'approve', 'reject', 'edit', 'delete']);
 
 const closePanel = () => {
   emit('close');
 };
 
-const formatDate = (isoStr: string) => {
-  if (!isoStr) return '';
-  const date = new Date(isoStr);
-  return date.toLocaleDateString('es-AR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  });
+const formatDate = (isoStr: string) => formatDateUI(isoStr)
+
+const formatPeriodo = (inicio?: string | Date | null, fin?: string | Date | null) => {
+  if (!inicio) return '-';
+  const startStr = formatDate(inicio as string);
+  if (!fin) return `${startStr} en adelante`;
+  return `${startStr} - ${formatDate(fin as string)}`;
 };
 
 const hasFile = computed(() => {
@@ -178,11 +373,7 @@ const sortedMovimientos = computed(() => {
   return [...props.novedad.movimientos].sort((a, b) => new Date(b.fechaHora).getTime() - new Date(a.fechaHora).getTime());
 });
 
-const formatDateEvent = (isoStr: string) => {
-  if (!isoStr) return '';
-  const date = new Date(isoStr);
-  return date.toLocaleDateString('es-AR') + ' ' + date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-};
+const formatDateEvent = (isoStr: string) => formatDateTimeUI(isoStr)
 
 const getUsuarioName = (mov: any) => {
   if (mov.usuario) {
@@ -194,10 +385,25 @@ const getUsuarioName = (mov: any) => {
 const formatTipoEvento = (tipo: string) => {
   const map: Record<string, string> = {
     'CREACION': 'Novedad Creada',
+    'CREACION_EMAIL': 'Ingresada por Email',
+    'CREACION_CORRECCION': 'Solicitud de Rectificación',
+    'CREACION_AJUSTE_PERIODO': 'Solicitud con Ajuste de Período',
     'EDICION': 'Novedad Editada',
     'APROBACION': 'Novedad Aprobada',
+    'APROBACION_ACTUALIZACION_CEDULA': 'Actualización de Cédula Aprobada',
+    'APROBACION_CORRECCION': 'Rectificación Aprobada',
+    'APROBACION_AJUSTE_PERIODO': 'Aprobación con Ajuste de Período',
+    'RECTIFICACION': 'Novedad Rectificada',
     'RECHAZO': 'Novedad Rechazada',
+    'RECHAZO_CORRECCION': 'Rectificación Rechazada',
+    'RECHAZO_AJUSTE_PERIODO': 'Ajuste de Período Rechazado',
+    'REEMPLAZADA_POR_EMAIL': 'Reemplazada por nuevo correo',
+    'REEMPLAZADA_POR_CORRECCION': 'Reemplazada por rectificación',
+    'REEMPLAZADA_POR_DISPONIBILIDAD': 'Reemplazada por nueva disponibilidad',
+    'AJUSTE_POR_DISPONIBILIDAD': 'Período acotado por disponibilidad',
+    'AJUSTE_POR_NO_DISPONIBILIDAD': 'Período acotado por no disponibilidad',
     'ELIMINACION': 'Novedad Eliminada',
+    'BORRADO_LOGICO': 'Novedad Eliminada',
     'REVISION_AI': 'Revisión por IA',
   };
   return map[tipo] || (tipo || 'MOVIMIENTO DESCONOCIDO').replace(/_/g, ' ');

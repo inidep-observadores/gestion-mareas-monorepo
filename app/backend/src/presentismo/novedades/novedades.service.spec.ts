@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NovedadesService } from './novedades.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import { DriveStorageService } from '../../files/drive-storage.service';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { User } from '@prisma/client';
 
@@ -18,12 +19,15 @@ describe('NovedadesService', () => {
     },
     observador: {
       findUnique: jest.fn(),
+      findFirst: jest.fn(),
+      update: jest.fn(),
     },
     tipoNovedad: {
       findUnique: jest.fn(),
     },
     marea: {
       findMany: jest.fn(),
+      findFirst: jest.fn().mockResolvedValue(null),
       update: jest.fn(),
     },
   };
@@ -35,11 +39,13 @@ describe('NovedadesService', () => {
       providers: [
         NovedadesService,
         { provide: PrismaService, useValue: mockPrismaService },
+        { provide: DriveStorageService, useValue: {} },
       ],
     }).compile();
 
     service = module.get<NovedadesService>(NovedadesService);
     prisma = module.get<PrismaService>(PrismaService);
+    mockPrismaService.marea.findFirst.mockResolvedValue(null);
   });
 
   afterEach(() => {
@@ -57,7 +63,7 @@ describe('NovedadesService', () => {
       await service.findAll('obs1', 'APROBADA');
       
       expect(prisma.observadorNovedad.findMany).toHaveBeenCalledWith(expect.objectContaining({
-        where: { activo: true, observadorId: 'obs1', estadoAprobacion: 'APROBADA' }
+        where: { observadorId: 'obs1', estadoAprobacion: 'APROBADA' }
       }));
     });
   });
@@ -114,6 +120,36 @@ describe('NovedadesService', () => {
       expect(prisma.observadorNovedad.create).toHaveBeenCalled();
       expect(res.id).toEqual('new-nov');
     });
+
+    it('debe auto-cerrar con fechaFin igual a fechaInicio para Franco Compensatorio (FC) sin fechaFin', async () => {
+      mockPrismaService.observador.findUnique.mockResolvedValue({ id: '1' });
+      mockPrismaService.tipoNovedad.findUnique.mockResolvedValue({ id: '2', activo: true, codigo: 'FC' });
+      mockPrismaService.observadorNovedad.findFirst.mockResolvedValue(null);
+      mockPrismaService.observadorNovedad.create.mockResolvedValue({ id: 'fc-nov', estadoAprobacion: 'APROBADA', fechaInicio: new Date('2026-08-18T00:00:00Z'), fechaFin: new Date('2026-08-18T00:00:00Z'), tipoNovedad: { codigo: 'FC' } });
+      mockPrismaService.marea.findMany.mockResolvedValue([]);
+
+      await service.create({ observadorId: '1', tipoNovedadId: '2', fechaInicio: '2026-08-18' }, mockUser);
+
+      expect(prisma.observadorNovedad.create).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({
+          fechaInicio: expect.any(Date),
+          fechaFin: expect.any(Date),
+        })
+      }));
+    });
+
+    it('debe permitir crear DISPONIBLE si la novedad previa similar esta separada por una marea intermedia', async () => {
+      mockPrismaService.observador.findUnique.mockResolvedValue({ id: '1' });
+      mockPrismaService.tipoNovedad.findUnique.mockResolvedValue({ id: '2', activo: true, codigo: 'DISPONIBLE' });
+      mockPrismaService.observadorNovedad.findFirst.mockResolvedValue({ id: 'prev-disp', fechaInicio: new Date('2025-01-01T00:00:00Z') });
+      // Simular que hubo marea intermedia
+      mockPrismaService.marea.findFirst.mockResolvedValue({ id: 'marea-intermedia' });
+      mockPrismaService.observadorNovedad.create.mockResolvedValue({ id: 'new-disp', estadoAprobacion: 'APROBADA', fechaInicio: new Date('2025-03-01T00:00:00Z'), tipoNovedad: { codigo: 'DISPONIBLE' } });
+      mockPrismaService.marea.findMany.mockResolvedValue([]);
+
+      const res = await service.create({ observadorId: '1', tipoNovedadId: '2', fechaInicio: '2025-03-01' }, mockUser);
+      expect(res.id).toBe('new-disp');
+    });
   });
 
   describe('update', () => {
@@ -135,6 +171,237 @@ describe('NovedadesService', () => {
       const res = await service.update('nov1', { estadoAprobacion: 'APROBADA' }, mockUser);
       expect(prisma.observadorNovedad.update).toHaveBeenCalled();
       expect(res.id).toEqual('nov1');
+    });
+
+    it('debe desactivar la novedad original al aprobar una rectificacion', async () => {
+      const existing = {
+        id: 'nov-correccion',
+        observadorId: '1',
+        tipoNovedadId: '2',
+        fechaInicio: new Date('2025-01-05'),
+        activo: true,
+        tipoNovedad: { codigo: 'DISPONIBILIDAD' },
+        metadata: { esCorreccion: true, novedadOriginalId: 'nov-original-aprobada' },
+      };
+      jest.spyOn(service, 'findOne').mockResolvedValue(existing as any);
+      mockPrismaService.observadorNovedad.findFirst.mockResolvedValue(null);
+      mockPrismaService.observadorNovedad.update.mockResolvedValue({ id: 'nov-correccion', estadoAprobacion: 'APROBADA' });
+      mockPrismaService.marea.findMany.mockResolvedValue([]);
+
+      await service.update('nov-correccion', { estadoAprobacion: 'APROBADA' }, mockUser);
+
+      // Debe haber llamado update para rectificar la novedad original
+      expect(prisma.observadorNovedad.update).toHaveBeenCalledWith(expect.objectContaining({
+        where: { id: 'nov-original-aprobada' },
+        data: expect.objectContaining({
+          activo: true,
+          estadoAprobacion: 'RECTIFICADA',
+        })
+      }));
+    });
+
+    it('debe permitir editar fechas de una rectificacion excluyendo la novedad original', async () => {
+      const existing = {
+        id: 'nov-correccion',
+        observadorId: '1',
+        tipoNovedadId: '2',
+        fechaInicio: new Date('2025-10-01'),
+        fechaFin: new Date('2025-10-15'),
+        estadoAprobacion: 'PENDIENTE',
+        activo: true,
+        tipoNovedad: { codigo: 'NO_DISPONIBLE' },
+        metadata: { esCorreccion: true, novedadOriginalId: 'nov-original-aprobada' },
+      };
+      jest.spyOn(service, 'findOne').mockResolvedValue(existing as any);
+      mockPrismaService.observadorNovedad.findFirst.mockResolvedValue(null);
+      mockPrismaService.observadorNovedad.update.mockResolvedValue({ id: 'nov-correccion', fechaInicio: new Date('2025-09-26') });
+
+      const res = await service.update('nov-correccion', { fechaInicio: '2025-09-26' }, mockUser);
+
+      expect(prisma.observadorNovedad.findFirst).toHaveBeenCalledWith(expect.objectContaining({
+        where: expect.objectContaining({
+          id: { notIn: ['nov-correccion', 'nov-original-aprobada'] }
+        })
+      }));
+      expect(res.id).toEqual('nov-correccion');
+    });
+
+    it('debe auto-convertir a rectificacion si una novedad PENDIENTE se edita y solapa con una APROBADA', async () => {
+      const existing = {
+        id: 'nov-pendiente',
+        observadorId: '1',
+        tipoNovedadId: '2',
+        fechaInicio: new Date('2025-10-05'),
+        estadoAprobacion: 'PENDIENTE',
+        activo: true,
+        tipoNovedad: { codigo: 'NO_DISPONIBLE' },
+        metadata: {},
+      };
+      jest.spyOn(service, 'findOne').mockResolvedValue(existing as any);
+      mockPrismaService.observadorNovedad.findFirst.mockResolvedValue({ id: 'nov-aprobada-existente', estadoAprobacion: 'APROBADA' });
+      mockPrismaService.observadorNovedad.update.mockResolvedValue({ id: 'nov-pendiente', metadata: { esCorreccion: true, novedadOriginalId: 'nov-aprobada-existente' } });
+
+      const res = await service.update('nov-pendiente', { fechaInicio: '2025-10-01' }, mockUser);
+
+      expect(prisma.observadorNovedad.update).toHaveBeenCalledWith(expect.objectContaining({
+        where: { id: 'nov-pendiente' },
+        data: expect.objectContaining({
+          metadata: expect.objectContaining({
+            esCorreccion: true,
+            novedadOriginalId: 'nov-aprobada-existente',
+          })
+        })
+      }));
+      expect(res.id).toEqual('nov-pendiente');
+    });
+
+    it('debe ajustar la fechaFin de la novedad opuesta previa al aprobar una novedad con esAjustePeriodo', async () => {
+      const existing = {
+        id: 'nov-disp',
+        observadorId: '1',
+        tipoNovedadId: '2',
+        fechaInicio: new Date('2026-10-10'),
+        estadoAprobacion: 'PENDIENTE',
+        activo: true,
+        tipoNovedad: { codigo: 'DISPONIBLE' },
+        metadata: { esAjustePeriodo: true, novedadAjustarId: 'nov-no-disp-aprobada' },
+      };
+      const novedadAjustar = {
+        id: 'nov-no-disp-aprobada',
+        fechaInicio: new Date('2026-09-26'),
+        fechaFin: new Date('2026-10-15'),
+        estadoAprobacion: 'APROBADA',
+        activo: true,
+        tipoNovedad: { codigo: 'NO_DISPONIBLE', descripcion: 'Declaración de No Disponibilidad' }
+      };
+
+      jest.spyOn(service, 'findOne').mockResolvedValue(existing as any);
+      mockPrismaService.observadorNovedad.findFirst.mockResolvedValue(null);
+      mockPrismaService.observadorNovedad.findUnique.mockResolvedValue(novedadAjustar as any);
+      mockPrismaService.tipoNovedad.findUnique.mockResolvedValue({ id: '2', descripcion: 'Declaración de Disponibilidad' });
+      mockPrismaService.observadorNovedad.update.mockResolvedValue({ id: 'nov-disp', estadoAprobacion: 'APROBADA' });
+      mockPrismaService.marea.findMany.mockResolvedValue([]);
+
+      await service.update('nov-disp', { estadoAprobacion: 'APROBADA' }, mockUser);
+
+      // Debe haber actualizado novedadAjustar recortando su fechaFin a 2026-10-09
+      expect(prisma.observadorNovedad.update).toHaveBeenCalledWith(expect.objectContaining({
+        where: { id: 'nov-no-disp-aprobada' },
+        data: expect.objectContaining({
+          fechaFin: new Date('2026-10-09'),
+          movimientos: expect.objectContaining({
+            create: expect.objectContaining({
+              tipoEvento: 'AJUSTE_POR_DISPONIBILIDAD'
+            })
+          })
+        })
+      }));
+    });
+
+    it('debe actualizar los datos del observador al aprobar una ACTUALIZACION_CEDULA', async () => {
+      const existing = {
+        id: 'nov-cedula-1',
+        observadorId: 'obs-1',
+        fechaInicio: new Date('2025-02-19'),
+        fechaFin: new Date('2025-02-19'),
+        estadoAprobacion: 'PENDIENTE',
+        activo: true,
+        tipoNovedad: { codigo: 'ACTUALIZACION_CEDULA', descripcion: 'Actualización de Cédula de Embarco' },
+        metadata: {
+          datosCedula: {
+            numeroCedula: '500228',
+            vencimientoCedula: '2028-02-19',
+            vencimientoAptoMedico: '2026-02-19',
+          }
+        }
+      };
+
+      jest.spyOn(service, 'findOne').mockResolvedValue(existing as any);
+      mockPrismaService.observador.findFirst.mockResolvedValue(null);
+      mockPrismaService.observador.update.mockResolvedValue({ id: 'obs-1', numeroCedula: 500228 });
+      mockPrismaService.observadorNovedad.update.mockResolvedValue({ id: 'nov-cedula-1', estadoAprobacion: 'APROBADA' });
+      mockPrismaService.marea.findMany.mockResolvedValue([]);
+
+      await service.update('nov-cedula-1', { estadoAprobacion: 'APROBADA' }, mockUser);
+
+      expect(prisma.observador.update).toHaveBeenCalledWith(expect.objectContaining({
+        where: { id: 'obs-1' },
+        data: expect.objectContaining({
+          numeroCedula: 500228,
+          fechaActualizacionDocumentacion: expect.any(Date),
+        })
+      }));
+
+      expect(prisma.observadorNovedad.update).toHaveBeenCalledWith(expect.objectContaining({
+        where: { id: 'nov-cedula-1' },
+        data: expect.objectContaining({
+          movimientos: expect.objectContaining({
+            create: expect.objectContaining({
+              tipoEvento: 'APROBACION_ACTUALIZACION_CEDULA',
+              estadoNuevo: 'APROBADA'
+            })
+          })
+        })
+      }));
+    });
+
+    it('debe rechazar la aprobacion si la cedula ya pertenece a otro observador', async () => {
+      const existing = {
+        id: 'nov-cedula-1',
+        observadorId: 'obs-1',
+        fechaInicio: new Date('2025-02-19'),
+        fechaFin: new Date('2025-02-19'),
+        estadoAprobacion: 'PENDIENTE',
+        activo: true,
+        tipoNovedad: { codigo: 'ACTUALIZACION_CEDULA', descripcion: 'Actualización de Cédula de Embarco' },
+        metadata: {
+          datosCedula: {
+            numeroCedula: '500228',
+            vencimientoCedula: '2028-02-19',
+            vencimientoAptoMedico: '2026-02-19',
+          }
+        }
+      };
+
+      jest.spyOn(service, 'findOne').mockResolvedValue(existing as any);
+      mockPrismaService.observador.findFirst.mockResolvedValue({
+        id: 'obs-2',
+        nombre: 'Juan',
+        apellido: 'Perez',
+        numeroCedula: 500228
+      });
+
+      await expect(
+        service.update('nov-cedula-1', { estadoAprobacion: 'APROBADA' }, mockUser)
+      ).rejects.toThrow(BadRequestException);
+
+      expect(prisma.observador.update).not.toHaveBeenCalled();
+    });
+
+    it('no debe modificar al observador si la novedad ACTUALIZACION_CEDULA es rechazada', async () => {
+      const existing = {
+        id: 'nov-cedula-1',
+        observadorId: 'obs-1',
+        fechaInicio: new Date('2025-02-19'),
+        fechaFin: new Date('2025-02-19'),
+        estadoAprobacion: 'PENDIENTE',
+        activo: true,
+        tipoNovedad: { codigo: 'ACTUALIZACION_CEDULA', descripcion: 'Actualización de Cédula de Embarco' },
+        metadata: {
+          datosCedula: {
+            numeroCedula: '500228',
+            vencimientoCedula: '2028-02-19',
+            vencimientoAptoMedico: '2026-02-19',
+          }
+        }
+      };
+
+      jest.spyOn(service, 'findOne').mockResolvedValue(existing as any);
+      mockPrismaService.observadorNovedad.update.mockResolvedValue({ id: 'nov-cedula-1', estadoAprobacion: 'RECHAZADA' });
+
+      await service.update('nov-cedula-1', { estadoAprobacion: 'RECHAZADA' }, mockUser);
+
+      expect(prisma.observador.update).not.toHaveBeenCalled();
     });
   });
 

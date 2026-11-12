@@ -1,6 +1,6 @@
 {
   "name": "sigma-mareas-monorepo",
-  "version": "0.11.0",
+  "version": "0.21.0",
   "private": true,
   "packageManager": "pnpm@11.18.0",
   "workspaces": [
@@ -16,16 +16,5 @@
     "lint": "pnpm -r run lint",
     "test": "pnpm -r run test",
     "prisma:studio": "pnpm --filter sigma-backend exec prisma studio"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "canvas",
-      "@google/genai",
-      "protobufjs",
-      "msgpackr-extract"
-    ],
-    "overrides": {
-      "@types/pg": "8.11.11"
-    }
   }
 }

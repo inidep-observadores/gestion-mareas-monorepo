@@ -45,13 +45,17 @@ export class ReportsService {
             year,
             mode,
             includeNonProtocolized,
-            includeProtocolizedOutOfPeriod = false,
+            // Regla de negocio: el informe de auditoría considera ESTRICTAMENTE las mareas finalizadas (o en ejecución)
+            // dentro del período. Las finalizadas en períodos anteriores nunca se incluyen, aunque se hayan protocolizado
+            // en el período actual. Por eso se ignora el valor recibido y se fuerza a false.
             includeCampaigns = true,
             startDate,
             endDate,
             protocolizationStartDate,
             protocolizationEndDate,
         } = params;
+
+        const includeProtocolizedOutOfPeriod = false;
 
         const pStart = startDate ? new Date(startDate) : new Date(Date.UTC(year, 0, 1));
         pStart.setUTCHours(0, 0, 0, 0);
@@ -130,13 +134,29 @@ export class ReportsService {
         });
 
         const lastStateMap = new Map<string, string>();
+        const lastStateDateMap = new Map<string, Date>();
         const processedMareas = new Set<string>();
         for (const mov of movsAlCorte) {
             if (!processedMareas.has(mov.mareaId)) {
                 lastStateMap.set(mov.mareaId, mov.estadoHasta.codigo);
+                lastStateDateMap.set(mov.mareaId, mov.fechaHora);
                 processedMareas.add(mov.mareaId);
             }
         }
+
+        /**
+         * Categoría administrativa al cierre, según el estado REAL (movimientos hasta snapDate).
+         * No se utilizan fechas lógicas: si el cambio de estado se cargó con posterioridad al cierre,
+         * la marea figura con el estado que tenía al corte.
+         */
+        const categoriaAlCierre = (mareaId: string): 'PROTOCOLIZADA' | 'ENVIADA' | 'DERIVADA' | 'REVISION' => {
+            switch (lastStateMap.get(mareaId)) {
+                case MareaEstado.PROTOCOLIZADA: return 'PROTOCOLIZADA';
+                case MareaEstado.ESPERANDO_PROTOCOLIZACION: return 'ENVIADA';
+                case MareaEstado.DELEGADA_EXTERNA: return 'DERIVADA';
+                default: return 'REVISION';
+            }
+        };
 
         // 6. Obtener datos adicionales en paralelo (Snapshot Histórico)
         const [secondaryStats, specialCases, protocolizationTimeline, fisheryOrdering] = await Promise.all([
@@ -242,12 +262,11 @@ export class ReportsService {
             
             if (item.estado === 'Finalizada') {
                 t.mareasFinalizadas++;
-                const fEnvio = item.fechaEnvioProtocolizacion ? new Date(item.fechaEnvioProtocolizacion) : null;
-                const fProt = item.fechaProtocolizacion ? new Date(item.fechaProtocolizacion) : null;
+                const categoria = categoriaAlCierre(item.id);
 
-                if (fEnvio && fEnvio >= pStart && fEnvio <= snapDate) {
-                    t.informesDeMarea++; // Balde 1: Enviadas a DNI
-                    if (fProt && fProt >= pStart && fProt <= snapDate) {
+                if (categoria === 'ENVIADA' || categoria === 'PROTOCOLIZADA') {
+                    t.informesDeMarea++; // Balde 1: Enviadas a DNI (según estado al cierre)
+                    if (categoria === 'PROTOCOLIZADA') {
                         t.informesProtocolizados++;
                     }
                 } else {
@@ -320,6 +339,9 @@ export class ReportsService {
                     pesqueria: item.pesqueria,
                     observador: item.observador || '',
                     estado: estadoAuditoria,
+                    categoriaCierre: estadoAuditoria === 'Finalizada' ? categoriaAlCierre(item.id) : null,
+                    estadoCierre: estadoAuditoria === 'Finalizada' ? (lastStateMap.get(item.id) ?? null) : null,
+                    fechaEstadoCierre: estadoAuditoria === 'Finalizada' ? (lastStateDateMap.get(item.id) ?? null) : null,
                     estadoActual: item.estadoActual || '',
                     observadorId: item.observadorId || null,
                     estadoOrden: item.estadoOrden ?? 0,

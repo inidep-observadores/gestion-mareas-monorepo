@@ -11,8 +11,8 @@
     </div>
 
     <!-- Control de Capas (Posicionado sobre el Zoom) -->
-    <div v-if="showControls" class="absolute bottom-[50px] right-[14px] z-[1000] pointer-events-auto">
-      <MapLayerControl :base-layers="BASE_LAYERS" :overlay-layers="OVERLAY_LAYERS" :current-base-id="currentBaseId"
+    <div v-if="showControls" class="absolute bottom-[50px] right-[14px] z-[9999] pointer-events-auto">
+      <MapLayerControl :base-layers="baseLayers" :overlay-layers="OVERLAY_LAYERS" :current-base-id="settings.mapType"
         :active-overlay-ids="activeOverlayIds" :show-graticule="localShowGraticule" @change-base="setBaseLayer"
         @toggle-overlay="toggleOverlay" @update:show-graticule="toggleGraticule">
         <template #extra><slot name="layer-control-extra" /></template>
@@ -35,7 +35,8 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import MapLayerControl from './MapLayerControl.vue'
 import MapTimeSlider from './MapTimeSlider.vue'
-import { BASE_LAYERS, OVERLAY_LAYERS } from './map-layers'
+import { getBaseLayers, OVERLAY_LAYERS } from './map-layers'
+import { useMapSettings, type MapType } from '@/composables/useMapSettings'
 
 const props = withDefaults(defineProps<{
   center?: [number, number]
@@ -71,15 +72,16 @@ let baseLayer: L.TileLayer | null = null
 let graticuleLayer: L.LayerGroup | null = null
 let themeObserver: MutationObserver | null = null
 
-const currentBaseId = ref('argenmap-mapa-base')
+const { settings } = useMapSettings()
+const baseLayers = computed(() => getBaseLayers(settings.value.provider))
 const activeOverlayIds = ref<string[]>([])
 const failingOverlayIds = ref<string[]>([])
 
 const hasOverlayError = computed(() => failingOverlayIds.value.length > 0)
 
-const setBaseLayer = (id: string) => {
+const applyBaseLayer = () => {
   if (!map) return
-  const layerDef = BASE_LAYERS.find(l => l.id === id)
+  const layerDef = baseLayers.value.find(l => l.id === settings.value.mapType)
   if (!layerDef) return
 
   if (baseLayer) {
@@ -88,10 +90,17 @@ const setBaseLayer = (id: string) => {
 
   baseLayer = L.tileLayer(layerDef.url, {
     attribution: layerDef.attribution,
-    maxZoom: layerDef.maxZoom
+    maxZoom: layerDef.maxZoom,
+    className: layerDef.className
   }).addTo(map)
-  currentBaseId.value = id
 }
+
+const setBaseLayer = (id: string) => {
+  settings.value.mapType = id as MapType
+}
+
+watch(() => settings.value.provider, () => applyBaseLayer())
+watch(() => settings.value.mapType, () => applyBaseLayer())
 
 const toggleOverlay = (id: string) => {
   const index = activeOverlayIds.value.indexOf(id)
@@ -307,9 +316,17 @@ const updateGraticule = () => {
 }
 
 const updateBaseLayerByTheme = () => {
+  if (settings.value.rememberSelection) return // Respetar la selección explícita del usuario
+
   const isDark = document.documentElement.classList.contains('dark')
-  const defaultId = isDark ? 'argenmap-oscuro' : 'argenmap-mapa-base'
-  setBaseLayer(defaultId)
+  const defaultId = isDark ? 'oscuro' : 'estandar'
+  
+  if (settings.value.mapType !== defaultId) {
+    settings.value.mapType = defaultId
+  } else {
+    // Si ya era igual pero es la primera vez, necesitamos aplicar la capa
+    applyBaseLayer()
+  }
 }
 
 const NauticalScale = L.Control.extend({
@@ -458,5 +475,14 @@ defineExpose({
 /* Ocultar controles de zoom en móvil */
 .hide-zoom-controls .leaflet-control-zoom {
   display: none !important;
+}
+
+/* Filtros CSS para capas de Google Maps */
+.google-gray-map {
+  filter: grayscale(100%) opacity(70%);
+}
+
+.google-dark-map {
+  filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%) grayscale(20%);
 }
 </style>

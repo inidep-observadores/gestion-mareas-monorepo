@@ -14,6 +14,7 @@ import { EnviarProtocolizacionDto } from './dto/enviar-protocolizacion.dto';
 import { ConfirmarProtocolizacionDto } from './dto/confirmar-protocolizacion.dto';
 import { MareaEtapaMetadata } from './interfaces/marea-etapa-metadata.interface';
 import { ProtocolizacionLoteMetadata } from './interfaces/protocolizacion-lote-metadata.interface';
+import { MareaMetadata } from './types/marea-metadata.types';
 import { DateUtils } from '../common/utils/date.utils';
 import { MareaUtils } from '../common/utils/marea.utils';
 import { ConfigService } from '@nestjs/config';
@@ -21,10 +22,10 @@ import * as ExcelJS from 'exceljs';
 import { DateTime } from 'luxon';
 import * as fs from 'fs';
 import * as path from 'path';
-
-
-
-@Injectable()
+import * as os from 'os';
+import { DriveStorageService } from '../files/drive-storage.service';
+import { JobQueueService } from '../jobs/job-queue.service';
+import { JobType } from '@prisma/client';@Injectable()
 export class MareasService {
     private readonly logger = new Logger(MareasService.name);
     // Fuentes únicas de verdad para estados operativos
@@ -43,7 +44,9 @@ export class MareasService {
         private readonly mailService: MailService,
         private readonly alertsService: AlertsService,
         private readonly businessRulesService: BusinessRulesService,
-        private readonly configService: ConfigService
+        private readonly configService: ConfigService,
+        private readonly driveStorageService: DriveStorageService,
+        private readonly jobQueueService: JobQueueService
     ) { }
 
 
@@ -104,8 +107,20 @@ export class MareasService {
         };
     }
 
-    async update(id: string, updateMareaDto: UpdateMareaDto, user?: User) {
-        const { etapas, artePrincipalId, arteId, pesqueriaId, observadorId, observadorPrincipalId, ...data } = updateMareaDto;
+    async update(id: string, updateMareaDto: UpdateMareaDto, files?: Array<Express.Multer.File>, user?: User) {
+        const {
+            etapas,
+            artePrincipalId,
+            arteId,
+            pesqueriaId,
+            observadorId,
+            observadorPrincipalId,
+            observadoresSecundariosPlanificados,
+            buqueId,
+            archivosToDelete,
+            ...data
+        } = updateMareaDto;
+
 
         // 1. Obtención inicial de marea para validaciones de integridad
         const mareaActual = await this.prisma.marea.findUnique({
@@ -123,7 +138,7 @@ export class MareasService {
             (updateMareaDto.anioMarea !== undefined && updateMareaDto.anioMarea !== mareaActual.anioMarea) ||
             (updateMareaDto.nroMarea !== undefined && updateMareaDto.nroMarea !== mareaActual.nroMarea) ||
             (updateMareaDto.tipoMarea !== undefined && updateMareaDto.tipoMarea !== mareaActual.tipoMarea) ||
-            (updateMareaDto.buqueId !== undefined && updateMareaDto.buqueId !== mareaActual.buqueId) ||
+            (buqueId !== undefined && buqueId !== mareaActual.buqueId) ||
             (observadorPrincipalId !== undefined && observadorPrincipalId !== mareaActual.observadorPrincipalId) ||
             (pesqueriaId !== undefined && pesqueriaId !== mareaActual.pesqueriaId) ||
             (artePrincipalId !== undefined && artePrincipalId !== mareaActual.artePrincipalId);
@@ -230,17 +245,29 @@ export class MareasService {
                 return isNaN(d.getTime()) ? null : d;
             };
 
-            if (artePrincipalId !== undefined) updateData.artePrincipalId = artePrincipalId;
-            if (artePrincipalId === undefined && arteId !== undefined) updateData.artePrincipalId = arteId;
+            // Relaciones foráneas de Prisma
+            if (buqueId !== undefined && buqueId !== null) {
+                updateData.buque = { connect: { id: buqueId } };
+            }
+
+            const finalArteId = artePrincipalId !== undefined ? artePrincipalId : arteId;
+            if (finalArteId !== undefined) {
+                updateData.artePrincipal = finalArteId ? { connect: { id: finalArteId } } : { disconnect: true };
+            }
+
+            const finalObsId = observadorPrincipalId !== undefined ? observadorPrincipalId : observadorId;
+            if (finalObsId !== undefined) {
+                updateData.observadorPrincipal = finalObsId ? { connect: { id: finalObsId } } : { disconnect: true };
+            }
+
+            if (pesqueriaId !== undefined) {
+                updateData.pesqueria = pesqueriaId ? { connect: { id: pesqueriaId } } : { disconnect: true };
+            }
 
             if (updateMareaDto.fechaZarpadaEstimada !== undefined) updateData.fechaZarpadaEstimada = processDate(updateMareaDto.fechaZarpadaEstimada);
-
             if (updateMareaDto.fechaInicioObservador !== undefined) updateData.fechaInicioObservador = processDate(updateMareaDto.fechaInicioObservador);
             if (updateMareaDto.fechaFinObservador !== undefined) updateData.fechaFinObservador = processDate(updateMareaDto.fechaFinObservador);
             if (updateMareaDto.fechaProtocolizacion !== undefined) updateData.fechaProtocolizacion = processDate(updateMareaDto.fechaProtocolizacion);
-
-            if (observadorPrincipalId !== undefined) updateData.observadorPrincipalId = observadorPrincipalId;
-            if (pesqueriaId !== undefined) updateData.pesqueriaId = pesqueriaId;
 
             // Otros campos que pueden ser nulos
             if (updateMareaDto.diasZonaAustral !== undefined) updateData.diasZonaAustral = updateMareaDto.diasZonaAustral;
@@ -249,14 +276,46 @@ export class MareasService {
             if (updateMareaDto.diasEstimados !== undefined) updateData.diasEstimados = updateMareaDto.diasEstimados;
             if (updateMareaDto.tipoCalculoZonaAustral !== undefined) updateData.tipoCalculoZonaAustral = updateMareaDto.tipoCalculoZonaAustral;
 
+            // Actualizar borrador de observadores secundarios en metadata
+            if (observadoresSecundariosPlanificados !== undefined) {
+                const principalId = updateData.observadorPrincipalId !== undefined
+                    ? updateData.observadorPrincipalId
+                    : (mareaActual as any).observadorPrincipalId;
+
+                await this.validateObservadoresSecundariosPlanificados(
+                    observadoresSecundariosPlanificados,
+                    principalId,
+                    id
+                );
+
+                const metadataActual = ((mareaActual as any).metadata as MareaMetadata) || {};
+                updateData.metadata = {
+                    ...metadataActual,
+                    observadoresSecundariosPlanificados: observadoresSecundariosPlanificados
+                } as MareaMetadata;
+            } else if (updateData.observadorPrincipalId) {
+                const metadataActual = ((mareaActual as any).metadata as MareaMetadata) || {};
+                if (metadataActual.observadoresSecundariosPlanificados?.length) {
+                    await this.validateObservadoresSecundariosPlanificados(
+                        metadataActual.observadoresSecundariosPlanificados,
+                        updateData.observadorPrincipalId,
+                        id
+                    );
+                }
+            }
+
+
+            let huboCambios = false;
             if (Object.keys(updateData).length > 0) {
                 await tx.marea.update({
                     where: { id },
                     data: updateData
                 });
+                huboCambios = true;
             }
 
             if (etapas !== undefined) {
+                huboCambios = true;
                 // Eliminar etapas que no vienen en el payload (etapas borradas en el frontend)
                 const payloadEtapaIds = etapas.map(e => e.id).filter(id => !!id);
                 await tx.mareaEtapa.deleteMany({
@@ -369,7 +428,59 @@ export class MareasService {
                     }
                 }
             }
+
+            if (huboCambios) {
+                await tx.mareaMovimiento.create({
+                    data: {
+                        mareaId: id,
+                        fechaHora: new Date(),
+                        usuarioId: user?.id ?? null,
+                        tipoEvento: 'EDICION_ESTRUCTURA',
+                        detalle: 'Edición de datos básicos de la marea.'
+                    }
+                });
+            }
         });
+
+        // Trigger AI processing for pasajes uploaded during this edit session
+        const unprocessedPasajes = await this.prisma.mareaArchivo.findMany({
+            where: {
+                mareaId: id,
+                tipoArchivo: 'PASAJE'
+            }
+        });
+
+        for (const pasaje of unprocessedPasajes) {
+            const meta = pasaje.metadata as any;
+            if (meta && meta.procesadoAi === false && meta.tempFilePath) {
+                try {
+                    await this.jobQueueService.addJob(
+                        JobType.NOVEDADES_AI_PROCESS,
+                        {
+                            origen: 'UI',
+                            mareaId: id,
+                            mareaArchivoId: pasaje.id,
+                            fuente: `ADJUNTO: ${meta.originalName}`,
+                            emailSubject: `Pasaje UI - Marea ${id}`,
+                            explicitDocType: 'PASAJE',
+                            attachmentData: {
+                                filePath: meta.tempFilePath,
+                                mimetype: meta.mimetype,
+                                filename: meta.originalName
+                            }
+                        }
+                    );
+                    
+                    meta.procesadoAi = true;
+                    await this.prisma.mareaArchivo.update({
+                        where: { id: pasaje.id },
+                        data: { metadata: meta }
+                    });
+                } catch (e) {
+                    this.logger.error(`Error encolando trabajo AI para el pasaje ${pasaje.id}: ${e}`);
+                }
+            }
+        }
 
         return this.findOne(id);
     }
@@ -477,6 +588,7 @@ export class MareasService {
                 fechaFinObservador: true,
                 artePrincipalId: true,
                 iniciaEnProspeccion: true,
+                desestimada: true,
                 buque: {
                     select: {
                         id: true,
@@ -522,7 +634,8 @@ export class MareasService {
                                     select: {
                                         id: true,
                                         nombre: true,
-                                        apellido: true
+                                        apellido: true,
+                                        fotoUrl: true
                                     }
                                 }
                             }
@@ -580,6 +693,8 @@ export class MareasService {
                 puerto_arribo: etapaFinal?.puertoArribo?.nombre,
                 fecha_arribo: etapaFinal?.fechaArribo,
                 observador: primaryObs ? `${primaryObs.nombre} ${primaryObs.apellido}` : 'Sin asignar',
+                observador_id: primaryObs?.id ?? null,
+                observador_foto_url: primaryObs?.fotoUrl ?? null,
                 progreso,
                 en_tierra: m.estadoActual.codigo === MareaEstado.EN_EJECUCION && etapaFinal?.fechaArribo !== null,
                 en_prospeccion: (m.estadoActual.codigo === MareaEstado.EN_EJECUCION && etapaFinal?.fechaArribo === null && etapaFinal?.tipoEtapa === 'EP') ||
@@ -588,6 +703,7 @@ export class MareasService {
                 dias_navegados: MareaUtils.calculateNavigatedDays(m),
                 dias_marea: m.fechaInicioObservador ? DateUtils.calculateInclusiveDays(m.fechaInicioObservador, m.fechaFinObservador) : 0,
                 alertas: activeAlerts.filter((a: any) => a.referenciaId === m.id),
+                desestimada: m.desestimada || false,
                 intencion_cierre: m.estadoActual.codigo.trim().toUpperCase() === MareaEstado.EN_EJECUCION &&
                     (etapaFinal?.metadata as unknown as MareaEtapaMetadata)?.opcionesCierre?.finalizarMareaAlArribo === true,
                 actionsAvailable,
@@ -613,7 +729,7 @@ export class MareasService {
     async getDashboardKpis(year?: number) {
         const { mareaYearFilter } = this.buildMareaYearFilter(year);
 
-        const [buquesActivos, observadoresDisponibles, mareasDesignadas, listasParaProtocolizar, mareasEnRevision] = await Promise.all([
+        const [buquesActivos, observadoresDisponibles, mareasDesignadas, listasParaProtocolizar, mareasEnRevision, novedadesPendientes] = await Promise.all([
             this.prisma.marea.groupBy({
                 by: ['buqueId'],
                 where: {
@@ -662,6 +778,12 @@ export class MareasService {
                         codigo: { in: this.ESTADOS_REVISION }
                     }
                 }
+            }),
+            this.prisma.observadorNovedad.count({
+                where: {
+                    activo: true,
+                    estadoAprobacion: 'PENDIENTE'
+                }
             })
         ]);
 
@@ -670,7 +792,8 @@ export class MareasService {
             observadoresDisponibles,
             mareasDesignadas,
             listasParaProtocolizar,
-            enRevision: mareasEnRevision
+            enRevision: mareasEnRevision,
+            novedadesPendientes
         };
     }
 
@@ -1352,6 +1475,108 @@ export class MareasService {
             stageCountByMarea.set(mareaId, (stageCountByMarea.get(mareaId) || 0) + 1);
         });
 
+        // Obtener novedades activas y aprobadas que cubren la fecha actual
+        const novedadesHoy = await this.prisma.observadorNovedad.findMany({
+            where: {
+                activo: true,
+                estadoAprobacion: 'APROBADA',
+                fechaInicio: { lte: now },
+                OR: [
+                    { fechaFin: { gte: now } },
+                    { fechaFin: null }
+                ]
+            },
+            include: {
+                tipoNovedad: true
+            }
+        });
+
+        const novedadesDisponiblesByObs = new Map<string, any>();
+        const novedadesBloqueantesByObs = new Map<string, any>();
+        const novedadesFlexiblesByObs = new Map<string, any>();
+
+        novedadesHoy.forEach((n: any) => {
+            if (n.tipoNovedad?.codigo === 'DISPONIBLE') {
+                novedadesDisponiblesByObs.set(n.observadorId, n);
+            } else if (n.tipoNovedad?.codigo === 'NO_DISPONIBLE' || n.tipoNovedad?.afectaPresentismo) {
+                if (n.permiteUrgencia === true || n.tipoNovedad?.codigo === 'FC') {
+                    novedadesFlexiblesByObs.set(n.observadorId, n);
+                } else {
+                    novedadesBloqueantesByObs.set(n.observadorId, n);
+                }
+            }
+        });
+
+        // Obtener avisos futuros de disponibilidad (fechaInicio > now)
+        // Regla: Si el observador declaró disponibilidad a futuro, los días previos se consideran No Disponible / Impedido
+        const avisosFuturosDisponibilidad = await this.prisma.observadorNovedad.findMany({
+            where: {
+                activo: true,
+                estadoAprobacion: 'APROBADA',
+                fechaInicio: { gt: now },
+                tipoNovedad: {
+                    codigo: 'DISPONIBLE'
+                }
+            },
+            include: {
+                tipoNovedad: true
+            },
+            orderBy: {
+                fechaInicio: 'asc'
+            }
+        });
+
+        const avisosFuturosDispByObs = new Map<string, any>();
+        avisosFuturosDisponibilidad.forEach((n: any) => {
+            if (!avisosFuturosDispByObs.has(n.observadorId)) {
+                avisosFuturosDispByObs.set(n.observadorId, n);
+            }
+        });
+
+        // Obtener escenarios de simulación activos (no borrados) para chequear planificaciones futuras
+        const escenariosActivos = await this.prisma.escenarioSimulacion.findMany({
+            where: {
+                estado: { not: 'BORRADO' }
+            },
+            select: {
+                id: true,
+                nombre: true,
+                items: true
+            }
+        });
+
+        // Mapear la planificación simulada más próxima para cada observador (con fechaZarpada >= now)
+        const planificacionesFuturasByObs = new Map<string, {
+            escenarioId: string;
+            escenarioNombre: string;
+            buqueNombre: string;
+            fechaZarpada: string;
+            observaciones?: string | null;
+        }>();
+
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+
+        escenariosActivos.forEach((esc: any) => {
+            const items = Array.isArray(esc.items) ? esc.items : [];
+            items.forEach((item: any) => {
+                if (item.tipoBloque === 'MAREA_SIMULADA' && item.observadorId && item.fechaZarpada) {
+                    const zarpadaDate = new Date(item.fechaZarpada);
+                    if (zarpadaDate >= todayStart) {
+                        const existing = planificacionesFuturasByObs.get(item.observadorId);
+                        if (!existing || zarpadaDate < new Date(existing.fechaZarpada)) {
+                            planificacionesFuturasByObs.set(item.observadorId, {
+                                escenarioId: esc.id,
+                                escenarioNombre: esc.nombre,
+                                buqueNombre: item.buqueNombre || 'Sin buque',
+                                fechaZarpada: zarpadaDate.toISOString(),
+                                observaciones: item.comentario || item.observaciones || null
+                            });
+                        }
+                    }
+                }
+            });
+        });
+
         const activeNav = new Map<string, { start: Date; vessel: string; mareaCode: string; fishery: string; enTierra: boolean; stageCount: number; fleetCode?: string; fleetName?: string; intervals: Array<{ start: Date; end?: Date | null }> }>();
         const lastArrivalByObs = new Map<string, { date: Date; mareaCode: string; vessel: string; fishery: string }>();
         const designadosActivosByObs = new Map<string, { mareaCode: string; vesselName: string; fechaZarpadaEstimada: Date | null; fishery: string }>();
@@ -1431,15 +1656,88 @@ export class MareasService {
             if (etapa.marea.observadorPrincipal) processObs(etapa.marea.observadorPrincipal);
         });
 
-        const listDescanso: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
-        const listImpedidos: Array<{ id: string; name: string; motivo: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
-        const listDisponibles: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
-        const listNavegando: Array<{ id: string; name: string; days: number; vessel: string; mareaCode: string; fishery: string; enTierra: boolean; startDate: string; tipoObservador: string; tipoContrato: string, stageCount: number; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string; fleetCode?: string; fleetName?: string }> = [];
-        const listDesignados: Array<{ id: string; name: string; mareaCode: string; vesselName: string; fishery: string; fechaZarpadaEstimada: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
-        const topDryCandidates: Array<{ id: string; name: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string }> = [];
+        type DocFields = {
+            codigoInterno?: number | null;
+            dni?: string | null;
+            numeroCedula?: number | null;
+            vencimientoCedula?: string | null;
+            vencimientoAptoMedico?: string | null;
+            fechaActualizacionDocumentacion?: string | null;
+            disponible?: boolean;
+        };
+
+        const listDescanso: Array<{ id: string; name: string; fotoUrl?: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string } & DocFields> = [];
+        const listImpedidos: Array<{ id: string; name: string; fotoUrl?: string; motivo: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string } & DocFields> = [];
+        const listDisponibles: Array<{
+            id: string;
+            name: string;
+            fotoUrl?: string;
+            days: number;
+            lastArrival: string;
+            mareaCode: string;
+            vesselName: string;
+            fishery: string;
+            tipoObservador: string;
+            tipoContrato: string;
+            sexo: string;
+            eventual: boolean;
+            tieneDesignacionActiva: boolean;
+            disponibilidadConfirmada: boolean;
+            esFlexible?: boolean;
+            motivoFlexibilidad?: string | null;
+            planificacionFutura: {
+                escenarioId: string;
+                escenarioNombre: string;
+                buqueNombre: string;
+                fechaZarpada: string;
+                observaciones?: string | null;
+            } | null;
+            observaciones?: string;
+        } & DocFields> = [];
+        const listNavegando: Array<{ id: string; name: string; fotoUrl?: string; days: number; vessel: string; mareaCode: string; fishery: string; enTierra: boolean; startDate: string; tipoObservador: string; tipoContrato: string, stageCount: number; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string; fleetCode?: string; fleetName?: string } & DocFields> = [];
+        const listDesignados: Array<{ id: string; name: string; fotoUrl?: string; mareaCode: string; vesselName: string; fishery: string; fechaZarpadaEstimada: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string } & DocFields> = [];
+        const topDryCandidates: Array<{ id: string; name: string; fotoUrl?: string; days: number; lastArrival: string; mareaCode: string; vesselName: string; fishery: string; tipoObservador: string; tipoContrato: string; sexo: string; eventual: boolean; tieneDesignacionActiva: boolean; observaciones?: string } & DocFields> = [];
 
         observadores.forEach((obs) => {
             if (!obs.activo) return;
+
+            const timezone = DateUtils.getTimezone();
+            const todayStart = DateTime.fromJSDate(now, { zone: timezone }).startOf('day');
+
+            // 1. Evaluación de Documentación Vencida (Cédula y Apto Médico)
+            const dtVtoCedula = obs.vencimientoCedula
+                ? DateTime.fromJSDate(obs.vencimientoCedula, { zone: timezone }).startOf('day')
+                : null;
+            const dtVtoMedico = obs.vencimientoAptoMedico
+                ? DateTime.fromJSDate(obs.vencimientoAptoMedico, { zone: timezone }).startOf('day')
+                : null;
+
+            let docVencida = false;
+            let motivoDocVencida = '';
+
+            const cedulaVencida = dtVtoCedula !== null && dtVtoCedula < todayStart;
+            const medicoVencido = dtVtoMedico !== null && dtVtoMedico < todayStart;
+
+            if (cedulaVencida && medicoVencido) {
+                docVencida = true;
+                motivoDocVencida = `Documentación vencida: Cédula (${dtVtoCedula.toFormat('dd/MM/yyyy')}) y Apto médico (${dtVtoMedico.toFormat('dd/MM/yyyy')})`;
+            } else if (cedulaVencida) {
+                docVencida = true;
+                motivoDocVencida = `Documentación vencida: Cédula (${dtVtoCedula.toFormat('dd/MM/yyyy')})`;
+            } else if (medicoVencido) {
+                docVencida = true;
+                motivoDocVencida = `Documentación vencida: Apto médico (${dtVtoMedico.toFormat('dd/MM/yyyy')})`;
+            }
+
+            const docData: DocFields = {
+                codigoInterno: obs.codigoInterno ?? null,
+                dni: obs.dni ?? null,
+                numeroCedula: obs.numeroCedula ?? null,
+                vencimientoCedula: obs.vencimientoCedula ? obs.vencimientoCedula.toISOString() : null,
+                vencimientoAptoMedico: obs.vencimientoAptoMedico ? obs.vencimientoAptoMedico.toISOString() : null,
+                fechaActualizacionDocumentacion: obs.fechaActualizacionDocumentacion ? obs.fechaActualizacionDocumentacion.toISOString() : null,
+                disponible: obs.disponible,
+            };
 
             const name = `${obs.apellido}, ${obs.nombre} `;
             const lastArrivalData = lastArrivalByObs.get(obs.id);
@@ -1448,13 +1746,58 @@ export class MareasService {
             const daysSince = lastArrival ? DateUtils.calculateInclusiveDays(lastArrival, now) - 1 : null;
 
             const hasDesignation = designadosActivosByObs.has(obs.id);
-            const status = this.getObserverStatus(obs, activeNav.has(obs.id), hasDesignation, lastArrival, now);
+            const novedadBloqueante = novedadesBloqueantesByObs.get(obs.id);
 
-            // Top Dry Check: Solo listar observadores genuinamente DISPONIBLES y de tipo OBSERVADOR (y sin marea designada)
-            if (obsConMareas.has(obs.id) && status === 'DISPONIBLE' && !hasDesignation && lastArrival && lastArrivalData && daysSince !== null && obs.tipoObservador === 'OBSERVADOR') {
+            // Avisos futuros de disponibilidad (por novedad o fechaProximaDisponibilidad en padrón)
+            let avisoFuturoDisp = avisosFuturosDispByObs.get(obs.id);
+            if (!avisoFuturoDisp && obs.fechaProximaDisponibilidad) {
+                const dtProx = DateTime.fromJSDate(obs.fechaProximaDisponibilidad, { zone: timezone }).startOf('day');
+                if (dtProx > todayStart) {
+                    avisoFuturoDisp = {
+                        fechaInicio: obs.fechaProximaDisponibilidad,
+                        tipoNovedad: { descripcion: 'Próxima disponibilidad' }
+                    };
+                }
+            }
+
+            const status = this.getObserverStatus(obs, activeNav.has(obs.id), hasDesignation, lastArrival, now, novedadBloqueante, avisoFuturoDisp, docVencida);
+
+            // Determinar disponibilidad confirmada y planificación simulada futura
+            let tieneAvisoVigente = false;
+            let esFlexible = false;
+            let motivoFlexibilidad: string | null = null;
+            let planificacion: { escenarioId: string; escenarioNombre: string; buqueNombre: string; fechaZarpada: string; observaciones?: string | null } | null = null;
+
+            if (status === 'DISPONIBLE') {
+                const novedadDisp = novedadesDisponiblesByObs.get(obs.id);
+                if (novedadDisp) {
+                    const iniAviso = new Date(novedadDisp.fechaInicio);
+                    const mareaPosterior = etapas.some((e: any) => {
+                        const obsEnEtapa = e.observadores?.some((o: any) => o.observador?.id === obs.id) || e.marea?.observadorPrincipalId === obs.id;
+                        if (!obsEnEtapa) return false;
+                        const zarpada = e.fechaZarpada ? new Date(e.fechaZarpada) : null;
+                        return zarpada && zarpada >= iniAviso && zarpada <= now;
+                    });
+                    tieneAvisoVigente = !mareaPosterior;
+                }
+
+                const novedadFlex = novedadesFlexiblesByObs.get(obs.id);
+                if (novedadFlex) {
+                    esFlexible = true;
+                    motivoFlexibilidad = novedadFlex.tipoNovedad?.descripcion || 'Licencia flexible';
+                }
+
+                planificacion = planificacionesFuturasByObs.get(obs.id) || null;
+            }
+
+            const disponibilidadConfirmada = tieneAvisoVigente || esFlexible;
+
+            // Top Dry Check: Solo listar observadores genuinamente DISPONIBLES y de tipo OBSERVADOR (y sin marea designada ni planificación simulada)
+            if (obsConMareas.has(obs.id) && status === 'DISPONIBLE' && obs.disponible !== false && !hasDesignation && lastArrival && lastArrivalData && daysSince !== null && obs.tipoObservador === 'OBSERVADOR' && tieneAvisoVigente && !planificacion) {
                 topDryCandidates.push({
                     id: obs.id,
                     name,
+                    fotoUrl: obs.fotoUrl,
                     days: daysSince,
                     lastArrival: lastArrival.toISOString(),
                     mareaCode: lastArrivalData.mareaCode,
@@ -1465,7 +1808,8 @@ export class MareasService {
                     sexo: obs.sexo,
                     eventual: obs.eventual,
                     tieneDesignacionActiva: designadosActivosByObs.has(obs.id),
-                    observaciones: obs.observaciones
+                    observaciones: obs.observaciones,
+                    ...docData
                 });
             }
 
@@ -1476,6 +1820,7 @@ export class MareasService {
                     listNavegando.push({
                         id: obs.id,
                         name,
+                        fotoUrl: obs.fotoUrl,
                         vessel: navData?.vessel || 'Desconocido',
                         mareaCode: navData?.mareaCode || '',
                         fishery: navData?.fishery || '',
@@ -1490,20 +1835,36 @@ export class MareasService {
                         tieneDesignacionActiva: designadosActivosByObs.has(obs.id),
                         observaciones: obs.observaciones,
                         fleetCode: navData?.fleetCode || '',
-                        fleetName: navData?.fleetName || ''
+                        fleetName: navData?.fleetName || '',
+                        ...docData
                     });
                     break;
                 case 'IMPEDIDO':
+                    let motivo = 'Sin motivo especificado';
+                    if (obs.disponible === false) {
+                        motivo = 'No disponible (desactivado en padrón)';
+                    } else if (obs.conImpedimento) {
+                        motivo = obs.motivoImpedimento || 'Sin motivo especificado';
+                    } else if (docVencida) {
+                        motivo = motivoDocVencida;
+                    } else if (novedadBloqueante) {
+                        motivo = novedadBloqueante.tipoNovedad?.descripcion + (novedadBloqueante.motivo ? ` - ${novedadBloqueante.motivo}` : '');
+                    } else if (avisoFuturoDisp) {
+                        const fechaDispStr = DateUtils.formatDate(avisoFuturoDisp.fechaInicio);
+                        motivo = `Disponible a partir del ${fechaDispStr} (aviso registrado)`;
+                    }
                     listImpedidos.push({
                         id: obs.id,
                         name,
-                        motivo: obs.motivoImpedimento || 'Sin motivo especificado',
+                        fotoUrl: obs.fotoUrl,
+                        motivo,
                         tipoObservador: obs.tipoObservador,
                         tipoContrato: obs.tipoContrato,
                         sexo: obs.sexo,
                         eventual: obs.eventual,
                         tieneDesignacionActiva: designadosActivosByObs.has(obs.id),
-                        observaciones: obs.observaciones
+                        observaciones: obs.observaciones,
+                        ...docData
                     });
                     break;
                 case 'DESIGNADO':
@@ -1511,6 +1872,7 @@ export class MareasService {
                     listDesignados.push({
                         id: obs.id,
                         name,
+                        fotoUrl: obs.fotoUrl,
                         mareaCode: desigData?.mareaCode || '',
                         vesselName: desigData?.vesselName || '',
                         fishery: desigData?.fishery || 'Sin Pesquería',
@@ -1520,13 +1882,15 @@ export class MareasService {
                         sexo: obs.sexo,
                         eventual: obs.eventual,
                         tieneDesignacionActiva: true,
-                        observaciones: obs.observaciones
+                        observaciones: obs.observaciones,
+                        ...docData
                     });
                     break;
                 case 'DESCANSO':
                     listDescanso.push({
                         id: obs.id,
                         name,
+                        fotoUrl: obs.fotoUrl,
                         days: daysSince || 0,
                         lastArrival: lastArrival?.toISOString() || '',
                         mareaCode: lastArrivalData?.mareaCode || '',
@@ -1537,13 +1901,15 @@ export class MareasService {
                         sexo: obs.sexo,
                         eventual: obs.eventual,
                         tieneDesignacionActiva: designadosActivosByObs.has(obs.id),
-                        observaciones: obs.observaciones
+                        observaciones: obs.observaciones,
+                        ...docData
                     });
                     break;
                 case 'DISPONIBLE':
                     listDisponibles.push({
                         id: obs.id,
                         name,
+                        fotoUrl: obs.fotoUrl,
                         days: daysSince || 0, // 0 if never arrived (new observer?)
                         lastArrival: lastArrival?.toISOString() || '',
                         mareaCode: lastArrivalData?.mareaCode || '',
@@ -1554,7 +1920,12 @@ export class MareasService {
                         sexo: obs.sexo,
                         eventual: obs.eventual,
                         tieneDesignacionActiva: designadosActivosByObs.has(obs.id),
-                        observaciones: obs.observaciones
+                        disponibilidadConfirmada,
+                        esFlexible,
+                        motivoFlexibilidad,
+                        planificacionFutura: planificacion,
+                        observaciones: obs.observaciones,
+                        ...docData
                     });
                     break;
             }
@@ -1597,19 +1968,20 @@ export class MareasService {
 
     /**
      * Determines the operational status of an observer based on business rules.
-     * Priority: NAVIGATING > IMPEDED > RESTING > AVAILABLE
+     * Priority: NAVIGATING > DESIGNATED > RESTING > IMPEDED > AVAILABLE
      */
     private getObserverStatus(
         obs: any,
         isNavigating: boolean,
         hasDesignation: boolean,
         lastArrival: Date | undefined,
-        now: Date
+        now: Date,
+        novedadBloqueante?: any,
+        avisoFuturoDisp?: any,
+        docVencida: boolean = false
     ): 'NAVEGANDO' | 'IMPEDIDO' | 'DESIGNADO' | 'DESCANSO' | 'DISPONIBLE' | 'OTRO' {
 
         if (isNavigating) return 'NAVEGANDO';
-
-        if (obs.conImpedimento) return 'IMPEDIDO';
 
         if (hasDesignation) return 'DESIGNADO';
 
@@ -1620,9 +1992,9 @@ export class MareasService {
             }
         }
 
-        if (obs.disponible) return 'DISPONIBLE';
+        if (obs.conImpedimento || docVencida || novedadBloqueante || avisoFuturoDisp) return 'IMPEDIDO';
 
-        return 'OTRO';
+        return 'DISPONIBLE';
     }
 
     async getMareaContext(id: string) {
@@ -1693,6 +2065,7 @@ export class MareasService {
                 label: t.etiqueta,
                 toState: t.estadoDestinoId,
                 toStateName: (t as any).estadoDestino?.nombre || 'Nuevo Estado',
+                toStateCodigo: (t as any).estadoDestino?.codigo || null,
                 requiresNotes: (t as any).requiereObs || false,
                 claseBoton: t.claseBoton
             };
@@ -1730,7 +2103,10 @@ export class MareasService {
                 puertoBaseCodigo: marea.buque.puertoBase?.codigoExterno,
                 estado: marea.estadoActual.nombre,
                 estado_codigo: marea.estadoActual.codigo,
-                observador: mainObs ? `${mainObs.nombre} ${mainObs.apellido} ` : 'No asignado',
+                observador: mainObs ? `${mainObs.nombre} ${mainObs.apellido}` : 'No asignado',
+                observadorPrincipalId: marea.observadorPrincipalId,
+                observador_principal_id: marea.observadorPrincipalId,
+                observadorPrincipal: marea.observadorPrincipal,
                 pesqueria: etapaFinal?.pesqueria?.nombre || 'General',
                 fecha_zarpada: fechaZarpada,
                 fecha_zarpada_estimada: marea.fechaZarpadaEstimada,
@@ -1742,8 +2118,10 @@ export class MareasService {
                 id_pesqueria: marea.pesqueriaId,
                 tipo_marea: marea.tipoMarea,
                 tipoMarea: marea.tipoMarea,
+                desestimada: marea.desestimada || false,
                 observaciones: marea.observaciones || '',
                 alertas: activeAlerts,
+                metadata: marea.metadata,
                 etapas: marea.etapas.map((e: any) => ({
                     id: e.id,
                     nroEtapa: e.nroEtapa,
@@ -1759,7 +2137,8 @@ export class MareasService {
                     tipoEtapa: e.tipoEtapa,
                     observaciones: e.observaciones,
                     durationDays: MareaUtils.calculateStageDays(e),
-                    metadata: e.metadata
+                    metadata: e.metadata,
+                    observadores: e.observadores
                 }))
             },
             actions,
@@ -1772,6 +2151,55 @@ export class MareasService {
             })),
             etapas: marea.etapas // Include stages for editing
         };
+    }
+
+    async getMareasByObservador(observadorId: string) {
+        return (this.prisma as any).marea.findMany({
+            where: {
+                activo: true,
+                OR: [
+                    { observadorPrincipalId: observadorId },
+                    {
+                        etapas: {
+                            some: {
+                                observadores: {
+                                    some: {
+                                        observadorId: observadorId
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    {
+                        metadata: {
+                            path: ['observadoresSecundariosPlanificados'],
+                            array_contains: [{ observadorId: observadorId }]
+                        }
+                    }
+                ]
+            },
+            include: {
+                pesqueria: true,
+                buque: {
+                    include: { tipoFlota: true }
+                },
+                estadoActual: true,
+                etapas: {
+                    orderBy: { nroEtapa: 'asc' },
+                    include: {
+                        pesqueria: true,
+                        puertoZarpada: true,
+                        puertoArribo: true,
+                        observadores: {
+                            include: { observador: true }
+                        }
+                    }
+                }
+            },
+            orderBy: {
+                fechaCreacion: 'desc'
+            }
+        });
     }
 
     async search(query: string) {
@@ -1852,9 +2280,6 @@ export class MareasService {
     async syncStages(tx: any, mareaId: string, incomingStages: any[]) {
         if (!incomingStages || !Array.isArray(incomingStages)) return;
 
-        console.log('--- SYNC STAGES START ---');
-        console.log('Incoming Stages in syncStages:', JSON.stringify(incomingStages, null, 2));
-
         // Fetch marea to validate stage types against marea type
         const marea = await tx.marea.findUnique({ where: { id: mareaId }, select: { tipoMarea: true } });
         if (marea) {
@@ -1892,6 +2317,8 @@ export class MareasService {
                 metadata: stg.metadata ?? undefined
             };
 
+            let etapaIdFinal = stg.id;
+
             if (stg.id) {
                 // Para actualizaciones, solo incluimos fuentes si vienen en el payload
                 // de lo contrario Prisma ignorará el campo si es undefined
@@ -1912,8 +2339,42 @@ export class MareasService {
                         ...stageData
                     }
                 });
+                etapaIdFinal = newStage.id;
+            }
 
-                // Do not copy observers automatically. Principal is at Marea level.
+            // Sincronización de observadores de la etapa
+            if (Array.isArray(stg.observadores) && stg.observadores.length > 0) {
+                const incomingObsIds = stg.observadores.map((o: any) => o.observadorId).filter(Boolean);
+                
+                await tx.mareaEtapaObservador.deleteMany({
+                    where: {
+                        etapaId: etapaIdFinal,
+                        observadorId: { notIn: incomingObsIds }
+                    }
+                });
+
+                for (const obs of stg.observadores) {
+                    if (!obs.observadorId) continue;
+                    const yaExiste = await tx.mareaEtapaObservador.findFirst({
+                        where: { etapaId: etapaIdFinal, observadorId: obs.observadorId }
+                    });
+                    if (!yaExiste) {
+                        await tx.mareaEtapaObservador.create({
+                            data: {
+                                etapaId: etapaIdFinal,
+                                observadorId: obs.observadorId,
+                                rol: obs.rol || 'SECUNDARIO',
+                                esDesignado: obs.esDesignado ?? true
+                            }
+                        });
+                    }
+                }
+
+                // Limpiar del borrador los observadores que han sido persistidos en esta etapa
+                await this.limpiarBorradorPlanificadosEtapa(tx, mareaId, stageData.nroEtapa, incomingObsIds);
+            } else if (!stg.id) {
+                // Para etapas nuevas sin observadores explícitos (ej: creadas automáticamente por PNA/Tracking)
+                await this.materializarObservadoresPlanificados(tx, mareaId, stageData.nroEtapa, null);
             }
         }
     }
@@ -2171,11 +2632,18 @@ export class MareasService {
             throw new Error(`Acción ${actionKey} no permitida para el estado ${marea.estadoActual.nombre} `);
         }
 
+        // Validar observaciones requeridas por la matriz de transición
+        if (transicion.requiereObs && (!payload.comentarios || !payload.comentarios.trim())) {
+            throw new BadRequestException('Esta acción requiere ingresar notas u observaciones obligatorias.');
+        }
+
+        // Validar motivo obligatorio al desestimar una marea
+        if (payload.desestimada === true && (!payload.comentarios || !payload.comentarios.trim())) {
+            throw new BadRequestException('Es obligatorio ingresar un motivo u observación al desestimar una marea.');
+        }
+
         // Ejecutar cambio de estado
         return await this.prisma.$transaction(async (tx) => {
-            console.log('--- MAREAS UPDATE START ---');
-            console.log('Payload Update Etapas RAW:', JSON.stringify(payload.etapas, null, 2));
-
             // Validate chronology first
             if (payload.etapas) {
                 this.validateStagesChronology(payload.etapas);
@@ -2213,6 +2681,9 @@ export class MareasService {
                 if (payload.etapas) {
                     await this.syncStages(tx, id, payload.etapas);
                 }
+
+                // Materializar observadores planificados para la Etapa 1 desde el borrador en metadata
+                await this.materializarObservadoresPlanificados(tx, id, 1, user);
             }
 
             if (actionKey === 'REGISTRAR_FINALIZACION') {
@@ -2288,6 +2759,11 @@ export class MareasService {
                 additionalMareaData.fechaProtocolizacion = new Date(payload.fechaProtocolizacion);
             }
 
+            // Si el payload contiene la marca de desestimada, actualizarla
+            if (typeof payload.desestimada === 'boolean') {
+                additionalMareaData.desestimada = payload.desestimada;
+            }
+
             // Evaluación de fin de Marea por arribo automático a puerto en etapa "Final"
             let destinoEstadoId = transicion.estadoDestinoId;
 
@@ -2332,6 +2808,16 @@ export class MareasService {
             if (destinoFinalCodigo && this.ESTADOS_NAVEGANDO.includes(destinoFinalCodigo as any)) {
                 additionalMareaData.fechaFinObservador = null;
             }
+
+            // Si la marea es cancelada o desestimada, limpiar el borrador de observadores secundarios
+            if (destinoFinalCodigo === MareaEstado.CANCELADA || destinoFinalCodigo === MareaEstado.DESESTIMADA) {
+                const currentMeta = ((marea as any)?.metadata as MareaMetadata) || {};
+                additionalMareaData.metadata = {
+                    ...currentMeta,
+                    observadoresSecundariosPlanificados: []
+                };
+            }
+
 
             const mareaUpdated = await tx.marea.update({
                 where: { id },
@@ -2397,7 +2883,7 @@ export class MareasService {
                     orderBy: { fechaHora: 'desc' }
                 });
 
-                await tx.mareaArchivo.create({
+                const archivoAprobacion = await tx.mareaArchivo.create({
                     data: {
                         mareaId: id,
                         movimientoOrigenId: movimiento?.id,
@@ -2406,7 +2892,26 @@ export class MareasService {
                         rutaArchivo: filePath.replace(/\\/g, '/'),
                         usuarioSubioId: user.id,
                         descripcion: 'Informe aprobado para protocolización',
-                        metadata: { originalName: file.originalname }
+                        metadata: { 
+                            originalName: file.originalname,
+                            mimetype: file.mimetype,
+                            tempFilePath: filePath,
+                            estadoDrive: 'PENDING'
+                        }
+                    }
+                });
+
+                await (tx as any).jobQueue.create({
+                    data: {
+                        type: JobType.DRIVE_SYNC,
+                        payload: {
+                            action: 'UPLOAD',
+                            mareaArchivoId: archivoAprobacion.id,
+                            categoria: 'INFORME_APROBACION'
+                        },
+                        priority: 10,
+                        status: 'PENDING',
+                        nextRunAt: new Date(),
                     }
                 });
             }
@@ -2537,6 +3042,16 @@ export class MareasService {
             }
         }
 
+        // Preparar borrador de observadores secundarios en metadata si viene en el DTO
+        const metadataInicial: MareaMetadata = {};
+        if (createMareaDto.observadoresSecundariosPlanificados?.length) {
+            await this.validateObservadoresSecundariosPlanificados(
+                createMareaDto.observadoresSecundariosPlanificados,
+                observadorId
+            );
+            metadataInicial.observadoresSecundariosPlanificados = createMareaDto.observadoresSecundariosPlanificados;
+        }
+
         return this.prisma.$transaction(async (tx) => {
             const marea = await (tx as any).marea.create({
                 data: {
@@ -2555,6 +3070,7 @@ export class MareasService {
                     finValidado,
                     diasEstimados,
                     observaciones: createMareaDto.observaciones || '',
+                    metadata: Object.keys(metadataInicial).length > 0 ? metadataInicial : undefined,
                 }
             });
 
@@ -2568,6 +3084,7 @@ export class MareasService {
                     detalle: `Marea creada por ${user.fullName}`
                 }
             });
+
 
             // NO creamos etapa ficticia. El observador está asignado a la marea.
             // La etapa 1 se creará al Registrar Inicio (Zarpar).
@@ -2712,6 +3229,75 @@ export class MareasService {
                 `Estado: SEGUIMIENTO -> VENCIDA. Notas: Re-check vencido el ${alerta.fechaVencimiento?.toLocaleDateString('es-AR') || 'N/D'}.`
             );
         }
+    }
+
+    async uploadPasajes(mareaId: string, files: Array<Express.Multer.File>, user: User) {
+        const marea = await this.prisma.marea.findUnique({ where: { id: mareaId } });
+        if (!marea) throw new NotFoundException('Marea no encontrada');
+
+        const resultados = [];
+        const folderId = this.configService.get<string>('GOOGLE_DRIVE_MAREAS_FOLDER_ID');
+        const tempDir = path.join(os.tmpdir(), 'novedades-ai-attachments');
+        await fs.promises.mkdir(tempDir, { recursive: true }).catch(() => {});
+
+        for (const file of files) {
+            try {
+                const result = await this.driveStorageService.uploadFile(
+                    file.originalname,
+                    file.mimetype,
+                    file.buffer,
+                    folderId
+                );
+
+                const tempFilePath = path.join(tempDir, `ui_${mareaId}_${Date.now()}_${file.originalname}`);
+                await fs.promises.writeFile(tempFilePath, file.buffer);
+
+                const mareaArchivo = await this.prisma.mareaArchivo.create({
+                    data: {
+                        mareaId: mareaId,
+                        tipoArchivo: 'PASAJE',
+                        formato: file.originalname.split('.').pop()?.toUpperCase() || 'UNKNOWN',
+                        rutaArchivo: result.webViewLink,
+                        usuarioSubioId: user.id,
+                        descripcion: `Pasaje subido manualmente por UI`,
+                        metadata: {
+                            driveFileId: result.fileId,
+                            originalName: file.originalname,
+                            mimetype: file.mimetype,
+                            tempFilePath: tempFilePath,
+                            procesadoAi: false
+                        }
+                    }
+                });
+
+                resultados.push(mareaArchivo);
+            } catch (err) {
+                this.logger.error(`Error subiendo pasaje ${file.originalname}: ${err.message}`);
+                throw new BadRequestException(`Fallo al subir archivo ${file.originalname}`);
+            }
+        }
+
+        return resultados;
+    }
+
+    async deleteArchivo(mareaId: string, archivoId: string, user: User) {
+        const archivo = await this.prisma.mareaArchivo.findUnique({
+            where: { id: archivoId }
+        });
+
+        if (!archivo) throw new NotFoundException('Archivo no encontrado');
+        if (archivo.mareaId !== mareaId) throw new BadRequestException('El archivo no pertenece a la marea indicada');
+
+        const metadata: any = archivo.metadata || {};
+        if (metadata.driveFileId) {
+            await this.driveStorageService.deleteFile(metadata.driveFileId);
+        }
+
+        await this.prisma.mareaArchivo.delete({
+            where: { id: archivoId }
+        });
+
+        return { success: true };
     }
 
     async getInbox(year?: number, user?: User) {
@@ -2914,6 +3500,10 @@ export class MareasService {
                 { observadorPrincipal: { apellido: { contains: query, mode: 'insensitive' } } },
                 { nroProtocolizacion: !isNaN(Number(query)) ? Number(query) : undefined },
             ].filter(cond => (cond as any).nroProtocolizacion !== undefined || Object.keys(cond).length > 0);
+
+            if (query.includes('desestimad')) {
+                where.OR.push({ desestimada: true });
+            }
 
             if (query.includes('/')) {
                 const [nro] = query.split('/');
@@ -3254,15 +3844,7 @@ export class MareasService {
                         contentType: newFile.mimetype,
                     });
                 } else if (existingFile) {
-                    if (!fs.existsSync(existingFile.rutaArchivo)) {
-                        throw new BadRequestException(`El archivo de protocolización para la marea ${marea.nroMarea}/${marea.anioMarea} no se encuentra físicamente en el servidor (${existingFile.rutaArchivo}). Por favor, vuelva a adjuntarlo.`);
-                    }
-                    const metadata = existingFile.metadata as any;
-                    const originalName = metadata?.originalName || `INFORME_APROBACION_MAREA_${marea.nroMarea}_${marea.anioMarea}.docx`;
-                    attachmentsConfig.push({
-                        filename: originalName,
-                        path: existingFile.rutaArchivo
-                    });
+                    attachmentsConfig.push(await this.resolverAdjuntoArchivo(existingFile, marea));
                 }
             }
         }
@@ -3377,7 +3959,7 @@ export class MareasService {
 
                     fs.writeFileSync(filePath, file.buffer);
 
-                    await tx.mareaArchivo.create({
+                    const archivoProtocolizacion = await tx.mareaArchivo.create({
                         data: {
                             mareaId: marea.id,
                             movimientoOrigenId: movimiento.id,
@@ -3385,7 +3967,27 @@ export class MareasService {
                             formato: fileExt.replace('.', '').toUpperCase(),
                             rutaArchivo: filePath.replace(/\\/g, '/'),
                             usuarioSubioId: user.id,
-                            descripcion: 'Informe de marea enviado para protocolización'
+                            descripcion: 'Informe de marea enviado para protocolización',
+                            metadata: {
+                                originalName: file.originalname,
+                                mimetype: file.mimetype,
+                                tempFilePath: filePath,
+                                estadoDrive: 'PENDING'
+                            }
+                        }
+                    });
+
+                    await (tx as any).jobQueue.create({
+                        data: {
+                            type: JobType.DRIVE_SYNC,
+                            payload: {
+                                action: 'UPLOAD',
+                                mareaArchivoId: archivoProtocolizacion.id,
+                                categoria: 'INFORME_PROTOCOLIZACION'
+                            },
+                            priority: 10,
+                            status: 'PENDING',
+                            nextRunAt: new Date(),
                         }
                     });
                 }
@@ -3482,4 +4084,429 @@ export class MareasService {
         });
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // OBSERVADORES SECUNDARIOS PLANIFICADOS
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Limpia o actualiza las entradas del borrador de observadores planificados
+     * que han sido asignadas o materializadas para una etapa concreta.
+     */
+    async limpiarBorradorPlanificadosEtapa(
+        tx: any,
+        mareaId: string,
+        nroEtapa: number,
+        observadoresIdsAsignados: string[]
+    ): Promise<void> {
+        const mareaData = await (tx.marea as any).findUnique({
+            where: { id: mareaId },
+            select: { metadata: true }
+        });
+        if (!mareaData?.metadata) return;
+
+        const metadata = (mareaData.metadata as MareaMetadata) || {};
+        const borrador = metadata.observadoresSecundariosPlanificados ?? [];
+        if (borrador.length === 0) return;
+
+        const restantes: any[] = [];
+        for (const obs of borrador) {
+            const desde = obs.etapaDesde ?? 1;
+            const hasta = obs.etapaHasta;
+
+            // Si esta entrada cubre la etapa actual y el observador fue asignado
+            if (nroEtapa >= desde && (hasta === null || hasta === undefined || nroEtapa <= hasta)) {
+                if (observadoresIdsAsignados.includes(obs.observadorId)) {
+                    // Si concluía en esta etapa (hasta <= nroEtapa), se consume totalmente y no se añade a restantes
+                    if (hasta && hasta <= nroEtapa) {
+                        continue;
+                    }
+                    // Si continuaba para etapas posteriores (hasta > nroEtapa o null), actualizamos etapaDesde a nroEtapa + 1
+                    restantes.push({
+                        ...obs,
+                        etapaDesde: nroEtapa + 1
+                    });
+                    continue;
+                }
+            }
+            restantes.push(obs);
+        }
+
+        await (tx.marea as any).update({
+            where: { id: mareaId },
+            data: { metadata: { ...metadata, observadoresSecundariosPlanificados: restantes } }
+        });
+    }
+
+    /**
+     * Materializa observadores secundarios planificados para un numero de etapa.
+     * Puede ser llamado como public para reutilizacion en syncStages y REGISTRAR_INICIO.
+     */
+    async materializarObservadoresPlanificados(
+        tx: any,
+        mareaId: string,
+        nroEtapa: number,
+        user: User | null
+    ): Promise<void> {
+        const mareaData = await (tx.marea as any).findUnique({
+            where: { id: mareaId },
+            select: { metadata: true }
+        });
+
+        if (!mareaData?.metadata) return;
+
+        const metadata = (mareaData.metadata as MareaMetadata) || {};
+        const borrador = metadata.observadoresSecundariosPlanificados ?? [];
+        if (borrador.length === 0) return;
+
+        const aplicables = borrador.filter((obs: any) => {
+            const desde = obs.etapaDesde ?? 1;
+            const hasta = obs.etapaHasta ?? Infinity;
+            return nroEtapa >= desde && nroEtapa <= hasta;
+        });
+
+        if (aplicables.length === 0) return;
+
+        const etapa = await tx.mareaEtapa.findFirst({
+            where: { mareaId, nroEtapa },
+            select: { id: true }
+        });
+
+        if (!etapa) return;
+
+        const asignados: string[] = [];
+        for (const obs of aplicables) {
+            const observador = await tx.observador.findUnique({
+                where: { id: obs.observadorId },
+                select: { id: true, activo: true, nombre: true, apellido: true }
+            });
+
+            if (!observador || observador.activo === false) {
+                this.logger.warn(
+                    `Observador planificado ${obs.observadorId} omitido al materializar Etapa #${nroEtapa} de marea ${mareaId}: ${!observador ? 'no encontrado' : 'dado de baja'}.`
+                );
+                continue;
+            }
+
+            const yaExiste = await tx.mareaEtapaObservador.findFirst({
+                where: { etapaId: etapa.id, observadorId: obs.observadorId }
+            });
+
+            if (!yaExiste) {
+                await tx.mareaEtapaObservador.create({
+                    data: { etapaId: etapa.id, observadorId: obs.observadorId, rol: 'SECUNDARIO', esDesignado: true }
+                });
+                this.logger.debug(`Obs. secundario ${observador.nombre} ${observador.apellido} materializado en Etapa #${nroEtapa} de marea ${mareaId}.`);
+            }
+            asignados.push(obs.observadorId);
+        }
+
+        // Limpiar o avanzar las entradas consumidas del borrador
+        await this.limpiarBorradorPlanificadosEtapa(tx, mareaId, nroEtapa, asignados);
+    }
+
+
+    /**
+     * Valida que la lista de observadores secundarios planificados cumpla las reglas de negocio:
+     * - Ninguno coincide con el observador principal.
+     * - No hay observadores secundarios duplicados en la lista.
+     * - Todos los observadores existen y están activos.
+     * - Ninguno posee impedimento activo (conImpedimento === true).
+     * - Ninguno está designado como observador principal en otra marea activa en estado DESIGNADA.
+     */
+    private async validateObservadoresSecundariosPlanificados(
+        observadoresSecundarios: Array<{ observadorId: string; etapaDesde?: number; etapaHasta?: number | null; notas?: string }>,
+        observadorPrincipalId?: string | null,
+        mareaIdActual?: string
+    ) {
+        if (!observadoresSecundarios || observadoresSecundarios.length === 0) return;
+
+        const seenIds = new Set<string>();
+
+        for (const obs of observadoresSecundarios) {
+            if (!obs.observadorId) {
+                throw new BadRequestException('El ID del observador secundario es obligatorio.');
+            }
+
+            // 1. No puede ser igual al observador principal
+            if (observadorPrincipalId && obs.observadorId === observadorPrincipalId) {
+                throw new BadRequestException('Un observador secundario no puede ser el mismo que el observador principal.');
+            }
+
+            // 2. No pueden existir observadores secundarios duplicados
+            if (seenIds.has(obs.observadorId)) {
+                throw new BadRequestException('No se puede asignar el mismo observador secundario más de una vez.');
+            }
+            seenIds.add(obs.observadorId);
+
+            // 3. Obtener datos del observador y validar existencia/estado
+            const observador = await this.prisma.observador.findUnique({
+                where: { id: obs.observadorId },
+                select: { id: true, nombre: true, apellido: true, activo: true, conImpedimento: true, motivoImpedimento: true }
+            });
+
+            if (!observador) {
+                throw new BadRequestException(`El observador con ID ${obs.observadorId} no existe en el sistema.`);
+            }
+
+            if (!observador.activo) {
+                throw new BadRequestException(`El observador ${observador.apellido}, ${observador.nombre} se encuentra inactivo.`);
+            }
+
+            if (observador.conImpedimento) {
+                throw new BadRequestException(`El observador secundario ${observador.apellido}, ${observador.nombre} posee un impedimento activo: ${observador.motivoImpedimento || 'Sin motivo especificado'}.`);
+            }
+
+            // 4. Validar que no esté asignado como principal a otra marea DESIGNADA
+            const whereMarea: any = {
+                observadorPrincipalId: obs.observadorId,
+                activo: true,
+                estadoActual: { codigo: MareaEstado.DESIGNADA }
+            };
+            if (mareaIdActual) {
+                whereMarea.id = { not: mareaIdActual };
+            }
+
+            const mareaDesignada = await this.prisma.marea.findFirst({
+                where: whereMarea,
+                include: { estadoActual: true }
+            });
+
+            if (mareaDesignada) {
+                throw new BadRequestException(`El observador secundario ${observador.apellido}, ${observador.nombre} ya tiene una marea designada para el futuro (${MareaUtils.formatCodigo(mareaDesignada as any)}).`);
+            }
+        }
+    }
+
+    /** Actualiza el borrador de observadores secundarios en metadata. */
+    async updateObservadoresSecundarios(
+        mareaId: string,
+        observadoresSecundariosPlanificados: Array<{
+            observadorId: string;
+            etapaDesde: number;
+            etapaHasta: number | null;
+            notas?: string;
+        }>,
+        user: User
+    ) {
+        const marea = await this.prisma.marea.findUnique({
+            where: { id: mareaId },
+            include: { estadoActual: true }
+        });
+        if (!marea) throw new NotFoundException('Marea no encontrada.');
+
+        await this.validateObservadoresSecundariosPlanificados(
+            observadoresSecundariosPlanificados,
+            marea.observadorPrincipalId,
+            mareaId
+        );
+
+        const metadataActual = ((marea as any)?.metadata as MareaMetadata) ?? {};
+        await (this.prisma.marea as any).update({
+            where: { id: mareaId },
+            data: { metadata: { ...metadataActual, observadoresSecundariosPlanificados } }
+        });
+
+        return this.findOne(mareaId);
+    }
+
+    /** Agrega un observador secundario a una etapa existente. */
+    async addObservadorEtapa(
+        mareaId: string,
+        etapaId: string,
+        observadorId: string,
+        aplicarASiguientesEtapas: boolean,
+        user: User
+    ) {
+        const [etapa, observador] = await Promise.all([
+            this.prisma.mareaEtapa.findFirst({ where: { id: etapaId, mareaId } }),
+            this.prisma.observador.findUnique({ where: { id: observadorId }, select: { id: true, activo: true, nombre: true, apellido: true } })
+        ]);
+
+        if (!etapa) throw new NotFoundException('Etapa no encontrada para esta marea.');
+        if (!observador) throw new NotFoundException('Observador no encontrado.');
+
+        const yaExiste = await this.prisma.mareaEtapaObservador.findFirst({ where: { etapaId, observadorId } });
+        if (yaExiste) throw new BadRequestException('El observador ya se encuentra asignado a esta etapa.');
+
+        await this.prisma.$transaction(async (tx) => {
+            await tx.mareaEtapaObservador.create({
+                data: { etapaId, observadorId, rol: 'SECUNDARIO', esDesignado: false }
+            });
+
+            if (aplicarASiguientesEtapas) {
+                const mareaData = await (tx.marea as any).findUnique({ where: { id: mareaId }, select: { metadata: true } });
+                const metadataActual = ((mareaData as any)?.metadata as MareaMetadata) ?? {};
+                const borradorActual = metadataActual.observadoresSecundariosPlanificados ?? [];
+                const nuevaEntrada = { observadorId, etapaDesde: etapa.nroEtapa + 1, etapaHasta: null, notas: `Agregado manualmente a partir de Etapa #${etapa.nroEtapa}` };
+                await (tx.marea as any).update({
+                    where: { id: mareaId },
+                    data: { metadata: { ...metadataActual, observadoresSecundariosPlanificados: [...borradorActual, nuevaEntrada] } }
+                });
+            }
+        });
+
+        return this.findOne(mareaId);
+    }
+
+
+    /** Quita un observador secundario de una etapa existente. */
+    async removeObservadorEtapa(mareaId: string, etapaId: string, observadorId: string, user: User) {
+        const registro = await this.prisma.mareaEtapaObservador.findFirst({ where: { etapaId, observadorId } });
+        if (!registro) throw new NotFoundException('El observador no se encuentra asignado a esta etapa.');
+
+        await this.prisma.mareaEtapaObservador.delete({ where: { id: registro.id } });
+        return this.findOne(mareaId);
+    }
+
+    /** Actualiza/reemplaza un observador secundario de una etapa existente. */
+    async updateObservadorEtapa(mareaId: string, etapaId: string, observadorId: string, nuevoObservadorId: string, user: User) {
+        const registro = await this.prisma.mareaEtapaObservador.findFirst({ where: { etapaId, observadorId } });
+        if (!registro) throw new NotFoundException('El observador no se encuentra asignado a esta etapa.');
+
+        const nuevoObs = await this.prisma.observador.findUnique({ where: { id: nuevoObservadorId } });
+        if (!nuevoObs) throw new NotFoundException('El nuevo observador no existe.');
+
+        await this.prisma.mareaEtapaObservador.update({
+            where: { id: registro.id },
+            data: { observadorId: nuevoObservadorId }
+        });
+        return this.findOne(mareaId);
+    }
+
+    /** Realiza la migración en batch de todos los informes locales pendientes a Google Drive */
+    async migrarInformesADrive() {
+        this.logger.log('Iniciando migración de informes locales a Google Drive...');
+        
+        const archivos = await this.prisma.mareaArchivo.findMany({
+            where: {
+                tipoArchivo: {
+                    in: ['INFORME_APROBACION', 'INFORME_PROTOCOLIZACION']
+                },
+                NOT: {
+                    rutaArchivo: { startsWith: 'http' }
+                }
+            }
+        });
+
+        const folderId = this.configService.get<string>('GOOGLE_DRIVE_MAREAS_FOLDER_ID');
+        if (!folderId) {
+            throw new Error('La variable GOOGLE_DRIVE_MAREAS_FOLDER_ID no está configurada.');
+        }
+
+        let procesados = 0;
+        let errores = 0;
+
+        for (const archivo of archivos) {
+            try {
+                if (!fs.existsSync(archivo.rutaArchivo)) {
+                    this.logger.warn(`Archivo local no encontrado para registro ${archivo.id}: ${archivo.rutaArchivo}`);
+                    errores++;
+                    continue;
+                }
+
+                const fileBuffer = await fs.promises.readFile(archivo.rutaArchivo);
+                const metadata: any = archivo.metadata || {};
+                const originalName = metadata.originalName || path.basename(archivo.rutaArchivo);
+                const mimetype = metadata.mimetype || 'application/pdf'; // Default fallback
+
+                const driveResult = await this.driveStorageService.uploadFile(
+                    originalName,
+                    mimetype,
+                    fileBuffer,
+                    folderId
+                );
+
+                metadata.driveFileId = driveResult.fileId;
+                metadata.migradoDrive = true;
+                
+                await this.prisma.mareaArchivo.update({
+                    where: { id: archivo.id },
+                    data: {
+                        rutaArchivo: driveResult.webViewLink,
+                        metadata
+                    }
+                });
+
+                this.logger.log(`Archivo ${archivo.id} migrado exitosamente a Drive.`);
+                procesados++;
+            } catch (error) {
+                this.logger.error(`Error migrando archivo ${archivo.id}: ${error.message}`);
+                errores++;
+            }
+        }
+
+        this.logger.log(`Migración finalizada. Procesados: ${procesados}, Errores: ${errores}`);
+        return { procesados, errores, total: archivos.length };
+    }
+
+    async getArchivoDriveId(archivoId: string): Promise<string> {
+        const archivo = await this.prisma.mareaArchivo.findUnique({
+            where: { id: archivoId }
+        });
+        if (!archivo) throw new NotFoundException('Archivo no encontrado');
+        
+        const driveFileId = this.extraerDriveFileId(archivo);
+        if (!driveFileId) throw new BadRequestException('El archivo no está en Google Drive o no tiene un ID válido');
+        return driveFileId;
+    }
+
+    /**
+     * Obtiene el ID de Google Drive de un MareaArchivo.
+     * Prioriza metadata.driveFileId; como respaldo lo extrae de la URL remota
+     * (soporta drive.google.com/file/d/ y docs.google.com/{document|spreadsheets|...}/d/).
+     */
+    private extraerDriveFileId(archivo: { rutaArchivo?: string | null; metadata?: any }): string | null {
+        const metadata = archivo.metadata && typeof archivo.metadata === 'object' ? archivo.metadata : null;
+        if (metadata?.driveFileId) return String(metadata.driveFileId);
+
+        const ruta = archivo.rutaArchivo || '';
+        if (/^https?:\/\//i.test(ruta) && /(drive|docs)\.google\.com/i.test(ruta)) {
+            const match = ruta.match(/\/d\/([a-zA-Z0-9_-]+)/) || ruta.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+            if (match?.[1]) return match[1];
+        }
+        return null;
+    }
+
+    /**
+     * Determina si un archivo está en la nube o en disco local y devuelve
+     * la configuración de adjunto para el email en consecuencia.
+     */
+    private async resolverAdjuntoArchivo(
+        archivo: { id: string; rutaArchivo: string | null; metadata: any },
+        marea: { nroMarea: number; anioMarea: number }
+    ): Promise<{ filename: string; content?: Buffer; path?: string; contentType?: string }> {
+        const metadata = (archivo.metadata && typeof archivo.metadata === 'object') ? archivo.metadata : {};
+        const filename = metadata.originalName || `INFORME_APROBACION_MAREA_${marea.nroMarea}_${marea.anioMarea}.docx`;
+        const contentType = metadata.mimetype || undefined;
+        const etiqueta = `${marea.nroMarea}/${marea.anioMarea}`;
+
+        const rutasLocales = [archivo.rutaArchivo, metadata.tempFilePath]
+            .filter((r): r is string => !!r && !/^https?:\/\//i.test(r));
+        const rutaLocalExistente = rutasLocales.find(r => fs.existsSync(r));
+
+        const driveFileId = this.extraerDriveFileId(archivo);
+        const urlRemota = (archivo.rutaArchivo && /^https?:\/\//i.test(archivo.rutaArchivo)) ? archivo.rutaArchivo : null;
+        const targetDescarga = driveFileId || urlRemota;
+
+        if (targetDescarga) {
+            try {
+                const content = await this.driveStorageService.downloadFile(targetDescarga);
+                return { filename, content, contentType };
+            } catch (error: any) {
+                this.logger.error(`Error al descargar desde Drive o URL remota el archivo ${archivo.id} (${targetDescarga}) de la marea ${etiqueta}: ${error?.message}`, error?.stack);
+                if (!rutaLocalExistente) {
+                    throw new BadRequestException(`No se pudo recuperar el archivo desde Google Drive para la marea ${etiqueta}. Por favor, vuelva a adjuntarlo.`);
+                }
+                this.logger.warn(`Se utilizará la copia local ${rutaLocalExistente} como respaldo.`);
+            }
+        }
+
+        if (rutaLocalExistente) {
+            return { filename, path: rutaLocalExistente, contentType };
+        }
+
+        this.logger.warn(`Archivo ${archivo.id} de la marea ${etiqueta} no disponible ni en Drive ni en disco (ruta: ${archivo.rutaArchivo}).`);
+        throw new BadRequestException(`El archivo de protocolización para la marea ${etiqueta} no se encuentra disponible. Por favor, vuelva a adjuntarlo.`);
+    }
 }
+

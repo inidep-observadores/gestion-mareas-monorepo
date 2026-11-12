@@ -66,4 +66,20 @@ export class CreateObservadorDto {
     @IsString()
     @IsOptional()
     observaciones?: string;
+
+    @IsInt()
+    @IsOptional()
+    @ValidateIf((_, value) => value !== null)
+    numeroCedula?: number | null;
+
+    @IsDateString()
+    @IsOptional()
+    @ValidateIf((_, value) => value !== null)
+    vencimientoCedula?: string | null;
+
+    @IsDateString()
+    @IsOptional()
+    @ValidateIf((_, value) => value !== null)
+    vencimientoAptoMedico?: string | null;
 }
+

@@ -68,10 +68,34 @@
                     :disabled="!canEditDesignationFields" />
                 </div>
                 <div class="space-y-1.5">
-                  <label class="block text-sm font-medium text-text-muted">Observador Designado</label>
+                  <div class="flex items-center justify-between">
+                    <label class="block text-sm font-medium text-text-muted">Observador Principal</label>
+                    <div v-if="selectedObservador" class="flex items-center gap-1.5 text-xs text-text-muted">
+                      <span class="text-[11px] font-semibold text-text-muted">Documentación:</span>
+                      <ObservadorDocumentacionBadge :observador="selectedObservador" />
+                    </div>
+                  </div>
                   <SearchableSelect ref="observadorSelect" v-model="form.observadorPrincipalId" :options="observadorOptions"
-                    :icon="BeakerIcon" :error="fieldErrors.observadorPrincipalId" placeholder="Seleccione el observador..."
-                    :disabled="!canEditDesignationFields" />
+                    :icon="BeakerIcon" :error="fieldErrors.observadorPrincipalId" placeholder="Seleccione el observador principal..."
+                    :disabled="!canEditDesignationFields">
+                    <template #option="{ option }">
+                      <div class="flex items-center justify-between w-full gap-2 pr-1">
+                        <span class="text-sm font-semibold truncate">{{ option.label }}</span>
+                        <ObservadorDocumentacionBadge :observador="option.observador" />
+                      </div>
+                    </template>
+                  </SearchableSelect>
+                </div>
+
+                <!-- Observadores Secundarios Planificados (Borrador) -->
+                <div class="col-span-1 md:col-span-2 pt-2 border-t border-border/50">
+                  <ObservadoresSecundariosEditor
+                    ref="secundariosEditorRef"
+                    v-model="form.observadoresSecundariosPlanificados"
+                    :observador-options="observadorOptions"
+                    :observador-principal-id="form.observadorPrincipalId"
+                    :read-only="!canEditDesignationFields"
+                  />
                 </div>
 
                 <!-- Row 3 -->
@@ -179,6 +203,9 @@ import BaseModal from '@/components/common/BaseModal.vue'
 import SearchableSelect from '@/components/common/SearchableSelect.vue'
 import DatePicker from '@/components/common/DatePicker.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
+import ObservadoresSecundariosEditor from './ObservadoresSecundariosEditor.vue'
+import ObservadorDocumentacionBadge from '@/modules/admin/components/ObservadorDocumentacionBadge.vue'
+import type { ObservadorSecundarioPlanificado } from '../types/marea-metadata.types';
 import {
   ShipIcon,
   DocsIcon,
@@ -194,6 +221,7 @@ import {
 const props = defineProps<{
   show: boolean
   mareaId: string
+  initialData?: any
 }>()
 
 const emit = defineEmits(['close', 'success'])
@@ -204,6 +232,7 @@ const error = ref<string | null>(null)
 const loadingCatalogs = ref(false)
 const fieldErrors = ref<Record<string, string>>({})
 const firstInput = ref<HTMLInputElement | null>(null)
+const secundariosEditorRef = ref<any>(null)
 
 const mareaData = ref<Marea | null>(null)
 
@@ -223,12 +252,17 @@ const arteOptions = computed(() => artes.value.map(a => ({ value: a.id, label: a
 const buqueOptions = computed(() => buques.value.map(b => ({ value: b.id, label: b.nombreBuque })))
 const observadorOptions = computed(() => {
   return observadores.value
-    .filter(o => o.activo && o.disponible || o.id === form.value.observadorPrincipalId)
-    .sort((a, b) => a.apellido.localeCompare(b.apellido))
+    .sort((a, b) => (a.apellido || '').localeCompare(b.apellido || ''))
     .map(o => ({
       value: o.id,
-      label: `${o.apellido}, ${o.nombre}`
+      label: `${o.apellido}, ${o.nombre}`,
+      observador: o
     }))
+})
+
+const selectedObservador = computed(() => {
+  if (!form.value.observadorPrincipalId) return null;
+  return observadores.value.find(o => o.id === form.value.observadorPrincipalId) || null;
 })
 
 const getBuqueName = () => {
@@ -250,22 +284,36 @@ const getInitialForm = () => {
     fechaZarpadaEstimada: null,
     diasEstimados: null,
     iniciaEnProspeccion: false,
+    observadoresSecundariosPlanificados: [] as ObservadorSecundarioPlanificado[],
   };
+
+  let planificados: ObservadorSecundarioPlanificado[] = [];
+  const rawMetadata: any = mareaData.value.metadata;
+  if (rawMetadata) {
+    try {
+      const parsed = typeof rawMetadata === 'string' ? JSON.parse(rawMetadata) : rawMetadata;
+      planificados = parsed.observadoresSecundariosPlanificados || [];
+    } catch {
+      planificados = [];
+    }
+  }
 
   return {
     tipoMarea: mareaData.value.tipoMarea || 'MC',
     buqueId: mareaData.value.buqueId || '',
     anioMarea: mareaData.value.anioMarea || new Date().getFullYear(),
     nroMarea: mareaData.value.nroMarea || null,
-    observadorPrincipalId: mareaData.value.observadorPrincipalId || '',
-    pesqueriaId: mareaData.value.pesqueriaId || '',
-    artePrincipalId: mareaData.value.artePrincipalId || '',
+    observadorPrincipalId: mareaData.value.observadorPrincipalId || (mareaData.value as any).observador_principal_id || '',
+    pesqueriaId: mareaData.value.pesqueriaId || (mareaData.value as any).id_pesqueria || '',
+    artePrincipalId: mareaData.value.artePrincipalId || (mareaData.value as any).id_arte_principal || '',
 
-    fechaZarpadaEstimada: mareaData.value.fechaZarpadaEstimada || null,
-    diasEstimados: mareaData.value.diasEstimados || null,
-    iniciaEnProspeccion: mareaData.value.iniciaEnProspeccion ?? false,
+    fechaZarpadaEstimada: mareaData.value.fechaZarpadaEstimada || (mareaData.value as any).fecha_zarpada_estimada || null,
+    diasEstimados: mareaData.value.diasEstimados || (mareaData.value as any).dias_estimados || null,
+    iniciaEnProspeccion: mareaData.value.iniciaEnProspeccion ?? (mareaData.value as any).inicia_en_prospeccion ?? false,
+    observadoresSecundariosPlanificados: [...planificados]
   }
 }
+
 
 const form = ref(getInitialForm())
 
@@ -329,7 +377,12 @@ const loadCatalogs = async () => {
   }
 }
 
-const validate = () => {
+const getObserverName = (id: string | number) => {
+  const obs = observadores.value.find(o => o.id === id)
+  return obs ? `${obs.apellido}, ${obs.nombre}` : 'Desconocido'
+}
+
+const validate = async () => {
   fieldErrors.value = {}
   let isValid = true
 
@@ -346,17 +399,67 @@ const validate = () => {
     isValid = false
   }
 
+  if (secundariosEditorRef.value?.hasPendingChanges) {
+    toast.error('Debe confirmar la edición de los observadores secundarios antes de continuar.')
+    return false
+  }
+
+  const currentMareaCode = mareaData.value?.id_marea || mareaData.value?.id
+
+  if (form.value.observadorPrincipalId && !fieldErrors.value.observadorPrincipalId) {
+    try {
+      const { available, marea } = await mareasService.validateObserverAvailability(form.value.observadorPrincipalId)
+      if (!available && marea !== currentMareaCode) {
+        fieldErrors.value.observadorPrincipalId = `El observador ya está designado en otra marea (${marea})`
+        isValid = false
+      }
+    } catch (e) {
+      console.error('Error validating observer:', e)
+    }
+  }
+
+  if (form.value.observadorPrincipalId && form.value.observadoresSecundariosPlanificados?.length) {
+    const conflict = form.value.observadoresSecundariosPlanificados.find(
+      (sec: any) => sec.observadorId === form.value.observadorPrincipalId
+    )
+    if (conflict) {
+      fieldErrors.value.observadorPrincipalId = 'El observador principal no puede estar asignado simultáneamente como secundario'
+      isValid = false
+    } else {
+      for (const sec of form.value.observadoresSecundariosPlanificados) {
+        try {
+          const { available, marea } = await mareasService.validateObserverAvailability(sec.observadorId)
+          if (!available && marea !== currentMareaCode) {
+            const obsName = getObserverName(sec.observadorId)
+            fieldErrors.value.observadorPrincipalId = `El observador secundario ${obsName} ya está designado en otra marea (${marea})`
+            isValid = false
+            break
+          }
+        } catch (e) {
+          console.error('Error validating secondary observer:', e)
+        }
+      }
+    }
+  }
 
   return isValid
 }
 
 const submit = async () => {
-  if (!validate()) return
+  const isValid = await validate()
+  if (!isValid) return
 
   loading.value = true
   error.value = null
 
   try {
+    const cleanedSecundarios = form.value.observadoresSecundariosPlanificados?.map(sec => ({
+      observadorId: sec.observadorId,
+      etapaDesde: sec.etapaDesde,
+      etapaHasta: sec.etapaHasta,
+      notas: sec.notas
+    })) || []
+
     const updateData = {
       tipoMarea: form.value.tipoMarea,
       buqueId: form.value.buqueId || null,
@@ -368,8 +471,10 @@ const submit = async () => {
 
       fechaZarpadaEstimada: form.value.fechaZarpadaEstimada || null,
       diasEstimados: form.value.diasEstimados || null,
-      iniciaEnProspeccion: form.value.tipoMarea === 'MC' ? form.value.iniciaEnProspeccion : false
+      iniciaEnProspeccion: form.value.tipoMarea === 'MC' ? form.value.iniciaEnProspeccion : false,
+      observadoresSecundariosPlanificados: cleanedSecundarios
     }
+
 
     await mareasService.update(props.mareaId, updateData)
     toast.success('Marea actualizada exitosamente')

@@ -140,6 +140,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatDateUI, formatDateTimeUI, formatTimeUI } from '@/utils/date.utils';
 import { ref } from 'vue'
 import HudCard from './HudCard.vue'
 import BaseSwitch from '@/components/ui/BaseSwitch.vue'
@@ -202,21 +203,7 @@ const formatCoordinate = (val: number, type: 'lat' | 'lon') => {
   return `${degrees}° ${minutes}' ${suffix}`
 }
 
-const formatDate = (ts: string | Date | null | undefined) => {
-  if (!ts) return '--/--/--'
-  const date = ts instanceof Date ? ts : new Date(ts)
-  if (isNaN(date.getTime())) return '--/--/--'
-  return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear().toString().slice(-2)}`
-}
+const formatDate = (ts: string | Date | null | undefined) => formatDateUI(ts)
 
-const formatTime = (ts: string | Date | null | undefined) => {
-  if (!ts) return '--:--'
-  const date = ts instanceof Date ? ts : new Date(ts)
-  if (isNaN(date.getTime())) return '--:--'
-  return date.toLocaleTimeString('es-AR', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
-  })
-}
+const formatTime = (ts: string | Date | null | undefined) => formatTimeUI(ts)
 </script>

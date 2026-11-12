@@ -18,6 +18,9 @@ describe('ObservadoresService', () => {
         },
         marea: {
             findMany: jest.fn(),
+        },
+        observadorNovedad: {
+            findMany: jest.fn().mockResolvedValue([]),
         }
     };
 
@@ -64,6 +67,48 @@ describe('ObservadoresService', () => {
 
             await expect(service.crear(dto)).rejects.toThrow(BadRequestException);
         });
+
+        it('debería registrar fechaActualizacionDocumentacion al crear con datos de documentación', async () => {
+            const dto = {
+                codigoInterno: 10,
+                nombre: 'Carlos',
+                apellido: 'Gomez',
+                tipoObservador: 'OBSERVADOR',
+                tipoContrato: 'LEY MARCO',
+                numeroCedula: 12345,
+                vencimientoCedula: '2026-10-15',
+                vencimientoAptoMedico: '2026-11-20'
+            } as any;
+
+            mockPrisma.observador.findUnique.mockResolvedValue(null);
+            mockPrisma.observador.create.mockResolvedValue({ id: 'uuid-10', ...dto });
+
+            await service.crear(dto);
+
+            expect(mockPrisma.observador.create).toHaveBeenCalledWith({
+                data: expect.objectContaining({
+                    numeroCedula: 12345,
+                    vencimientoCedula: expect.any(Date),
+                    vencimientoAptoMedico: expect.any(Date),
+                    fechaActualizacionDocumentacion: expect.any(Date)
+                })
+            });
+        });
+
+        it('debería lanzar BadRequestException al crear si la cédula ya existe', async () => {
+            const dto = {
+                codigoInterno: 10,
+                nombre: 'Carlos',
+                apellido: 'Gomez',
+                tipoObservador: 'OBSERVADOR',
+                tipoContrato: 'LEY MARCO',
+                numeroCedula: 12345,
+            } as any;
+
+            mockPrisma.observador.findUnique.mockResolvedValue({ id: 'uuid-otro', apellido: 'Perez', nombre: 'Juan' });
+
+            await expect(service.crear(dto)).rejects.toThrow(BadRequestException);
+        });
     });
 
     describe('actualizar', () => {
@@ -80,6 +125,65 @@ describe('ObservadoresService', () => {
                 where: { id },
                 data: expect.objectContaining({
                     email: null
+                })
+            });
+        });
+
+        it('debería registrar fechaActualizacionDocumentacion si se actualiza la cédula o vencimientos', async () => {
+            const id = 'uuid-2';
+            const dto = { numeroCedula: 99999 };
+
+            mockPrisma.observador.findUnique
+                .mockResolvedValueOnce({ 
+                    id, 
+                    numeroCedula: 11111,
+                    vencimientoCedula: null,
+                    vencimientoAptoMedico: null 
+                }) // para obtenerUno
+                .mockResolvedValueOnce(null); // para validar unicidad de 99999
+            mockPrisma.observador.update.mockResolvedValue({ id, numeroCedula: 99999 });
+
+            await service.actualizar(id, dto as any);
+
+            expect(mockPrisma.observador.update).toHaveBeenCalledWith({
+                where: { id },
+                data: expect.objectContaining({
+                    numeroCedula: 99999,
+                    fechaActualizacionDocumentacion: expect.any(Date)
+                })
+            });
+        });
+
+        it('debería lanzar BadRequestException si se intenta asignar una cédula ya existente a otro observador', async () => {
+            const id = 'uuid-2';
+            const dto = { numeroCedula: 88888 };
+
+            mockPrisma.observador.findUnique
+                .mockResolvedValueOnce({ id, numeroCedula: 11111 }) // obtenerUno
+                .mockResolvedValueOnce({ id: 'uuid-otro', apellido: 'Gomez', nombre: 'Juan', numeroCedula: 88888 }); // check unicidad
+
+            await expect(service.actualizar(id, dto as any)).rejects.toThrow(BadRequestException);
+        });
+
+        it('NO debería actualizar fechaActualizacionDocumentacion si los datos de documentación no cambiaron', async () => {
+            const id = 'uuid-3';
+            const dto = { telefonoPrincipal: '12345678' };
+
+            mockPrisma.observador.findUnique.mockResolvedValue({ 
+                id, 
+                telefonoPrincipal: '000000',
+                numeroCedula: 11111,
+                vencimientoCedula: null,
+                vencimientoAptoMedico: null 
+            });
+            mockPrisma.observador.update.mockResolvedValue({ id, telefonoPrincipal: '12345678' });
+
+            await service.actualizar(id, dto as any);
+
+            expect(mockPrisma.observador.update).toHaveBeenCalledWith({
+                where: { id },
+                data: expect.not.objectContaining({
+                    fechaActualizacionDocumentacion: expect.anything()
                 })
             });
         });
@@ -167,6 +271,93 @@ describe('ObservadoresService', () => {
             expect(yearTotal.totalDays).toBe(0); // No debe haber sumado los 5 días teóricos
 
             getNowSpy.mockRestore();
+        });
+
+        it('debería incluir novedades de DISPONIBLE y NO_DISPONIBLE intercaladas cronológicamente', async () => {
+            const obsId = 'obs1';
+            const year = 2024;
+            const fixedNow = new Date('2024-06-01T12:00:00Z');
+            const getNowSpy = jest.spyOn(DateUtils, 'getNow').mockReturnValue(fixedNow);
+
+            mockPrisma.marea.findMany.mockResolvedValue([
+                {
+                    id: 'm1',
+                    fechaInicioObservador: new Date('2024-05-01T10:00:00Z'),
+                    fechaZarpadaEstimada: new Date('2024-05-01T10:00:00Z'),
+                    fechaFinObservador: new Date('2024-05-10T10:00:00Z'),
+                    estadoActual: { codigo: 'FINALIZADA', nombre: 'Finalizada' },
+                    buque: { nombreBuque: 'Buque 1' },
+                    etapas: []
+                }
+            ]);
+
+            mockPrisma.observadorNovedad.findMany.mockResolvedValue([
+                {
+                    id: 'nov1',
+                    fechaInicio: new Date('2024-05-20T10:00:00Z'),
+                    fechaFin: null,
+                    fechaCreacion: new Date('2024-05-18T10:00:00Z'),
+                    motivo: 'Disponible para campaña',
+                    permiteUrgencia: true,
+                    estadoAprobacion: 'APROBADA',
+                    origen: 'MANUAL',
+                    metadata: null,
+                    tipoNovedad: { id: 'tn1', codigo: 'DISPONIBLE', descripcion: 'Disponible' },
+                    archivos: [],
+                    movimientos: [],
+                    creadoPor: { id: 'u1', fullName: 'Juan Perez', email: 'juan@inidep.edu.ar' }
+                }
+            ]);
+
+            const result = await service.obtenerHistorial(obsId, year);
+
+            const novedadItem = result.find((item: any) => item.type === 'NOVEDAD');
+            expect(novedadItem).toBeDefined();
+            expect(novedadItem.id).toBe('nov1');
+            expect(novedadItem.codigo).toBe('DISPONIBLE');
+            expect(novedadItem.creadoPor.fullName).toBe('Juan Perez');
+
+            getNowSpy.mockRestore();
+        });
+    });
+
+    describe('obtenerArchivos', () => {
+        it('debe retornar los archivos con tipoNovedad, tipoNovedadCodigo y fechaRecepcion ordenados descendente por fechaRecepcion', async () => {
+            const obsId = 'obs1';
+            mockPrisma.observadorNovedad.findMany.mockResolvedValue([
+                {
+                    id: 'nov-old',
+                    fechaInicio: new Date('2026-08-01T10:00:00Z'),
+                    fechaCreacion: new Date('2026-08-01T10:00:00Z'),
+                    tipoNovedad: { id: 'tn1', codigo: 'LICENCIA', descripcion: 'Licencia Médica' },
+                    archivos: [
+                        { id: 'arch1', rutaArchivo: 'https://drive/1', tipoArchivo: 'PDF', nombreOriginal: 'certificado.pdf', fechaSubida: new Date('2026-08-01T10:00:00Z') }
+                    ]
+                },
+                {
+                    id: 'nov-recent',
+                    fechaInicio: new Date('2026-09-15T10:00:00Z'),
+                    fechaCreacion: new Date('2026-09-20T10:00:00Z'),
+                    tipoNovedad: { id: 'tn2', codigo: 'DISPONIBLE', descripcion: 'Declaración de Disponibilidad' },
+                    archivos: [
+                        { id: 'arch2', rutaArchivo: 'https://drive/2', tipoArchivo: 'PDF', nombreOriginal: 'aviso.pdf', fechaSubida: new Date('2026-09-20T10:00:00Z') }
+                    ]
+                }
+            ]);
+
+            const result = await service.obtenerArchivos(obsId);
+
+            expect(result).toHaveLength(2);
+            // El más reciente en fechaRecepcion debe estar primero
+            expect(result[0].id).toBe('arch2');
+            expect(result[0].tipoNovedad).toBe('Declaración de Disponibilidad');
+            expect(result[0].tipoNovedadCodigo).toBe('DISPONIBLE');
+            expect(result[0].fechaRecepcion).toEqual(new Date('2026-09-20T10:00:00Z'));
+
+            expect(result[1].id).toBe('arch1');
+            expect(result[1].tipoNovedad).toBe('Licencia Médica');
+            expect(result[1].tipoNovedadCodigo).toBe('LICENCIA');
+            expect(result[1].fechaRecepcion).toEqual(new Date('2026-08-01T10:00:00Z'));
         });
     });
 });

@@ -132,7 +132,8 @@ export function useMareas() {
                 normalize(m.buque_nombre).includes(queryNorm) ||
                 normalize(m.id_marea).includes(queryNorm) ||
                 (m.observador && normalize(m.observador).includes(queryNorm)) ||
-                (m.pesquerias_nombres && m.pesquerias_nombres.some(p => normalize(p).includes(queryNorm)));
+                (m.pesquerias_nombres && m.pesquerias_nombres.some(p => normalize(p).includes(queryNorm))) ||
+                (m.desestimada && 'desestimada'.includes(queryNorm));
 
             return matchesState && matchesPesqueria && matchesText;
         });

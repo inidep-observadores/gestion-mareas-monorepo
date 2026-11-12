@@ -14,7 +14,9 @@ import { BackupAutoProcessor } from './processors/backup-auto.processor';
 import { BackupModule } from '../admin/backup/backup.module';
 import { NovedadesEmailProcessor } from './processors/novedades-email.processor';
 import { NovedadesAiProcessor } from './processors/novedades-ai.processor';
+import { DriveSyncProcessor } from './processors/drive-sync.processor';
 import { PurgeLogsService } from './purge-logs.service';
+import { ErrorLogsModule } from '../common/error-logs/error-logs.module';
 
 @Global()
 @Module({
@@ -24,6 +26,7 @@ import { PurgeLogsService } from './purge-logs.service';
         AuthModule,
         forwardRef(() => PnaApiModule),
         BackupModule,
+        ErrorLogsModule,
     ],
     controllers: [
         JobQueueController,
@@ -38,6 +41,7 @@ import { PurgeLogsService } from './purge-logs.service';
         JobQueueStatsService,
         NovedadesEmailProcessor,
         NovedadesAiProcessor,
+        DriveSyncProcessor,
         PurgeLogsService,
     ],
     exports: [

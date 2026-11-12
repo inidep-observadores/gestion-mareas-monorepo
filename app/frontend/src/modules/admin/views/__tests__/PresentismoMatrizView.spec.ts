@@ -30,7 +30,7 @@ describe('PresentismoMatrizView.vue', () => {
     feriados: { 1: 'Año Nuevo' },
     matriz: [
       {
-        observador: { id: '1', nombre: 'Juan', apellido: 'Perez', codigoInterno: '123', tipoObservador: 'TECNICO', tipoContrato: 'CONTRATADO' },
+        observador: { id: '1', nombre: 'Juan', apellido: 'Perez', codigoInterno: '123', tipoObservador: 'CIENTIFICO', tipoContrato: 'CONTRATADO' },
         totales: { navegando: 5, puerto: 2, novedades: 0, libres: 24, feriadosFinSemana: 8, conflictos: 0, esperandoZarpada: 0 },
         dias: Array.from({length: 31}, (_, i) => ({ estado: 'LIBRE' })).reduce((acc, curr, i) => { acc[i+1] = curr; return acc; }, {} as any)
       },
@@ -75,8 +75,8 @@ describe('PresentismoMatrizView.vue', () => {
     const wrapper = mount(PresentismoMatrizView, { global: { stubs: globalStubs } });
     await flushPromises();
 
-    const exportBtn = wrapper.findAll('button').find(b => b.text().includes('Exportar Excel'));
-    await exportBtn?.trigger('click');
+    const exportBtn = wrapper.findComponent({ name: 'ExportExcelButton' });
+    await exportBtn.trigger('click');
     await flushPromises();
 
     expect(presentismoExportService.exportarAExcel).toHaveBeenCalled();

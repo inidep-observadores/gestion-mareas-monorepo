@@ -6,6 +6,8 @@ import { BusinessRulesService } from '../common/business-rules/business-rules.se
 import { MailService } from '../mail/mail.service';
 import { AlertsService } from '../alerts/alerts.service';
 import { ConfigService } from '@nestjs/config';
+import { DriveStorageService } from '../files/drive-storage.service';
+import { JobQueueService } from '../jobs/job-queue.service';
 import { MareaEstado } from './mareas.constants';
 
 describe('MareasService - getFleetDistributionByFishery', () => {
@@ -30,6 +32,8 @@ describe('MareasService - getFleetDistributionByFishery', () => {
                 { provide: MailService, useValue: {} },
                 { provide: AlertsService, useValue: {} },
                 { provide: ConfigService, useValue: { get: jest.fn() } },
+                { provide: DriveStorageService, useValue: {} },
+                { provide: JobQueueService, useValue: {} },
             ],
         }).compile();
 

@@ -6,6 +6,8 @@ import { BusinessRulesService } from '../common/business-rules/business-rules.se
 import { MailService } from '../mail/mail.service';
 import { AlertsService } from '../alerts/alerts.service';
 import { ConfigService } from '@nestjs/config';
+import { DriveStorageService } from '../files/drive-storage.service';
+import { JobQueueService } from '../jobs/job-queue.service';
 import { TipoMarea, TipoEtapa } from './mareas.constants';
 import { DateUtils } from '../common/utils/date.utils';
 
@@ -23,11 +25,16 @@ describe('Mareas - Normalización de Fechas', () => {
             findFirst: jest.fn(),
         },
         mareaEtapa: {
-            create: jest.fn(),
-            update: jest.fn(),
-            deleteMany: jest.fn(),
-            count: jest.fn(),
-            findFirst: jest.fn(),
+            create: jest.fn().mockResolvedValue({ id: 'e-1' }),
+            update: jest.fn().mockResolvedValue({ id: 'e-1' }),
+            deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+            count: jest.fn().mockResolvedValue(0),
+            findFirst: jest.fn().mockResolvedValue(null),
+            findMany: jest.fn().mockResolvedValue([]),
+        },
+        mareaEtapaObservador: {
+            deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+            create: jest.fn().mockResolvedValue({}),
         },
         mareaMovimiento: {
             create: jest.fn(),
@@ -43,6 +50,9 @@ describe('Mareas - Normalización de Fechas', () => {
         },
         observador: {
             findUnique: jest.fn(),
+        },
+        mareaArchivo: {
+            findMany: jest.fn().mockResolvedValue([]),
         },
         $transaction: jest.fn((cb) => cb(mockPrisma)),
     };
@@ -63,6 +73,8 @@ describe('Mareas - Normalización de Fechas', () => {
                 { provide: MailService, useValue: mockMailService },
                 { provide: AlertsService, useValue: mockAlertsService },
                 { provide: ConfigService, useValue: { get: jest.fn() } },
+                { provide: DriveStorageService, useValue: {} },
+                { provide: JobQueueService, useValue: {} },
             ],
         }).compile();
 

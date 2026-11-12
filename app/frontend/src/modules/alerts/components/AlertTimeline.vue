@@ -28,6 +28,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatDateUI, formatDateTimeUI, formatTimeUI } from '@/utils/date.utils';
 import { computed } from 'vue'
 import type { AlertEvent } from '../services/alerts.service'
 import { CheckIcon, DocsIcon, EditIcon, ChatIcon, RefreshIcon } from '@/icons' // Updated imports
@@ -64,11 +65,7 @@ const getTitle = (type: string) => {
     return titulos[type] || type
 }
 
-const formatDate = (dateStr: string) => {
-  return new Date(dateStr).toLocaleString('es-AR', { 
-    day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' 
-  })
-}
+const formatDate = (dateStr: string) => formatDateUI(dateStr)
 
 const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase()

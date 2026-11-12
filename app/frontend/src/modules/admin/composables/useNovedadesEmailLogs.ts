@@ -27,6 +27,34 @@ export function useNovedadesEmailLogs() {
         selectedLog.value = log;
     };
 
+    const isReprocessing = ref(false);
+
+    const reprocessLog = async (id: string) => {
+        isReprocessing.value = true;
+        try {
+            const result = await novedadesEmailLogsApi.reprocessLog(id);
+            toast.success(result.message || 'Reprocesamiento iniciado exitosamente');
+            if (selectedLog.value && selectedLog.value.id === id) {
+                selectedLog.value.estado = 'PROCESANDO';
+            }
+            const item = logs.value.find(l => l.id === id);
+            if (item) {
+                item.estado = 'PROCESANDO';
+            }
+            // Refrescar en unos segundos para reflejar los resultados finales
+            setTimeout(() => {
+                fetchLogs(currentPage.value);
+            }, 3000);
+            return true;
+        } catch (error: any) {
+            const msg = error.response?.data?.message || 'Error al solicitar el reprocesamiento del correo';
+            toast.error(msg);
+            return false;
+        } finally {
+            isReprocessing.value = false;
+        }
+    };
+
     onMounted(() => {
         fetchLogs();
     });
@@ -35,9 +63,11 @@ export function useNovedadesEmailLogs() {
         logs,
         selectedLog,
         isLoading,
+        isReprocessing,
         currentPage,
         totalItems,
         fetchLogs,
-        selectLog
+        selectLog,
+        reprocessLog
     };
 }

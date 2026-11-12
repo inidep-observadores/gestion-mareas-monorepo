@@ -93,12 +93,20 @@ export class AllExceptionsFilter implements ExceptionFilter {
         // Log por consola también para desarrollo
         this.logger.error(`${request.method} ${request.url} - Status: ${status} - Message: ${message}`);
 
+        let customData = {};
+        const exceptionResponse: any = exception instanceof HttpException ? exception.getResponse() : null;
+        if (exceptionResponse && typeof exceptionResponse === 'object' && !Array.isArray(exceptionResponse)) {
+             const { message: _msg, statusCode: _code, error: _err, ...rest } = exceptionResponse;
+             customData = rest;
+        }
+
         response.status(status).json({
             statusCode: status,
             timestamp: new Date().toISOString(),
             path: request.url,
             message: validationErrors || userMessage,
             error: status >= 500 ? 'Internal Server Error' : (exception.name || 'Error'),
+            ...customData
         });
     }
 }

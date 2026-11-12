@@ -1,4 +1,4 @@
-import { IsBoolean, IsDateString, IsInt, IsNumber, IsOptional, IsString, IsUUID, ValidateIf } from 'class-validator';
+import { IsBoolean, IsDateString, IsInt, IsNumber, IsOptional, IsString, IsUUID, Max, Min, ValidateIf } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateBuqueDto {
@@ -99,6 +99,18 @@ export class CreateBuqueDto {
     @IsDateString()
     @IsOptional()
     fechaBaja?: string | null;
+
+    @IsBoolean()
+    @IsOptional()
+    habitabilidadFemeninaApta?: boolean;
+
+    @IsInt({ message: 'La calificación debe ser un número entero' })
+    @Min(0, { message: 'La calificación mínima es 0' })
+    @Max(5, { message: 'La calificación máxima es 5' })
+    @IsOptional()
+    @ValidateIf((o, v) => v !== null && v !== undefined)
+    @Type(() => Number)
+    calificacion?: number;
 
     @IsString()
     @IsOptional()

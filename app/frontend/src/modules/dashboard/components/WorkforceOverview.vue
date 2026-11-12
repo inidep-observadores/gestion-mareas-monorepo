@@ -35,7 +35,7 @@
         :chart-observers="getFilteredList(
           status.label === 'Navegando' ? (props.data?.listNavegando || []) :
           status.label === 'Descanso' ? (props.data?.listDescanso || []) :
-          status.label === 'Disponibles' ? (props.data?.listDisponibles || []) :
+          status.label === 'Disponibles' ? getFilteredDisponibles(props.data?.listDisponibles || []) :
           (props.data?.listDesignados || [])
         )"
         @select-status="selectStatus"
@@ -87,23 +87,54 @@
         </div>
 
         <!-- Filtros y Búsqueda -->
-        <div
-          class="px-6 py-2.5 bg-surface border-b border-border flex flex-col sm:flex-row sm:items-center gap-4 shrink-0 transition-all">
-          <SearchInput v-model="searchQuery" placeholder="Buscar observador, buque o marea..."
-            class="!w-full sm:!w-80" />
+        <div class="px-6 py-2.5 bg-surface border-b border-border flex flex-col gap-2 shrink-0 transition-all">
+          <!-- Línea 1: Búsqueda y Selector de Tipo -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <SearchInput v-model="searchQuery" placeholder="Buscar observador, buque o marea..."
+              class="!w-full sm:!w-72" />
 
-          <div class="flex gap-2">
-            <button
-              v-for="type in [{ key: 'OBSERVADOR', label: 'Observadores' }, { key: 'TECNICO', label: 'Técnicos' }]"
-              :key="type.key" @click="toggleType(type.key)"
-              class="px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-tight transition-all duration-200"
-              :class="[
-                selectedTypes.includes(type.key)
-                  ? 'bg-primary text-white shadow-sm ring-1 ring-primary'
-                  : 'bg-surface-muted text-text-muted border border-border hover:bg-surface hover:text-text'
-              ]">
-              {{ type.label }}
-            </button>
+            <div class="flex gap-2 shrink-0">
+              <button
+                v-for="type in [{ key: 'OBSERVADOR', label: 'Observadores' }, { key: 'TECNICO', label: 'Técnicos' }]"
+                :key="type.key" @click="toggleType(type.key)"
+                class="px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-tight transition-all duration-200"
+                :class="[
+                  selectedTypes.includes(type.key)
+                    ? 'bg-primary text-white shadow-sm ring-1 ring-primary'
+                    : 'bg-surface-muted text-text-muted border border-border hover:bg-surface hover:text-text'
+                ]">
+                {{ type.label }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Línea 2: Filtros de Disponibilidad (solo si se visualiza Disponibles) -->
+          <div v-if="selectedStatus === 'Disponibles'"
+            class="pt-2 border-t border-border/50 flex flex-wrap items-center gap-5 text-xs animate-fadeIn">
+            <span class="text-[9px] font-black uppercase tracking-widest text-text-muted">
+              Filtros:
+            </span>
+            <label class="inline-flex items-center gap-1.5 cursor-pointer select-none group">
+              <input type="checkbox" v-model="includeNoConfirmada"
+                class="w-3.5 h-3.5 rounded border-border text-primary focus:ring-primary/20 cursor-pointer" />
+              <span class="text-[10px] font-bold text-text-muted group-hover:text-text transition-colors">
+                Incluir disponibilidad no confirmada
+              </span>
+            </label>
+            <label class="inline-flex items-center gap-1.5 cursor-pointer select-none group">
+              <input type="checkbox" v-model="includePlanificados"
+                class="w-3.5 h-3.5 rounded border-border text-primary focus:ring-primary/20 cursor-pointer" />
+              <span class="text-[10px] font-bold text-text-muted group-hover:text-text transition-colors">
+                Incluir planificados a futuro
+              </span>
+            </label>
+            <label class="inline-flex items-center gap-1.5 cursor-pointer select-none group">
+              <input type="checkbox" v-model="includeNoDisponibles"
+                class="w-3.5 h-3.5 rounded border-border text-primary focus:ring-primary/20 cursor-pointer" />
+              <span class="text-[10px] font-bold text-text-muted group-hover:text-text transition-colors">
+                Incluir no disponibles en padrón
+              </span>
+            </label>
           </div>
         </div>
 
@@ -152,53 +183,82 @@
                   ? 'hover:brightness-95 dark:hover:brightness-110' : ''
               ]">
                 <td class="px-6 py-3 text-xs font-bold text-text">
-                  <div class="flex items-center gap-2">
-                    <span
-                      class="hover:text-primary transition-colors cursor-pointer hover:underline decoration-primary/30 underline-offset-2"
-                      @click="$emit('view-timeline', item.id, item.name)">
-                      {{ item.name }}
-                    </span>
-                    
-                    <!-- Botón Editar Inline -->
-                    <button v-if="canManageObservations && editingObsId !== item.id" 
-                      @click="startEditing(item.id, (item as any).observaciones)"
-                      class="opacity-0 group-hover:opacity-100 p-1 hover:bg-primary/10 text-primary rounded transition-all"
-                      title="Editar observaciones">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none"
-                          stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                      </svg>
-                    </button>
-                  </div>
+                  <div class="flex items-center gap-2.5">
+                    <ObservadorAvatar :foto-url="(item as any).fotoUrl" :nombre="item.name" :observador="item as any" :observador-id="item.id" size="lg" />
+                    <div class="flex flex-col min-w-0 flex-1">
+                      <div class="flex items-center gap-2">
+                        <span
+                          class="hover:text-primary transition-colors cursor-pointer hover:underline decoration-primary/30 underline-offset-2"
+                          @click="$emit('view-timeline', item.id, item.name, (item as any).fotoUrl)">
+                          {{ item.name }}
+                        </span>
 
-                  <!-- Modo Edición Inline -->
-                  <div v-if="editingObsId === item.id" class="mt-2 flex flex-col gap-1.5 max-w-[180px]">
-                    <textarea v-model="tempObservaciones"
-                      class="w-full bg-surface border border-primary/30 rounded-lg p-2 text-[9px] font-medium text-text focus:outline-none focus:ring-2 focus:ring-primary/10 min-h-[60px]"
-                      placeholder="Observaciones..."></textarea>
-                    <div class="flex justify-end gap-2">
-                      <button @click="cancelEditing" :disabled="savingInline"
-                        class="text-[8px] font-black uppercase text-text-muted hover:text-text">
-                        X
-                      </button>
-                      <button @click="saveInline" :disabled="savingInline"
-                        class="text-[8px] font-black uppercase text-primary hover:text-primary-hover">
-                        {{ savingInline ? '...' : 'OK' }}
-                      </button>
+                        <!-- Badge No Disponible en Padrón -->
+                        <span v-if="selectedStatus === 'Disponibles' && (item as any).disponible === false"
+                          class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30"
+                          title="Observador no disponible según padrón">
+                          No disponible
+                        </span>
+
+                        <!-- Badge ¿Disponible? si no está confirmada -->
+                        <span v-if="selectedStatus === 'Disponibles' && !(item as any).disponibilidadConfirmada"
+                          class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+                          title="Disponibilidad no confirmada por el observador">
+                          ¿Disponible?
+                        </span>
+
+                        <!-- Badge Flexible por urgencia si aplica -->
+                        <span v-if="selectedStatus === 'Disponibles' && (item as any).esFlexible"
+                          class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-violet-500/15 text-violet-700 dark:text-violet-300 border border-violet-500/30"
+                          :title="`Convocable por urgencia (${(item as any).motivoFlexibilidad || 'Licencia flexible'})`">
+                          Flexible • {{ (item as any).motivoFlexibilidad || 'Urgencia' }}
+                        </span>
+
+                        <!-- Estado Documentación (sólo advertencias) -->
+                        <ObservadorDocumentacionBadge :observador="item" only-warnings />
+                        
+                        <!-- Botón Editar Inline -->
+                        <button v-if="canManageObservations && editingObsId !== item.id" 
+                          @click="startEditing(item.id, (item as any).observaciones)"
+                          class="opacity-0 group-hover:opacity-100 p-1 hover:bg-primary/10 text-primary rounded transition-all"
+                          title="Editar observaciones">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none"
+                              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                          </svg>
+                        </button>
+                      </div>
+
+                      <!-- Modo Edición Inline -->
+                      <div v-if="editingObsId === item.id" class="mt-2 flex flex-col gap-1.5 max-w-[180px]">
+                        <textarea v-model="tempObservaciones"
+                          class="w-full bg-surface border border-primary/30 rounded-lg p-2 text-[9px] font-medium text-text focus:outline-none focus:ring-2 focus:ring-primary/10 min-h-[60px]"
+                          placeholder="Observaciones..."></textarea>
+                        <div class="flex justify-end gap-2">
+                          <button @click="cancelEditing" :disabled="savingInline"
+                            class="text-[8px] font-black uppercase text-text-muted hover:text-text">
+                            X
+                          </button>
+                          <button @click="saveInline" :disabled="savingInline"
+                            class="text-[8px] font-black uppercase text-primary hover:text-primary-hover">
+                            {{ savingInline ? '...' : 'OK' }}
+                          </button>
+                        </div>
+                      </div>
+
+                      <!-- Modo Vista -->
+                      <template v-else>
+                        <div v-if="canManageObservations && (item as any).observaciones" 
+                          class="mt-1 pl-2 border-l-2 border-primary/20 text-[9px] font-medium text-text-muted italic leading-relaxed">
+                          {{ (item as any).observaciones }}
+                        </div>
+                        <span v-else class="block text-[9px] font-normal text-text-muted/40 uppercase tracking-tighter mt-0.5">
+                          {{ item.tipoObservador }}
+                        </span>
+                      </template>
                     </div>
                   </div>
-
-                  <!-- Modo Vista -->
-                  <template v-else>
-                    <div v-if="canManageObservations && (item as any).observaciones" 
-                      class="mt-1 pl-2 border-l-2 border-primary/20 text-[9px] font-medium text-text-muted italic leading-relaxed">
-                      {{ (item as any).observaciones }}
-                    </div>
-                    <span v-else class="block text-[9px] font-normal text-text-muted/40 uppercase tracking-tighter mt-0.5">
-                      {{ item.tipoObservador }}
-                    </span>
-                  </template>
                 </td>
 
                 <!-- Impedidos Columns -->
@@ -256,6 +316,24 @@
                     <span class="text-[8px] font-medium text-primary uppercase tracking-widest italic">
                       {{ (item as any).fishery || 'Sin Pesquería' }}
                     </span>
+
+                    <!-- Indicador de Planificación en Simulador -->
+                    <div v-if="selectedStatus === 'Disponibles' && (item as any).planificacionFutura"
+                      class="mt-1 flex items-start gap-1.5 px-2 py-1 rounded-lg bg-sky-500/10 border border-sky-500/20 text-sky-700 dark:text-sky-300 text-[8px] font-bold"
+                      :title="`Planificado en escenario ${(item as any).planificacionFutura.escenarioNombre}${(item as any).planificacionFutura.observaciones ? ' • Observaciones: ' + (item as any).planificacionFutura.observaciones : ''}`">
+                      <span class="w-1.5 h-1.5 rounded-full bg-sky-500 shrink-0 mt-0.5 animate-pulse"></span>
+                      <div class="flex flex-col min-w-0 leading-tight">
+                        <span class="truncate">
+                          Planificado: {{ (item as any).planificacionFutura.escenarioNombre }}
+                        </span>
+                        <span class="text-[7.5px] font-medium opacity-90 truncate">
+                          {{ (item as any).planificacionFutura.buqueNombre || 'Sin buque' }} • {{ formatDate((item as any).planificacionFutura.fechaZarpada) }}
+                        </span>
+                        <span v-if="(item as any).planificacionFutura.observaciones" class="text-[7px] italic font-normal opacity-85 truncate" :title="(item as any).planificacionFutura.observaciones">
+                          {{ formatObservaciones((item as any).planificacionFutura.observaciones) }}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </td>
 
@@ -333,33 +411,67 @@
         </div>
 
         <!-- Filtros y Búsqueda (Replicados para el Modal) -->
-        <div class="px-8 py-4 bg-surface border-b border-border flex items-center gap-6 shrink-0">
-          <div class="flex-1 max-w-md">
-            <SearchInput v-model="searchQuery" placeholder="Buscar observador, buque o marea..." class="!w-full" />
+        <div class="px-8 py-3.5 bg-surface border-b border-border flex flex-col gap-3 shrink-0">
+          <div class="flex items-center justify-between gap-6">
+            <div class="flex-1 max-w-md">
+              <SearchInput v-model="searchQuery" placeholder="Buscar observador, buque o marea..." class="!w-full" />
+            </div>
+
+            <div class="flex items-center gap-3">
+              <div class="flex gap-2 p-1 bg-surface-muted rounded-xl border border-border">
+                <button
+                  v-for="type in [{ key: 'OBSERVADOR', label: 'Observadores' }, { key: 'TECNICO', label: 'Técnicos' }]"
+                  :key="type.key" @click="toggleType(type.key)"
+                  class="px-5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all duration-200"
+                  :class="[
+                    selectedTypes.includes(type.key)
+                      ? 'bg-primary text-white shadow-md'
+                      : 'text-text-muted hover:text-text'
+                  ]">
+                  {{ type.label }}
+                </button>
+              </div>
+
+              <div v-if="selectedCategory" class="animate-fadeIn">
+                <span class="px-3 py-1.5 bg-primary text-white text-[10px] font-black uppercase rounded-lg flex items-center gap-2 shadow-sm ring-2 ring-primary/20">
+                  Filtro: {{ selectedCategory }}
+                  <button @click="selectedCategory = null" class="hover:bg-white/20 p-0.5 rounded transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </span>
+              </div>
+            </div>
           </div>
-          <div class="flex gap-2 p-1 bg-surface-muted rounded-xl border border-border">
-            <button
-              v-for="type in [{ key: 'OBSERVADOR', label: 'Observadores' }, { key: 'TECNICO', label: 'Técnicos' }]"
-              :key="type.key" @click="toggleType(type.key)"
-              class="px-5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all duration-200"
-              :class="[
-                selectedTypes.includes(type.key)
-                  ? 'bg-primary text-white shadow-md'
-                  : 'text-text-muted hover:text-text'
-              ]">
-              {{ type.label }}
-            </button>
-          </div>
-          
-          <div v-if="selectedCategory" class="animate-fadeIn">
-            <span class="px-3 py-1.5 bg-primary text-white text-[10px] font-black uppercase rounded-lg flex items-center gap-2 shadow-sm ring-2 ring-primary/20">
-              Filtro: {{ selectedCategory }}
-              <button @click="selectedCategory = null" class="hover:bg-white/20 p-0.5 rounded transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+
+          <!-- Filtros de Disponibilidad (Modal) -->
+          <div v-if="selectedStatus === 'Disponibles'"
+            class="pt-2 border-t border-border/50 flex items-center gap-6 animate-fadeIn">
+            <span class="text-[10px] font-black uppercase tracking-widest text-text-muted">
+              Filtros:
             </span>
+            <label class="inline-flex items-center gap-2 cursor-pointer select-none group">
+              <input type="checkbox" v-model="includeNoConfirmada"
+                class="w-4 h-4 rounded border-border text-primary focus:ring-primary/20 cursor-pointer" />
+              <span class="text-xs font-bold text-text-muted group-hover:text-text transition-colors">
+                Incluir disponibilidad no confirmada
+              </span>
+            </label>
+            <label class="inline-flex items-center gap-2 cursor-pointer select-none group">
+              <input type="checkbox" v-model="includePlanificados"
+                class="w-4 h-4 rounded border-border text-primary focus:ring-primary/20 cursor-pointer" />
+              <span class="text-xs font-bold text-text-muted group-hover:text-text transition-colors">
+                Incluir planificados a futuro
+              </span>
+            </label>
+            <label class="inline-flex items-center gap-2 cursor-pointer select-none group">
+              <input type="checkbox" v-model="includeNoDisponibles"
+                class="w-4 h-4 rounded border-border text-primary focus:ring-primary/20 cursor-pointer" />
+              <span class="text-xs font-bold text-text-muted group-hover:text-text transition-colors">
+                Incluir no disponibles en padrón
+              </span>
+            </label>
           </div>
         </div>
 
@@ -412,35 +524,68 @@
                 ]">
                 <td class="px-8 py-4 text-sm font-bold text-text">
                   <div class="flex items-center gap-3">
-                    <span
-                      class="hover:text-primary transition-colors cursor-pointer hover:underline decoration-primary/30 underline-offset-4"
-                      @click="$emit('view-timeline', item.id, item.name)">
-                      {{ item.name }}
-                    </span>
-                    <button v-if="canManageObservations && editingObsId !== item.id" 
-                      @click="startEditing(item.id, (item as any).observaciones)"
-                      class="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-primary/10 text-primary rounded-lg transition-all">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                      </svg>
-                    </button>
-                  </div>
+                    <ObservadorAvatar :foto-url="(item as any).fotoUrl" :nombre="item.name" :observador="item as any" :observador-id="item.id" size="xl" />
+                    <div class="flex flex-col min-w-0 flex-1">
+                      <div class="flex items-center gap-3">
+                        <span
+                          class="hover:text-primary transition-colors cursor-pointer hover:underline decoration-primary/30 underline-offset-4"
+                          @click="$emit('view-timeline', item.id, item.name, (item as any).fotoUrl)">
+                          {{ item.name }}
+                        </span>
 
-                  <div v-if="editingObsId === item.id" class="mt-3 flex flex-col gap-2 max-w-sm">
-                    <textarea v-model="tempObservaciones"
-                      class="w-full bg-surface border border-primary/30 rounded-xl p-3 text-xs font-medium text-text focus:outline-none focus:ring-4 focus:ring-primary/5 min-h-[80px]"
-                      placeholder="Escriba observaciones..."></textarea>
-                    <div class="flex justify-end gap-3">
-                      <button @click="cancelEditing" class="text-[10px] font-black uppercase text-text-muted hover:text-text">Cancelar</button>
-                      <button @click="saveInline" class="px-4 py-1.5 bg-primary text-white text-[10px] font-black uppercase rounded-lg">Guardar</button>
+                        <!-- Badge No Disponible en Padrón -->
+                        <span v-if="selectedStatus === 'Disponibles' && (item as any).disponible === false"
+                          class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30"
+                          title="Observador no disponible según padrón">
+                          No disponible
+                        </span>
+
+                        <!-- Badge ¿Disponible? si no está confirmada -->
+                        <span v-if="selectedStatus === 'Disponibles' && !(item as any).disponibilidadConfirmada"
+                          class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+                          title="Disponibilidad no confirmada por el observador">
+                          ¿Disponible?
+                        </span>
+
+                        <!-- Badge Flexible por urgencia si aplica (Modal) -->
+                        <span v-if="selectedStatus === 'Disponibles' && (item as any).esFlexible"
+                          class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-violet-500/15 text-violet-700 dark:text-violet-300 border border-violet-500/30"
+                          :title="`Convocable por urgencia (${(item as any).motivoFlexibilidad || 'Licencia flexible'})`">
+                          Flexible • {{ (item as any).motivoFlexibilidad || 'Urgencia' }}
+                        </span>
+
+                        <!-- Estado Documentación (sólo advertencias) -->
+                        <ObservadorDocumentacionBadge :observador="item" only-warnings />
+
+                        <button v-if="canManageObservations && editingObsId !== item.id" 
+                          @click="startEditing(item.id, (item as any).observaciones)"
+                          class="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-primary/10 text-primary rounded-lg transition-all">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                          </svg>
+                        </button>
+                      </div>
+
+                      <div v-if="editingObsId === item.id" class="mt-3 flex flex-col gap-2 max-w-sm">
+                        <textarea v-model="tempObservaciones"
+                          class="w-full bg-surface border border-primary/30 rounded-xl p-3 text-xs font-medium text-text focus:outline-none focus:ring-4 focus:ring-primary/5 min-h-[80px]"
+                          placeholder="Escriba observaciones..."></textarea>
+                        <div class="flex justify-end gap-3">
+                          <button @click="cancelEditing" class="text-[10px] font-black uppercase text-text-muted hover:text-text">Cancelar</button>
+                          <button @click="saveInline" class="px-4 py-1.5 bg-primary text-white text-[10px] font-black uppercase rounded-lg">Guardar</button>
+                        </div>
+                      </div>
+                      <template v-else>
+                        <div v-if="canManageObservations && (item as any).observaciones" 
+                          class="mt-2 pl-3 border-l-2 border-primary/30 text-[11px] font-medium text-text-muted italic leading-relaxed">
+                          {{ (item as any).observaciones }}
+                        </div>
+                        <span v-else class="block text-[10px] font-normal text-text-muted/40 uppercase tracking-tighter mt-1">
+                          {{ item.tipoObservador }}
+                        </span>
+                      </template>
                     </div>
                   </div>
-                  <template v-else>
-                    <div v-if="canManageObservations && (item as any).observaciones" 
-                      class="mt-2 pl-3 border-l-2 border-primary/30 text-[11px] font-medium text-text-muted italic leading-relaxed">
-                      {{ (item as any).observaciones }}
-                    </div>
-                  </template>
                 </td>
                 
                 <td v-if="selectedStatus === 'Impedidos'" class="px-8 py-4 text-xs font-medium text-text-muted">
@@ -465,6 +610,24 @@
                     <span class="text-[9px] font-bold text-primary uppercase tracking-widest italic leading-none mt-1">
                       {{ (item as any).fishery || 'Sin Pesquería' }}
                     </span>
+
+                    <!-- Indicador de Planificación en Simulador (Modal) -->
+                    <div v-if="selectedStatus === 'Disponibles' && (item as any).planificacionFutura"
+                      class="mt-1 flex items-start gap-2 px-2.5 py-1.5 rounded-lg bg-sky-500/10 border border-sky-500/20 text-sky-700 dark:text-sky-300 text-[10px] font-bold"
+                      :title="`Planificado en escenario ${(item as any).planificacionFutura.escenarioNombre}${(item as any).planificacionFutura.observaciones ? ' • Observaciones: ' + (item as any).planificacionFutura.observaciones : ''}`">
+                      <span class="w-2 h-2 rounded-full bg-sky-500 shrink-0 mt-0.5 animate-pulse"></span>
+                      <div class="flex flex-col min-w-0 leading-snug">
+                        <span class="truncate">
+                          Planificado: {{ (item as any).planificacionFutura.escenarioNombre }}
+                        </span>
+                        <span class="text-[9px] font-medium opacity-90 truncate">
+                          {{ (item as any).planificacionFutura.buqueNombre || 'Sin buque' }} • {{ formatDate((item as any).planificacionFutura.fechaZarpada) }}
+                        </span>
+                        <span v-if="(item as any).planificacionFutura.observaciones" class="text-[8.5px] italic font-normal opacity-85 truncate" :title="(item as any).planificacionFutura.observaciones">
+                          {{ formatObservaciones((item as any).planificacionFutura.observaciones) }}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </td>
                 <td class="px-8 py-4 text-right">
@@ -494,6 +657,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatDateUI, formatDateTimeUI, formatTimeUI } from '@/utils/date.utils';
 import { ref, markRaw, computed } from 'vue'
 import { ShipIcon, UserGroupIcon, DocsIcon, HotelIcon, ChevronDownIcon } from '@/icons'
 import type { WorkforceStatus } from '../services/dashboard.service'
@@ -502,6 +666,8 @@ import WorkforceStatusCard from './WorkforceStatusCard.vue'
 import BaseModal from '@/components/common/BaseModal.vue'
 import WorkforceDonutChart from './WorkforceDonutChart.vue'
 import observadoresApi from '@/modules/admin/services/observadores.service'
+import ObservadorAvatar from '@/modules/mareas/components/ObservadorAvatar.vue'
+import ObservadorDocumentacionBadge from '@/modules/admin/components/ObservadorDocumentacionBadge.vue'
 import statsService from '@/modules/stats/services/stats.service'
 import { toast } from 'vue-sonner';
 import ExportExcelButton from '@/modules/shared/components/ExportExcelButton.vue';
@@ -520,6 +686,9 @@ const searchQuery = ref('')
 const sortBy = ref<'name' | 'days' | null>(null)
 const sortOrder = ref<'asc' | 'desc'>('desc')
 const selectedCategory = ref<string | null>(null)
+const includeNoConfirmada = ref(false)
+const includePlanificados = ref(false)
+const includeNoDisponibles = ref(false)
 
 const authStore = useAuthStore()
 const canManageObservations = computed(() => {
@@ -539,7 +708,7 @@ const currentStatusObservers = computed(() => {
   if (!selectedStatus.value || !props.data) return []
   return selectedStatus.value === 'Navegando' ? props.data.listNavegando :
          selectedStatus.value === 'Descanso' ? props.data.listDescanso :
-         selectedStatus.value === 'Disponibles' ? props.data.listDisponibles :
+         selectedStatus.value === 'Disponibles' ? getFilteredDisponibles(props.data.listDisponibles) :
          selectedStatus.value === 'Designados' ? props.data.listDesignados :
          props.data.listImpedidos
 })
@@ -613,7 +782,7 @@ const availableComposition = computed(() => {
   const list = selectedStatus.value === 'Navegando' ? (props.data?.listNavegando || []) :
                selectedStatus.value === 'Descanso' ? (props.data?.listDescanso || []) :
                selectedStatus.value === 'Designados' ? (props.data?.listDesignados || []) :
-               (props.data?.listDisponibles || [])
+               getFilteredDisponibles(props.data?.listDisponibles || [])
   
   return getListComposition(list)
 })
@@ -765,14 +934,15 @@ type DistributionItem = {
   color?: string
 }
 
-const formatDate = (dateString: string) => {
-  if (!dateString) return '-'
-  const date = new Date(dateString)
-  return date.toLocaleDateString('es-AR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: '2-digit'
-  })
+const formatDate = (dateString: string) => formatDateUI(dateString)
+
+const formatObservaciones = (obs?: string | null) => {
+  if (!obs) return '';
+  const trimmed = obs.trim();
+  if (trimmed.length > 30) {
+    return trimmed.slice(0, 30) + '...';
+  }
+  return trimmed;
 }
 
 const getFilteredList = (list: any[]) => {
@@ -785,12 +955,28 @@ const getFilteredList = (list: any[]) => {
   });
 }
 
+const getFilteredDisponibles = (list: any[]) => {
+  if (!list) return [];
+  return list.filter(item => {
+    if (!includeNoDisponibles.value && item.disponible === false) {
+      return false;
+    }
+    if (!includeNoConfirmada.value && !item.disponibilidadConfirmada) {
+      return false;
+    }
+    if (!includePlanificados.value && item.planificacionFutura) {
+      return false;
+    }
+    return true;
+  });
+}
+
 const filteredStats = computed(() => {
   if (!props.data) return { navegando: 0, descanso: 0, disponibles: 0, designados: 0, total: 0 }
 
   const navegando = getFilteredList(props.data.listNavegando).length
   const descanso = getFilteredList(props.data.listDescanso).length
-  const disponibles = getFilteredList(props.data.listDisponibles).length
+  const disponibles = getFilteredDisponibles(getFilteredList(props.data.listDisponibles)).length
   const designados = getFilteredList(props.data.listDesignados).length
   const total = navegando + descanso + disponibles + designados
 
@@ -868,7 +1054,7 @@ const currentList = computed(() => {
   switch (selectedStatus.value) {
     case 'Navegando': list = props.data.listNavegando; break
     case 'Descanso': list = props.data.listDescanso; break
-    case 'Disponibles': list = props.data.listDisponibles; break
+    case 'Disponibles': list = getFilteredDisponibles(props.data.listDisponibles); break
     case 'Designados': list = props.data.listDesignados; break
     default: list = []
   }

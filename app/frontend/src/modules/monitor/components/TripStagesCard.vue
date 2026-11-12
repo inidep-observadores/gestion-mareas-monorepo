@@ -67,6 +67,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatDateUI, formatDateTimeUI, formatTimeUI } from '@/utils/date.utils';
 import { ref } from 'vue'
 import HudCard from './HudCard.vue'
 
@@ -102,9 +103,5 @@ const calculateDuration = (start: string, end: string | null) => {
 
 const isCollapsed = ref(false)
 
-const formatDate = (ts: string) => {
-  if (!ts) return '--/--/----'
-  const date = new Date(ts)
-  return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`
-}
+const formatDate = (ts: string) => formatDateUI(ts)
 </script>

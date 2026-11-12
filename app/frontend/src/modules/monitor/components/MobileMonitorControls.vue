@@ -208,7 +208,8 @@ import { ref, computed } from 'vue'
 import BaseSwitch from '@/components/ui/BaseSwitch.vue'
 import UserLayersPanel from './UserLayersPanel.vue'
 import SearchInput from '@/components/ui/SearchInput.vue'
-import { BASE_LAYERS } from '@/components/common/map-layers'
+import { getBaseLayers } from '@/components/common/map-layers'
+import { useMapSettings } from '@/composables/useMapSettings'
 import type { MonitorVessel } from './VesselListSidebar.vue'
 
 const props = defineProps<{
@@ -277,7 +278,8 @@ const filteredVessels = computed(() => {
   })
 })
 
-const baseLayers = BASE_LAYERS
+const { settings } = useMapSettings()
+const baseLayers = computed(() => getBaseLayers(settings.value.provider))
 
 const closeAll = () => {
   openLayers.value = false

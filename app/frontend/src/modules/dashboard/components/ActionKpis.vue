@@ -1,5 +1,5 @@
 <template>
-  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:gap-6">
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 xl:gap-6">
     <div v-for="kpi in kpis" :key="kpi.title"
       class="group relative overflow-hidden rounded-2xl border border-border bg-surface p-5 shadow-sm transition-all hover:shadow-xl hover:-translate-y-1">
       <!-- Background Decorative Gradient -->
@@ -13,7 +13,7 @@
             {{ kpi.title }}
           </p>
           <div class="flex items-baseline gap-2">
-            <h3 class="mt-1 text-3xl font-black text-text leading-none">
+            <h3 class="mt-1 text-3xl font-black leading-none" :class="kpi.valueClass || 'text-text'">
               {{ kpi.value }}
             </h3>
             <span v-if="kpi.trend" class="text-[10px] font-bold px-1.5 py-0.5 rounded-md" :class="kpi.trendClass">
@@ -53,7 +53,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { toast } from 'vue-sonner'
-import { ShipIcon, UserGroupIcon, TaskIcon, CheckIcon } from '@/icons'
+import { ShipIcon, UserGroupIcon, TaskIcon, CheckIcon, MailBox } from '@/icons'
 import mareasService from '@/modules/mareas/services/mareas.service'
 import type { DashboardKpis } from '@/modules/mareas/types/marea.types'
 
@@ -66,9 +66,10 @@ const kpiDefinitions: Array<
     title: string
     subtext: string
     icon: any
-    bgClass: string
-    iconContainerClass: string
-    iconClass: string
+    bgClass: string | ((val: any) => string)
+    iconContainerClass: string | ((val: any) => string)
+    iconClass: string | ((val: any) => string)
+    valueClass?: string | ((val: any) => string)
     link: string | { name: string; query?: Record<string, string> }
     trend?: string
     trendClass?: string
@@ -115,13 +116,38 @@ const kpiDefinitions: Array<
       iconClass: 'text-primary',
       link: { name: 'MareasWorkflow', query: { expand: 'PARA_PROTOCOLIZAR' } },
     },
+    {
+      key: 'novedadesPendientes',
+      title: 'Novedades pendientes',
+      subtext: 'Comunicaciones de observadores',
+      icon: MailBox,
+      bgClass: (val) => (Number(val) > 0 ? 'bg-error' : 'bg-text-muted'),
+      iconContainerClass: (val) => (Number(val) > 0 ? 'bg-error/10' : 'bg-surface-muted'),
+      iconClass: (val) => (Number(val) > 0 ? 'text-error' : 'text-text-muted'),
+      valueClass: (val) => (Number(val) > 0 ? 'text-error' : 'text-text'),
+      link: { name: 'SistemaObservadoresNovedades', query: { tab: 'pendientes' } },
+    },
   ]
 
 const kpis = computed(() =>
-  kpiDefinitions.map((definition) => ({
-    ...definition,
-    value: stats.value ? stats.value[definition.key] : '—',
-  }))
+  kpiDefinitions.map((definition) => {
+    const rawVal = stats.value ? stats.value[definition.key] : null
+    const value = rawVal ?? '—'
+
+    const resolveClass = (cls?: string | ((val: any) => string), defaultVal = '') => {
+      if (!cls) return defaultVal
+      return typeof cls === 'function' ? cls(rawVal) : cls
+    }
+
+    return {
+      ...definition,
+      value,
+      bgClass: resolveClass(definition.bgClass),
+      iconContainerClass: resolveClass(definition.iconContainerClass),
+      iconClass: resolveClass(definition.iconClass),
+      valueClass: resolveClass(definition.valueClass, 'text-text'),
+    }
+  })
 )
 
 const fetchKpis = async () => {

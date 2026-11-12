@@ -53,6 +53,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatDateUI, formatDateTimeUI, formatTimeUI } from '@/utils/date.utils';
 import { ref, onMounted, watch } from 'vue'
 import { type Alerta, alertsService } from '../services/alerts.service'
 import AlertTimeline from './AlertTimeline.vue'
@@ -103,7 +104,5 @@ const getBadgeColor = (status: string) => {
     }
 }
 
-const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString()
-}
+const formatDate = (dateStr: string) => formatDateUI(dateStr)
 </script>

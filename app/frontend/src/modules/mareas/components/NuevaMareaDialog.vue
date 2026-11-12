@@ -142,9 +142,32 @@
 
 
               <div class="space-y-1.5">
-                <label class="block text-sm font-medium text-text-muted">Observador Asignado</label>
+                <div class="flex items-center justify-between">
+                  <label class="block text-sm font-medium text-text-muted">Observador Principal</label>
+                  <div v-if="selectedObservador" class="flex items-center gap-1.5 text-xs text-text-muted">
+                    <span class="text-[11px] font-semibold text-text-muted">Documentación:</span>
+                    <ObservadorDocumentacionBadge :observador="selectedObservador" />
+                  </div>
+                </div>
                 <SearchableSelect ref="observadorSelect" v-model="form.observadorId" :options="observadorOptions"
-                  :icon="BeakerIcon" :error="fieldErrors.observadorId" placeholder="Seleccione el observador..." />
+                  :icon="BeakerIcon" :error="fieldErrors.observadorId" placeholder="Seleccione el observador principal...">
+                  <template #option="{ option }">
+                    <div class="flex items-center justify-between w-full gap-2 pr-1">
+                      <span class="text-sm font-semibold truncate">{{ option.label }}</span>
+                      <ObservadorDocumentacionBadge :observador="option.observador" />
+                    </div>
+                  </template>
+                </SearchableSelect>
+              </div>
+
+              <!-- Observadores Secundarios Planificados (Borrador en metadata) -->
+              <div class="pt-2 border-t border-border/60">
+                <ObservadoresSecundariosEditor
+                  ref="secundariosEditorRef"
+                  v-model="form.observadoresSecundariosPlanificados"
+                  :observador-options="observadorOptions"
+                  :observador-principal-id="form.observadorId"
+                />
               </div>
 
               <div class="space-y-1.5">
@@ -198,6 +221,7 @@
 
             <NavigationStagesEditor v-model="form.etapas" :puerto-options="puertoOptions"
               :pesqueria-options="pesqueriaOptions" :default-pesqueria-id="form.pesqueriaId" :errors="fieldErrors"
+              :observador-principal-id="form.observadorId"
               :default-fecha-zarpada="form.fechaZarpadaEstimada" :puerto-base-id="form.puertoBaseId" :tipoMarea="form.tipoMarea" />
           </div>
 
@@ -232,7 +256,10 @@
               <div class="p-6 bg-surface-muted rounded-xl border border-border/50">
                 <p class="text-[9px] font-black text-text-muted uppercase tracking-widest mb-2">Operación</p>
                 <p class="text-sm font-black uppercase text-text">{{ getPesqueriaName(form.pesqueriaId) }}</p>
-                <p class="text-xs text-text-muted font-medium mt-0.5">Obs: {{ getObserverName(form.observadorId) }}</p>
+                <div class="flex items-center gap-1.5 mt-0.5">
+                  <p class="text-xs text-text-muted font-medium">Obs: {{ getObserverName(form.observadorId) }}</p>
+                  <ObservadorDocumentacionBadge v-if="selectedObservador" :observador="selectedObservador" />
+                </div>
                 <p v-if="form.diasEstimados" class="text-xs text-text-muted font-medium mt-0.5">Est: {{
                   form.diasEstimados }} días</p>
               </div>
@@ -311,6 +338,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatDateUI, formatDateTimeUI } from '@/utils/date.utils'
 import { ref, computed, onMounted, watch, nextTick, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
@@ -320,11 +348,14 @@ import DatePicker from '@/components/common/DatePicker.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import ConfirmationDialog from '@/components/common/ConfirmationDialog.vue'
 import NavigationStagesEditor from './NavigationStagesEditor.vue'
+import ObservadoresSecundariosEditor from './ObservadoresSecundariosEditor.vue'
+import type { ObservadorSecundarioPlanificado } from '../types/marea-metadata.types';
 import { TipoMarea, TIPO_MAREA_DESC } from '../types/enums';
 import { useMareas } from '../composables/useMareas'
 import { useWorkflowStore } from '../../shared/stores/workflow.store'
 import { useConfigStore } from '../../shared/stores/config.store'
 import { alertsService } from '@/modules/alerts/services/alerts.service'
+import ObservadorDocumentacionBadge from '@/modules/admin/components/ObservadorDocumentacionBadge.vue'
 import catalogosService from '../services/catalogos.service'
 import mareasService from '../services/mareas.service'
 import {
@@ -377,8 +408,10 @@ const getInitialForm = () => ({
   diasEstimados: null as number | null,
   puertoBaseId: '',
   iniciaEnProspeccion: false,
-  etapas: [] as any[]
+  etapas: [] as any[],
+  observadoresSecundariosPlanificados: [] as ObservadorSecundarioPlanificado[]
 })
+
 
 const form = ref(getInitialForm())
 
@@ -392,6 +425,7 @@ const buqueSelect = ref<any>(null)
 const nroMareaInput = ref<HTMLInputElement | null>(null)
 const arteSelect = ref<any>(null)
 const observadorSelect = ref<any>(null)
+const secundariosEditorRef = ref<any>(null)
 
 // Catalogs
 const loadingCatalogs = ref(true)
@@ -419,8 +453,13 @@ const observadorOptions = computed(() => {
   return observadores.value
     .map(o => ({
       value: o.id,
-      label: `${o.apellido}, ${o.nombre}`
+      label: `${o.apellido}, ${o.nombre}`,
+      observador: o
     }))
+})
+
+const selectedObservador = computed(() => {
+  return observadores.value.find(o => o.id === form.value.observadorId) || null
 })
 
 const arteOptions = computed(() => {
@@ -648,6 +687,11 @@ const validateStep = async (step: number) => {
   }
 
   if (step === 2) {
+    if (secundariosEditorRef.value?.hasPendingChanges) {
+      toast.error('Debe confirmar la edición de los observadores secundarios antes de continuar.')
+      return false
+    }
+
     if (!form.value.pesqueriaId) fieldErrors.value.pesqueriaId = 'La pesquería es obligatoria'
     if (!form.value.observadorId) fieldErrors.value.observadorId = 'Debe asignar un observador'
     if (!form.value.arteId) fieldErrors.value.arteId = 'El arte de pesca es obligatorio'
@@ -661,6 +705,28 @@ const validateStep = async (step: number) => {
         }
       } catch (e) {
         console.error('Error validating observer:', e)
+      }
+    }
+
+    if (form.value.observadorId && form.value.observadoresSecundariosPlanificados?.length && !fieldErrors.value.observadorId) {
+      const conflict = form.value.observadoresSecundariosPlanificados.find(
+        (sec: any) => sec.observadorId === form.value.observadorId
+      )
+      if (conflict) {
+        fieldErrors.value.observadorId = 'El observador principal no puede estar asignado simultáneamente como secundario'
+      } else {
+        for (const sec of form.value.observadoresSecundariosPlanificados) {
+          try {
+            const { available, marea } = await mareasService.validateObserverAvailability(sec.observadorId)
+            if (!available) {
+              const obsName = getObserverName(sec.observadorId)
+              fieldErrors.value.observadorId = `El observador secundario ${obsName} ya está designado en otra marea (${marea})`
+              break
+            }
+          } catch (e) {
+            console.error('Error validating secondary observer:', e)
+          }
+        }
       }
     }
 
@@ -825,13 +891,7 @@ const getObserverName = (id: string) => {
   const o = observadores.value.find(obs => obs.id === id)
   return o ? `${o.apellido}, ${o.nombre}` : '---'
 }
-const formatDate = (dateStr?: string, withTime = false) => {
-  if (!dateStr) return 'N/D'
-  const options: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit', year: 'numeric' }
-  if (withTime) {
-    options.hour = '2-digit'
-    options.minute = '2-digit'
-  }
-  return new Date(dateStr).toLocaleDateString('es-AR', options)
+const formatDate = (date?: string | Date | null, withTime = false) => {
+  return withTime ? formatDateTimeUI(date) : formatDateUI(date)
 }
 </script>

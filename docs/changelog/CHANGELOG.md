@@ -2,8 +2,169 @@
 
 Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/), y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
 ## [Unreleased]
+
+### Added
+- **observadores:** incorporar avatar con foto de perfil (`ObservadorAvatar`) en el encabezado del diálogo de historial completo del observador (`ObservadorTimelineDialog`).
+- **componentes:** soporte para tamaño `2xl` (`w-12 h-12`) en `ObservadorAvatar`.
+- **observadores:** nuevo modal interactivo de ficha rápida (`ObservadorQuickModal`) accesible al hacer clic sobre el avatar en cualquier vista, que visualiza la foto ampliada (96x96 px), nombre completo, Nº de legajo, DNI, Nº de cédula de embarque y estado de vencimientos de documentación con indicador de alertas.
+- **componentes:** dotar a `ObservadorAvatar` de interactividad (`cursor-pointer`, hover visual y apertura de ficha de observador) y soporte para apertura sin peticiones HTTP redundantes cuando los datos están precargados.
+- **backend:** incluir `codigoInterno` y `dni` en los registros devueltos por `getWorkforceStatus` y `observador_id` en las mareas operativas para vinculación directa de datos.
+- **observadores:** visualizar el tipo de novedad en una insignia y la fecha de recepción en el encabezado de cada archivo dentro de la pestaña de archivos del panel lateral de observadores, ordenados cronológicamente de forma descendente (del más reciente al más antiguo).
+- **disponibilidad:** incorporar opción de exportación a planilla Excel en la vista de Disponibilidad de Observadores, capturando dinámicamente el rango de fechas visible en el timeline (`getWindow()`), respetando los filtros aplicados (búsqueda, tipo, contrato, ocultar no disponibles) y replicando fielmente los estilos, bordes y colores del timeline junto a una hoja complementaria de referencias.
+- **admin:** incorporar filtro desplegable por tipo de novedad y columna 'Registrado' con fecha de recepción/creación (`fechaCreacion`) en la gestión de novedades de observadores, optimizando el ancho de los selectores de fecha.
+- **dashboard:** unificar y corregir conteo de alertas activas en Central de Alertas excluyendo alertas de fatiga ocultas e incluyendo el cálculo de riesgo de nota de crédito para observadores monotributistas vía `credit-note-risk.utils.ts`.
+- **ui:** reemplazar ícono genérico de buque por la foto del observador principal en Panel Operativo y Flujo de Trabajo (tabla y móvil), con fallback a iniciales o ícono genérico.
+- **ui:** incorporar avatar con foto del observador en las listas de dotación de personal (`WorkforceOverview`) centrado verticalmente y con tamaño incrementado un 30%.
+- **componentes:** nuevo componente reutilizable `ObservadorAvatar` con carga segura de imagen, fallback dinámico y soporte de tamaños (`sm`, `md`, `lg`, `xl`).
+- **backend:** incluir `observador_foto_url` en listado operativo de mareas (`mareas.service.ts`) y en estado de dotación de personal (`WorkforceStatus`).
+- **observadores:** carga y optimización de foto de perfil con procesamiento en backend vía `sharp` (redimensionamiento a 400x400 px, rotación EXIF y compresión JPEG) almacenado en `uploads/observadores/`, previsualización local en cliente con revocación segura de memoria y subida diferida al confirmar el guardado del observador sin generar archivos huérfanos.
+- **buques:** calificación de buques con estrellas (escala 0 a 5, default 3) con filtro bidireccional por puntaje límite, detalle obligatorio de observaciones para calificaciones menores a 3, y campo para indicar buque apto para observadoras mujeres (`habitabilidad_femenina_apta`, default false).
+- **disponibilidad:** predeterminar el filtro de 'Técnico' (`TECNICO`) como desmarcado por defecto en la vista de Disponibilidad de Observadores, mostrando inicialmente solo personal con rol de 'Observador' y habilitando su inclusión mediante la botonera de filtros.
+- **observadores:** incorporar filtros tipo botonera en la Lista de Observadores para filtrar por estado (`INACTIVOS` y `NO DISPONIBLES`, desmarcados por defecto mostrando únicamente personal activo y disponible) y por tipo de contrato (`1109`, `LEY MARCO`, `MONOTRIBUTISTA`, `PLANTA PERMANENTE`, marcados por defecto), incluyendo contador dinámico de registros visibles.
+- **disponibilidad:** excluir eventos de novedad de 'Actualización de cédula' (`ACTUALIZACION_CEDULA`) de la línea de tiempo de disponibilidad, dado que constituyen trámites administrativos de registro documental que no impactan en la disponibilidad operativa para embarque.
+- **disponibilidad:** predeterminar el selector de horizonte temporal en '1 Mes' (en lugar de 15 días) al cargar la vista de Disponibilidad de Observadores, ajustando de forma coherente el rango inicial de filtrado de fechas y el control deslizante.
+- **disponibilidad:** ampliar la ventana histórica de datos hacia el pasado en la línea de tiempo de disponibilidad de 30 días a 120 días anteriores (4 meses), permitiendo una inspección retrospectiva profunda de mareas y eventos previos con renderizado atenuado.
+- **disponibilidad:** unificar toda la afección a marea en ejecución bajo el estado `NAVEGANDO` (sin fragmentar en 'Esperando Zarpada' o 'En Puerto' dentro de la línea de tiempo de disponibilidad) hasta la fecha estimada de arribo según la duración prevista; visualización en verde sólido para el período confirmado en curso (hasta hoy) y en verde atenuado con borde punteado (`dashed`) para la navegación proyectada a partir de mañana, activando la ventana móvil de 7 días (`NO DISP. (EST.)`, rojo suave punteado) únicamente cuando se superan los días estimados sin cierre de marea.
+- **disponibilidad:** corregir etiqueta en el timeline de `ESPERANDO_ZARPADA` para visualizar `ESP. ZARPADA` y descalificar al observador del filtro de disponibilidad.
+- **disponibilidad:** considerar como bloqueante la fecha de vencimiento de la cédula de embarque o del reconocimiento médico (lo que suceda primero), generando una situación de 'No disponible' indefinida a partir del día siguiente al vencimiento y auto-liberándose cuando la documentación es actualizada.
+- **observadores:** corregir desfase de zona horaria en fechas de vencimiento de cédula y apto médico convirtiendo las columnas a `timestamptz` con preservación de fecha local argentina y estandarizando el guardado de metadata a formato ISO `YYYY-MM-DD`.
+- **admin:** auto-reconciliar registros de auditoría de correos colgados en 'PROCESANDO' sin tareas activas en cola y habilitar la opción de forzar reprocesamiento en la interfaz.
+
+- **disponibilidad:** incorporar opción de filtro 'Ocultar no disponibles entre fechas' con selectores de fecha (`DatePicker`) y control deslizante doble (`DoubleRangeSlider`), sincronizado automáticamente con el selector de horizonte y filtrando estrictamente observadores con disponibilidad continua o novedades flexibles en todo el período seleccionado.
+- **disponibilidad:** corregir falso conflicto y precedencia indebida de novedades de aviso de disponibilidad (`DISPONIBLE`) sobre mareas en ejecución en el timeline de disponibilidad; el aviso previo queda consumido tras la zarpada y la navegación activa (`NAVEGANDO`) prevalece correctamente.
+- **disponibilidad:** bifurcar la disponibilidad en dos niveles diferenciados: disponibilidad confirmada respaldada documentalmente por aviso de disponibilidad (`DISPONIBLE`, amarillo sólido) y disponibilidad no confirmada asumida en períodos libres sin aviso registrado (`DISPONIBLE_NO_CONFIRMADA`, etiqueta `¿DISPONIBLE?`, fondo amarillo atenuado, borde punteado y tooltip descriptivo).
+- **disponibilidad:** reorganizar interfaz de filtros dejando el buscador de texto siempre visible a la izquierda del selector de horizonte y colapsando el panel de filtros secundarios (tipo de observador y contrato) por defecto para maximizar el área de trabajo vertical.
+- **disponibilidad:** incorporar módulo y vista de Disponibilidad de Observadores con línea de tiempo (`vis-timeline`), precarga continua a 6 meses para navegación fluida sin recargas, y selector de enfoque/zoom rápido (15 Días por default, 1 Mes, 3 Meses y 6 Meses).
+- **disponibilidad:** filtrar de forma fija en backend a los observadores activos con `conImpedimento = false` y `disponible = true`, excluyendo automáticamente observadores no operativos sin requerir filtros adicionales en la interfaz.
+- **disponibilidad:** incorporar mareas en estado 'DESIGNADA' como causa de no disponibilidad, proyectando un bloque de color verde atenuado con borde punteado (`DESIGNADA`) desde la fecha de zarpada estimada hasta la fecha de fin prevista según los días estimados (excluyendo explícitamente mareas en estado 'A_REASIGNAR').
+- **disponibilidad:** mostrar textos descriptivos y elegantes en todos los bloques del timeline ('NO DISPONIBLE', 'DESIGNADA', '¿DISPONIBLE?', 'NAVEGANDO', 'FRANCO', 'LICENCIA', etc.), sanitizando códigos crudos con guiones bajos (`NO_DISPONIBLE`) y proyectando los bloques de 'No Disponible' con un color rojo suave diferenciado tanto en modo claro como en modo oscuro.
+- **disponibilidad:** rediseñar tooltips interactivos eliminando información redundante e incorporando rango de fechas con cálculo de duración en días y detalles estructurados.
+- **disponibilidad:** limitar los eventos y bloques de 'Navegando' a la fecha estimada de arribo (`inicio + diasEstimados - 1`) al igual que en `ObservadorCalendar`, liberando automáticamente la disponibilidad del observador tras cumplir dicho período estimado.
+- **disponibilidad:** alinear comportamiento con `ObservadorCalendar`: omitir bloque positivo de novedad `DISPONIBLE` y pintar el espacio libre previo como 'No Disponible' (`NO_DISP`) hasta alcanzar la fecha del aviso.
+- **disponibilidad:** proyectar en color amarillo/ámbar los bloques de 'Disponible para embarque' para periodos futuros libres sin eventos que corten la disponibilidad.
+- **disponibilidad:** incorporar detección de flexibilidad ante urgencias para Francos Compensatorios (`FC`) y novedades con `permiteUrgencia = true`, con estilos y tooltips diferenciados.
+- **disponibilidad:** proyectar impedimentos de observadores (`conImpedimento` o `disponible = false`) mediante franja continua y tooltip con motivo detallado.
+- **dashboard:** renovar el Dashboard de Observadores actualizando el título de la sección a 'Gestión de Observadores', posicionando la ficha de 'Disponibilidad' en el último lugar de la grilla e identificándola con el ícono de buque (`ShipIcon`) y tono distintivo `info` (celeste/cian oceánico).
+- **mareas:** validaciones exhaustivas para observadores secundarios planificados en backend (`MareasService.create` y `MareasService.update`) asegurando que no coincidan con el observador principal, no existan duplicados, no tengan impedimentos activos y no estén asignados como principal a otra marea activa en estado `DESIGNADA`.
+- **mareas:** validación interactiva y reactiva en frontend (`NuevaMareaDialog`, `EditMareaDesignadaDialog`, `EditarMareaView` y `ObservadoresSecundariosEditor`) para evitar selección de secundarios en conflicto con el principal o duplicados.
+
+
+### Added
+- **observadores:** registrar documentación de embarque para observadores (número numérico de cédula único por observador, fecha de vencimiento de cédula, fecha de vencimiento de apto médico y fecha automática de última actualización), visualización en tabla y tarjetas con ícono de advertencia por colores (gris para datos incompletos/sin registrar, amarillo para vencimientos < 2 meses, rojo para vencimientos < 30 días o vencidos, tilde verde para documentación al día) y tooltips informativos detallados.
+- **presentismo:** computar automáticamente como 'En tránsito' los días intermedios entre el viaje inicial y la zarpada, y entre el arribo y el viaje de regreso
+- **presentismo:** preservar las fechas originales de las novedades de viaje sin mutaciones artificiales en la planilla mensual
+- **planificacion:** corregir visualización de etiquetas de eventos de viaje en el timeline del simulador mostrando 'Viaje' en lugar de código truncado
+- **presentismo:** aislar el cómputo de etapas y períodos de puerto/navegación para observadores secundarios y dar por finalizada su participación tras su última etapa asignada
+- **presentismo:** vincular eventos de viaje (`VIAJE_INICIO` y `VIAJE_FIN`) con las etapas específicas asignadas a cada observador secundario
+- **admin:** reflejar etapas asignadas y designaciones de observadores secundarios en el calendario individual (`ObservadorCalendarView`) y en el simulador
+- **mareas:** incorporar precarga automática de observadores secundarios planificados al crear o iniciar etapas en `GestionEtapasMareaDialog` y `NavigationStagesEditor`
+- **mareas:** depurar y avanzar progresivamente el borrador de observadores planificados en `metadata` al materializar o asignar etapas
+- **mareas:** incorporar pestaña interna de gestión de observadores por etapa en `NavigationStagesEditor` con soporte para alta, edición y baja
+- **mareas:** visualizar observador principal en solo lectura dentro de la nómina de cada etapa y badge de dotación total con color condicional
+- **mareas:** implementar soporte para planificación y asignación de observadores secundarios en etapas de marea vía `metadata` JSONB
+- **mareas:** incorporar componente `ObservadoresSecundariosEditor` en diálogos de nueva marea y edición de designación
+- **mareas:** materializar automáticamente observadores secundarios planificados en `mareas_etapas_observadores` al iniciar marea y crear etapas
+- **mareas:** añadir endpoints en la API para actualizar observadores planificados y gestionar observadores asignados por etapa
+- **planificacion:** implementar motor unificado de eventos de observador (`observador-events-engine.ts`) compartido entre el calendario individual y el simulador de cobertura
+- **planificacion:** ocultar bloques de disponibilidad en el timeline del simulador para una vista más limpia y habilitar espacios libres de asignación
+- **admin:** optimizaciones de UX/UI en buscadores y filtros de novedades, observadores y feriados
+- **novedades:** soporte para ajuste automático de periodos opuestos (trimming)
+- **novedades:** implementar rectificación de novedades y comparador antes/después
+- **backend:** registrar errores de Drive, email e IMAP en ErrorLog general
+- **dashboard:** agregar tarjeta de novedades pendientes y navegación directa
+- **mareas:** incorporar campo booleano `desestimada` y soporte dinámico en diálogo de transiciones a 'Pendiente de informe'
+- **mareas:** visualizar badge de 'Desestimada' en vista de flujo de mareas, panel operativo y panel lateral de detalle
+- **mareas:** requerir observaciones de forma obligatoria al marcar una marea como desestimada en el diálogo y en la API
+- **admin:** envolver barra de filtros en sección expandible en planilla de presentismo
+- **admin:** integrar encabezado, filtros y leyenda al panel fijado superior en matriz de presentismo
+- **admin:** unificar panel fijado superior y buscador en vistas de observadores
+
+### Fixed
+- **mareas:** resolver persistencia de observadores en `getMareaContext` y clonación de etapas en `GestionEtapasMareaDialog`
+- **mareas:** corregir serialización de relaciones de Prisma en `update()` evitando pasar argumentos desconocidos como `buqueId`
+- **mareas:** corregir filtrado de observadores en `EditMareaDesignadaDialog` y resolución de nombres en `ObservadoresSecundariosEditor`
+- **planificacion:** resolver falsos conflictos de disponibilidad sin fecha fin en el simulador de cobertura
+- **planificacion:** unificar cálculo de conflictos en simulador para detectar correctamente no disponibilidades reales/virtuales y mareas reales/proyectadas
+- **planificacion:** garantizar IDs globales únicos por observador en Vis-Timeline para evitar colisiones y bloqueos de renderizado
+- **reports:** asegurar que las mareas desestimadas continúen clasificándose en su sección de estado administrativo en el informe de auditoría
+- **jobs:** mostrar '(Sin asunto)' en PDF cuando el email no tiene asunto
+- **admin:** excluir novedades no aprobadas del calendario de observadores
+- **presentismo:** incluir el día de hoy en la planilla mensual
+- **admin:** rellenar huecos entre novedades de viaje y fechas reales de marea en calendario
+- **presentismo:** rellenar huecos entre fin de marea e inicio de viaje
+- **presentismo:** agregar fallback para enlazar dinámicamente novedades de VIAJE_FIN no procesadas previamente al graficar matriz
+- **presentismo:** corregir exclusión de marea en matriz mensual cuando sólo solapa la fecha de fin de viaje
+- **ui:** resolver comportamiento de scroll anidado en componentes de calendario y timeline en versión móvil
+- **novedades:** ocultar eliminadas en calendario y ajustar acciones según estado
+
+### Changed
+- **jobs:** optimizar tipografía y jerarquía visual en el PDF de respaldo de correo electrónico (metadatos compactos a 10px y cuerpo destacado a 14.5px)
+- **style:** activar color de alerta en novedades pendientes solo cuando el valor es mayor a cero
+- **config:** migrar configuración pnpm a `pnpm-workspace.yaml` (pnpm v10+)
+
+### Refactored
+- **frontend:** extraer lógica de `calendarAttributes` de `ObservadorCalendar.vue` al motor compartido reutilizable
+
+## [v0.12.0] - 2026-08-08
+
+### Added
+- **observadores:** agregar `detailMode` al calendario para mostrar detalle en modal o vista lateral
+- **observadores:** integrar calendario en panel lateral con autogestión de novedades
+- **observadores:** mostrar historial completo y agregar flota en timeline
+- **mareas:** mejoras UX/UI y carga de datos en calendario de observadores
+- **calendario:** integración de mareas en el calendario del observador
+- **frontend:** añadir navegación mensual premium en matriz de presentismo
+- **frontend:** añadir estilos específicos para DISPONIBLE y NO_DISPONIBLE
+- **admin:** agregar vista de calendario de novedades por observador
+- **admin:** añadir pesquería en historial del observador
+- **mareas:** implementar subida diferida de archivos a Drive
+- **planificacion:** bloquear modificación de adjuntos en novedades autogeneradas
+- **planificacion:** restringir adjuntos de Novedades a imágenes y PDFs
+- **planificacion:** permitir adjuntos en novedades manuales vía Google Drive
+- **planificacion:** simplificar matriz de experiencia aglutinando por pesquería y remover desglose por flota
+- **planificacion:** implementar modal de detalle de mareas en matriz de experiencia
+- **planificacion:** vincular simulador al store de configuración y cargar horizonte de 5 años
+- **planificacion:** mensaje de error de solapamiento más específico
+- **planificacion:** autofocus en modal de recursos
+- **planificacion:** bloquear fechas pasadas para proyecciones de mareas
+- **planificacion:** tooltip con fechas en bloques y snap a días enteros
+- **planificacion:** autocerrar recursos y agregar simulador al sidebar
+- **planificacion:** devolver marea proyectada a requerimientos pendientes y editar parámetros en timeline
+- **planificacion:** usar `SearchableSelect` para catálogos en el simulador y permitir editar/eliminar recursos
+- **planificacion:** mejorar UI/UX de bloques del simulador y corregir estados
+- **presentismo:** implementar y pulir vis-timeline para matriz de presentismo
+
+### Fixed
+- **mareas:** ajustar margen superior del panel lateral para no ocultarse bajo navbar
+- **backend:** mejorar extracción de fechas en pasajes con IA
+- **novedades:** gestión de novedades eliminadas lógicamente
+- **admin:** restaurar lógica de días a disponibilidad en puerto local
+- **mail:** optimizar procesamiento de pasajes por IA y habilitar rango de fechas
+- **planificacion:** agregar debounce al buscador del simulador de cobertura para evitar lag al escribir
+- **backend:** generar iteradores de fechas en zona local en lugar de UTC para evitar desfasaje de 1 día en timeline
+- **planificacion:** operador non-null assertion para editar buqueId en modal
+- **planificacion:** corregir binding de `buqueId` en modal editar marea simulada
+- **planificacion:** restaurar opcionalidad de `buqueId` en `MareaSimuladaItem`
+- **planificacion:** corregir errores de tipos TS en `SimuladorCoberturaView`
+- **planificacion:** aumentar ancho modal editar marea simulada a XL
+- **planificacion:** agrandar modal editar marea simulada y mejorar texto botón
+- **planificacion:** incluir novedades sin `afecta_presentismo` en timeline de simulador
+- **planificacion:** tooltip con fecha de fin inclusiva correcta
+- **planificacion:** corregir mensaje al mover marea simulada en timeline
+- **planificacion:** corregir bugs de scope de Vue CSS con selectores globales para dark mode
+- **planificacion:** corregir selectores CSS para dark mode en simulador
+- **planificacion:** restaurar estilos visuales de bloques proyectados
+- **planificacion:** excluir mareas canceladas del simulador de cobertura
+- **planificacion:** corregir comportamiento de drag and drop en simulador
+- **frontend:** aumentar timeout de envío a protocolización a 5 minutos
+- **presentismo:** ocultar línea de tiempo actual y resolver advertencias de TS en Vis-Timeline
+
+### Refactored
+- **mail:** procesar contenido de adjuntos en triage para mejorar precisión
+- **frontend:** migrar calendario de novedades a `v-calendar` y aplicar rediseño responsive
+- **planificacion:** usar `BaseModal` y `v-form-nav` para diálogos y double click en recursos
+- **planificacion:** desacoplar lógica de presentismo y crear endpoint nativo para simulación
 
 ## [v0.11.0] - 2026-07-30
 

@@ -163,6 +163,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatDateUI, formatDateTimeUI, formatTimeUI } from '@/utils/date.utils';
 import { ref, onMounted } from 'vue'
 import { toast } from 'vue-sonner'
 import { ChevronDownIcon, ShipIcon } from '@/icons'
@@ -198,38 +199,11 @@ const setDays = async (days: number) => {
   await loadMovements()
 }
 
-const formatDate = (dateStr: string) => {
-  if (!dateStr) return '-'
-  const date = new Date(dateStr)
-  return new Intl.DateTimeFormat('es-AR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  }).format(date)
-}
+const formatDate = (dateStr: string) => formatDateUI(dateStr)
 
-const formatDateTime = (dateTimeStr: string) => {
-  if (!dateTimeStr) return '-'
-  const date = new Date(dateTimeStr)
-  return new Intl.DateTimeFormat('es-AR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date)
-}
+const formatDateTime = (dateTimeStr: string) => formatDateTimeUI(dateTimeStr)
 
-const formatTime = (dateTimeStr: string) => {
-  if (!dateTimeStr) return ''
-  const date = new Date(dateTimeStr)
-  // Si la hora es exactamente 00:00, podríamos ocultarla, 
-  // pero el usuario pidió dejarla visible definitivamente.
-  return new Intl.DateTimeFormat('es-AR', {
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date)
-}
+const formatTime = (dateTimeStr: string) => formatTimeUI(dateTimeStr)
 
 const getSources = (fuentes: any): string[] => {
   if (!fuentes) return []

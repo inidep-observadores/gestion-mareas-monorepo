@@ -4,6 +4,7 @@ import { ImapService } from '../../mail/imap.service';
 import { NovedadesAiService } from '../../mail/novedades-ai.service';
 import { JobQueueService } from '../job-queue.service';
 import { JobProcessor, JobType, JobStatus } from '../job-types';
+import { ErrorLogsService } from '../../common/error-logs/error-logs.service';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import * as os from 'os';
@@ -17,7 +18,8 @@ export class NovedadesEmailProcessor implements JobProcessor {
         private readonly prisma: PrismaService,
         private readonly imapService: ImapService,
         private readonly jobQueueService: JobQueueService,
-        private readonly novedadesAiService: NovedadesAiService
+        private readonly novedadesAiService: NovedadesAiService,
+        private readonly errorLogsService: ErrorLogsService,
     ) {
         // Asegurar que el directorio temporal exista
         fs.mkdir(this.tempDir, { recursive: true }).catch(err => {
@@ -70,11 +72,25 @@ export class NovedadesEmailProcessor implements JobProcessor {
                 const detallesPrevios = emailLog.detalles || [];
                 const yaEncolado = (fuente: string) => detallesPrevios.some(d => d.fuente === fuente);
 
+                // Asegurar nombres únicos para adjuntos sin nombre
+                const attachmentsData = (email.attachments || []).map((att, i) => {
+                    let fname = att.filename;
+                    if (!fname) {
+                        const ext = (att.contentType || '').split('/')[1] || 'pdf';
+                        fname = `adjunto_${i}.${ext}`;
+                    }
+                    return { ...att, resolvedFilename: fname };
+                });
+
                 // --- FASE 1: Triage ---
                 let triageResult: any = emailLog.clasificacionTriage;
                 if (!triageResult) {
-                    const nombresAdjuntos = (email.attachments || []).map(a => a.filename || 'adjunto.pdf');
-                    triageResult = await this.novedadesAiService.clasificarEmail(email.subject, email.text, nombresAdjuntos);
+                    const attachmentsParaTriage = attachmentsData.map(a => ({
+                        buffer: a.content,
+                        mimetype: a.contentType || 'application/pdf',
+                        filename: a.resolvedFilename
+                    }));
+                    triageResult = await this.novedadesAiService.clasificarEmail(email.subject, email.text, attachmentsParaTriage);
                     
                     await this.prisma.novedadesEmailLog.update({
                         where: { id: emailLog.id },
@@ -108,7 +124,7 @@ export class NovedadesEmailProcessor implements JobProcessor {
                             fuente: 'CUERPO',
                             texto: email.text,
                             emailSubject: email.subject,
-                            emailData: { from: email.from, date: email.date },
+                            emailData: { from: email.from, to: email.to, date: email.date },
                             explicitDocType: cuerpoCandidato.tipoDocumento
                         },
                         10
@@ -116,10 +132,10 @@ export class NovedadesEmailProcessor implements JobProcessor {
                 }
 
                 // 3. Procesar cada Adjunto marcado como relevante
-                if (email.attachments && email.attachments.length > 0) {
-                    for (let i = 0; i < email.attachments.length; i++) {
-                        const att = email.attachments[i];
-                        const filename = att.filename || `adjunto_${i}.pdf`;
+                if (attachmentsData.length > 0) {
+                    for (let i = 0; i < attachmentsData.length; i++) {
+                        const att = attachmentsData[i];
+                        const filename = att.resolvedFilename;
                         
                         const adjuntoCandidato = candidatosRelevantes.find((c: any) => c.fuente === 'ADJUNTO' && c.nombreArchivo === filename);
                         if (adjuntoCandidato) {
@@ -135,6 +151,7 @@ export class NovedadesEmailProcessor implements JobProcessor {
                                             emailLogId: emailLog.id,
                                             fuente: attFuente,
                                             emailSubject: email.subject,
+                                            emailData: { from: email.from, to: email.to, date: email.date },
                                             explicitDocType: adjuntoCandidato.tipoDocumento,
                                             attachmentData: {
                                                 filePath,
@@ -146,6 +163,20 @@ export class NovedadesEmailProcessor implements JobProcessor {
                                     );
                                 } catch (err: any) {
                                     this.logger.error(`Error guardando adjunto o encolando IA para ${attFuente}: ${err.message}`);
+                                    await this.errorLogsService.create({
+                                        level: 'ERROR',
+                                        source: 'EMAIL_SYNC',
+                                        context: 'NovedadesEmailProcessor.processAttachment',
+                                        message: `Error guardando adjunto o encolando IA (${attFuente}): ${err.message}`,
+                                        stack: err.stack,
+                                        detail: {
+                                            emailLogId: emailLog.id,
+                                            messageId: email.messageId,
+                                            subject: email.subject,
+                                            filename,
+                                            fuente: attFuente,
+                                        },
+                                    });
                                     enqueueSuccess = false;
                                 }
                             }

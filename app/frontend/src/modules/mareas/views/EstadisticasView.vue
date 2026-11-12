@@ -173,14 +173,25 @@
                      :export-filename="`Cronograma_Distribucion_Mareas_${year}`"
                      @dataPointClick="handleGanttClick" @download="handleDownload('Distribucion_Temporal_Gantt')">
                      <template #header-action>
-                        <div class="flex items-center gap-2">
-                           <span class="text-[10px] font-black text-text-muted uppercase tracking-widest">Filtrar
-                              Pesquería:</span>
-                           <select v-model="selectedDistributionFishery"
-                              class="bg-surface border border-border rounded-lg px-3 py-1 text-xs font-bold text-text focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none">
-                              <option value="ALL">Todas las Pesquerías</option>
-                              <option v-for="f in ganttFisheries" :key="f" :value="f">{{ f }}</option>
-                           </select>
+                        <div class="flex items-center gap-4">
+                           <div class="flex items-center gap-2">
+                              <span class="text-[10px] font-black text-text-muted uppercase tracking-widest">Filtrar
+                                 Pesquería:</span>
+                              <select v-model="selectedDistributionFishery"
+                                 class="bg-surface border border-border rounded-lg px-3 py-1 text-xs font-bold text-text focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none">
+                                 <option value="ALL">Todas las Pesquerías</option>
+                                 <option v-for="f in ganttFisheries" :key="f" :value="f">{{ f }}</option>
+                              </select>
+                           </div>
+                           <label class="flex items-center gap-2 cursor-pointer select-none"
+                              :class="{ 'opacity-50 cursor-not-allowed': selectedDistributionFishery !== 'ALL' }"
+                              :title="selectedDistributionFishery !== 'ALL' ? 'Solo disponible cuando están seleccionadas todas las pesquerías' : ''">
+                              <input type="checkbox" v-model="groupByVessel" :disabled="selectedDistributionFishery !== 'ALL'"
+                                 class="w-4 h-4 text-primary bg-surface border-border rounded focus:ring-primary/20 transition-colors cursor-pointer disabled:cursor-not-allowed" />
+                              <span class="text-[10px] font-black text-text-muted uppercase tracking-widest">
+                                 Agrupar por buque (sin pesquería)
+                              </span>
+                           </label>
                         </div>
                      </template>
                   </ChartWidget>
@@ -732,21 +743,12 @@ const distributionData = ref<MareaDistributionItem[]>([]);
 const coverageData = ref<{ month: number, count: number, days: number, fleets: { name: string, count: number, days: number }[] }[]>([]);
 const requerimientosData = ref<RequerimientoCobertura[]>([]);
 const selectedDistributionFishery = ref<string>('ALL');
+const groupByVessel = ref<boolean>(false);
 
-const dynamicChartHeight = computed(() => {
-   let filtered = distributionData.value;
-   if (selectedDistributionFishery.value !== 'ALL') {
-      filtered = filtered.filter(item => item.pesqueria === selectedDistributionFishery.value);
+watch(selectedDistributionFishery, (newVal) => {
+   if (newVal !== 'ALL') {
+      groupByVessel.value = false;
    }
-   const uniqueVessels = new Set(filtered.map(item => item.buque)).size;
-const handleTimeFilter = (period: { startDate: string | null; endDate: string | null }) => {
-   startDate.value = period.startDate;
-   endDate.value = period.endDate;
-   fetchData();
-};
-
-// Base 100px para ejes + 20px por buque. Mínimo 500px.
-   return Math.max(500, uniqueVessels * 20 + 100);
 });
 // --- Estimation Deviation State ---
 const estimationTolerance = ref<number>(Number(localStorage.getItem('sigma_estimation_tolerance')) || 20);
@@ -1021,20 +1023,32 @@ const ganttFisheries = computed(() => {
 
 const ganttSeries = computed(() => {
    let filtered = distributionData.value;
-   if (selectedDistributionFishery.value !== 'ALL') {
+   const isFisheryFiltered = selectedDistributionFishery.value !== 'ALL';
+   const isGroupedByVessel = groupByVessel.value && !isFisheryFiltered;
+
+   if (isFisheryFiltered) {
       filtered = filtered.filter(item => item.pesqueria === selectedDistributionFishery.value);
    }
 
-   // Ordenar por Pesquería, luego Flota, luego Buque, luego Fecha Zarpada
-   filtered = [...filtered].sort((a, b) => {
-      const p = a.pesqueria.localeCompare(b.pesqueria);
-      if (p !== 0) return p;
-      const f = (a.flota || '').localeCompare(b.flota || '');
-      if (f !== 0) return f;
-      const bc = a.buque.localeCompare(b.buque);
-      if (bc !== 0) return bc;
-      return new Date(a.fechaZarpada).getTime() - new Date(b.fechaZarpada).getTime();
-   });
+   if (isGroupedByVessel) {
+      // Ordenar por Buque alfabéticamente, luego por Fecha Zarpada
+      filtered = [...filtered].sort((a, b) => {
+         const bc = a.buque.localeCompare(b.buque);
+         if (bc !== 0) return bc;
+         return new Date(a.fechaZarpada).getTime() - new Date(b.fechaZarpada).getTime();
+      });
+   } else {
+      // Ordenar por Pesquería, luego Flota, luego Buque, luego Fecha Zarpada
+      filtered = [...filtered].sort((a, b) => {
+         const p = a.pesqueria.localeCompare(b.pesqueria);
+         if (p !== 0) return p;
+         const f = (a.flota || '').localeCompare(b.flota || '');
+         if (f !== 0) return f;
+         const bc = a.buque.localeCompare(b.buque);
+         if (bc !== 0) return bc;
+         return new Date(a.fechaZarpada).getTime() - new Date(b.fechaZarpada).getTime();
+      });
+   }
 
    const yearStart = new Date(Date.UTC(year.value, 0, 1, 0, 0, 0, 0)).getTime();
    const seriesData: any[] = [];
@@ -1045,11 +1059,10 @@ const ganttSeries = computed(() => {
       const end = item.fechaArribo ? new Date(item.fechaArribo).getTime() : Date.now();
       const baseColor = getFisheryColor(item.pesqueria);
 
-      const isFisheryFiltered = selectedDistributionFishery.value !== 'ALL';
       const subLabel = isFisheryFiltered 
          ? (item.flota || 'Sin Flota') 
          : `${item.pesqueria} - ${item.flota || 'Sin Flota'}`;
-      const labelFormat = [item.buque, subLabel];
+      const labelFormat = isGroupedByVessel ? item.buque : [item.buque, subLabel];
 
       // Si estamos en modo TOTAL y el segmento cruza el inicio del año
       if (mode.value === 'TOTAL' && start < yearStart && end > yearStart) {
@@ -1093,6 +1106,7 @@ const ganttDynamicHeight = computed(() => {
 });
 
 const ganttChartOptions = computed(() => {
+   const isGroupedByVessel = groupByVessel.value && selectedDistributionFishery.value === 'ALL';
    return {
    chart: {
       type: 'rangeBar',
@@ -1143,12 +1157,12 @@ const ganttChartOptions = computed(() => {
          minWidth: 50,
          maxWidth: 230,
          offsetX: 0,
-         offsetY: 6, // Ajuste para centrar verticalmente las dos líneas
+         offsetY: isGroupedByVessel ? 0 : 6, // Ajuste vertical según sea 1 o 2 líneas
          style: {
             fontSize: '11px',
             fontWeight: 700,
             colors: '#0f172a', // text
-            cssClass: 'apexcharts-yaxis-label-multiline'
+            cssClass: isGroupedByVessel ? '' : 'apexcharts-yaxis-label-multiline'
          }
       }
    },

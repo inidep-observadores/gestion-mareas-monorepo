@@ -4,8 +4,9 @@ import { join } from 'path';
 import * as http from 'http';
 import * as url from 'url';
 
-// Cargar .env
-dotenv.config({ path: join(process.cwd(), '.env') });
+const envFile = process.argv[2] || '.env';
+console.log(`Cargando variables desde: ${envFile}`);
+dotenv.config({ path: join(process.cwd(), envFile) });
 
 const PORT = 3000;
 const REDIRECT_URI = `http://localhost:${PORT}/oauth2callback`;
@@ -15,7 +16,7 @@ async function generateDriveToken() {
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
     if (!clientId || !clientSecret) {
-        console.error('❌ Error: Falta GOOGLE_CLIENT_ID o GOOGLE_CLIENT_SECRET en el archivo .env');
+        console.error(`❌ Error: Falta GOOGLE_CLIENT_ID o GOOGLE_CLIENT_SECRET en el archivo ${envFile}`);
         return;
     }
 

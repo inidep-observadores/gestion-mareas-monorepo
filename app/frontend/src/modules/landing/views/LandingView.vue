@@ -40,7 +40,7 @@ const handleEnter = () => {
 
     <!-- Versión sutil en el pie -->
     <div class="version-tag absolute bottom-8 z-10">
-        SIGMA V0.0.1 | INIDEP
+        SIGMA V0.21.1 | INIDEP
     </div>
   </div>
 </template>

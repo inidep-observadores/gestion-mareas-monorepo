@@ -23,6 +23,8 @@ export interface MareaListItem {
     fecha_arribo?: string;
     progreso: number;
     observador?: string;
+    observador_id?: string | null;
+    observador_foto_url?: string | null;
     fecha_fin_observador?: string;
     en_tierra?: boolean;
     en_prospeccion?: boolean;
@@ -33,6 +35,7 @@ export interface MareaListItem {
     dias_marea?: number;
     dias_navegados?: number;
     intencion_cierre?: boolean;
+    desestimada?: boolean;
     actionsAvailable: Record<string, { enabled: boolean; label: string; blockedReason?: string; claseBoton?: string }>;
 }
 
@@ -61,9 +64,10 @@ export interface MareaContext {
         observador: string;
         id_pesqueria?: string;
         tipo_marea: TipoMarea;
+        desestimada?: boolean;
         etapas?: any[];
     };
-    actions: Record<string, { enabled: boolean; label: string; blockedReason?: string; claseBoton?: string }>;
+    actions: Record<string, { enabled: boolean; label: string; blockedReason?: string; toStateCodigo?: string; claseBoton?: string }>;
     lastEvents: { id: string; titulo: string; fecha: string; usuario: string; comentarios?: string }[];
 }
 
@@ -73,6 +77,7 @@ export interface DashboardKpis {
     mareasDesignadas: number;
     listasParaProtocolizar: number;
     enRevision: number;
+    novedadesPendientes?: number;
 }
 
 export interface MovementEvent {
@@ -127,6 +132,7 @@ export interface Marea {
     tipoMarea?: TipoMarea;
     inicia_en_prospeccion?: boolean;
     iniciaEnProspeccion?: boolean;
+    desestimada?: boolean;
     anio_marea?: number;
     anioMarea?: number;
     nro_marea?: number;
@@ -142,7 +148,9 @@ export interface Marea {
 
     tipoCalculoZonaAustral?: TipoCalculoZonaAustral;
     archivos?: any[];
+    metadata?: import('./marea-metadata.types').MareaMetadata | Record<string, any> | null;
 }
+
 
 export interface MareaOpcionesCierre {
     finalizarMareaAlArribo: boolean;

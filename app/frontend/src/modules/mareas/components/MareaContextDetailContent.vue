@@ -37,10 +37,16 @@
         <section v-if="showOperationalInfo" class="space-y-6">
           <div class="flex items-center justify-between">
             <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">Estado & Progreso</h4>
-            <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter shadow-sm"
-              :class="getStatusClasses(context.marea.estado_codigo)">
-              {{ context.marea.estado }}
-            </span>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span v-if="context.marea.desestimada"
+                class="px-2.5 py-1 bg-error/15 text-error rounded-full text-[10px] font-black uppercase tracking-tighter border border-error/30 shadow-sm">
+                Desestimada
+              </span>
+              <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter shadow-sm"
+                :class="getStatusClasses(context.marea.estado_codigo)">
+                {{ context.marea.estado }}
+              </span>
+            </div>
           </div>
 
           <!-- Progress Bar -->
@@ -323,6 +329,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatDateUI, formatDateTimeUI, formatTimeUI } from '@/utils/date.utils';
 import { computed, ref } from 'vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import httpClient from '@/config/http/http.client'
@@ -558,11 +565,7 @@ const onAction = (key: string | number) => {
   emit('action', key)
 }
 
-const formatDate = (date?: string) => {
-  if (!date) return '---'
-  const d = new Date(date)
-  return d.toLocaleDateString()
-}
+const formatDate = (val?: string) => formatDateUI(val)
 </script>
 
 <style scoped>

@@ -1,4 +1,5 @@
-import { Controller, Get, Param, Post, Query, Body, Patch, Res } from '@nestjs/common';
+import { Controller, Get, Param, Post, Query, Body, Patch, Res, UseInterceptors, UploadedFiles, Delete } from '@nestjs/common';
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 import { MareasService } from './mareas.service';
 import { DateUtils } from '../common/utils/date.utils';
@@ -15,13 +16,18 @@ import { AuditEvent } from '../audit/decorators/audit-event.decorator';
 import { AuditCategoria } from '../audit/enums/audit.enums';
 import { EnviarProtocolizacionDto } from './dto/enviar-protocolizacion.dto';
 import { ConfirmarProtocolizacionDto } from './dto/confirmar-protocolizacion.dto';
-import { UseInterceptors, UploadedFiles } from '@nestjs/common';
-import { AnyFilesInterceptor } from '@nestjs/platform-express';
+import { ParseJsonPipe } from '../common/pipes/parse-json.pipe';
+import { DriveStorageService } from '../files/drive-storage.service';
+import { ConversionService } from '../reports/conversion.service';
 
 @Controller('mareas')
 @Auth()
 export class MareasController {
-    constructor(private readonly mareasService: MareasService) { }
+    constructor(
+        private readonly mareasService: MareasService,
+        private readonly driveStorageService: DriveStorageService,
+        private readonly conversionService: ConversionService,
+    ) { }
 
     @Post('claim')
     @Auth(ValidRoles.admin, ValidRoles.tecnico)
@@ -123,6 +129,11 @@ export class MareasController {
         res.end();
     }
 
+    @Get('por-observador/:observadorId')
+    getMareasByObservador(@Param('observadorId') observadorId: string) {
+        return this.mareasService.getMareasByObservador(observadorId);
+    }
+
     @Get(':id')
     findOne(@Param('id') id: string) {
         return this.mareasService.findOne(id);
@@ -130,12 +141,14 @@ export class MareasController {
 
     @Patch(':id')
     @Auth(ValidRoles.admin, ValidRoles.tecnico)
+    @UseInterceptors(AnyFilesInterceptor())
     update(
         @Param('id') id: string,
-        @Body() updateMareaDto: UpdateMareaDto,
+        @Body(ParseJsonPipe) updateMareaDto: UpdateMareaDto,
+        @UploadedFiles() files: Array<Express.Multer.File>,
         @GetUser() user: User
     ) {
-        return this.mareasService.update(id, updateMareaDto, user);
+        return this.mareasService.update(id, updateMareaDto, files, user);
     }
 
     @Get(':id/context')
@@ -274,4 +287,135 @@ export class MareasController {
     async getProtocolizacionLoteDetalle(@Param('id') id: string) {
         return this.mareasService.getProtocolizacionLoteDetalle(id);
     }
+
+    @Post(':id/archivos/pasajes')
+    @Auth(ValidRoles.admin, ValidRoles.tecnico)
+    @UseInterceptors(AnyFilesInterceptor())
+    @AuditEvent({
+        tipoEvento: 'SUBIR_PASAJE',
+        categoria: AuditCategoria.MAREAS,
+        descripcion: 'Subida de pasaje a la marea y proceso de IA'
+    })
+    uploadPasajes(
+        @Param('id') id: string,
+        @UploadedFiles() files: Array<Express.Multer.File>,
+        @GetUser() user: User
+    ) {
+        return this.mareasService.uploadPasajes(id, files, user);
+    }
+
+    @Delete(':id/archivos/:archivoId')
+    @Auth(ValidRoles.admin, ValidRoles.tecnico)
+    @AuditEvent({
+        tipoEvento: 'ELIMINAR_ARCHIVO',
+        categoria: AuditCategoria.MAREAS,
+        descripcion: 'Eliminación de archivo de marea'
+    })
+    deleteArchivo(
+        @Param('id') id: string,
+        @Param('archivoId') archivoId: string,
+        @GetUser() user: User
+    ) {
+        return this.mareasService.deleteArchivo(id, archivoId, user);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // OBSERVADORES SECUNDARIOS
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Patch(':id/observadores-secundarios')
+    @Auth(ValidRoles.admin, ValidRoles.tecnico)
+    @AuditEvent({
+        tipoEvento: 'ACTUALIZAR_OBSERVADORES_SECUNDARIOS',
+        categoria: AuditCategoria.MAREAS,
+        descripcion: 'Actualizacion del borrador de observadores secundarios planificados'
+    })
+    updateObservadoresSecundarios(
+        @Param('id') id: string,
+        @Body('observadoresSecundariosPlanificados') observadoresSecundariosPlanificados: any[],
+        @GetUser() user: User
+    ) {
+        return this.mareasService.updateObservadoresSecundarios(id, observadoresSecundariosPlanificados ?? [], user);
+    }
+
+    @Patch(':id/etapas/:etapaId/observadores')
+    @Auth(ValidRoles.admin, ValidRoles.tecnico)
+    @AuditEvent({
+        tipoEvento: 'AGREGAR_OBSERVADOR_ETAPA',
+        categoria: AuditCategoria.MAREAS,
+        descripcion: 'Asignacion de observador secundario a una etapa existente'
+    })
+    addObservadorEtapa(
+        @Param('id') id: string,
+        @Param('etapaId') etapaId: string,
+        @Body('observadorId') observadorId: string,
+        @Body('aplicarASiguientesEtapas') aplicarASiguientesEtapas: boolean,
+        @GetUser() user: User
+    ) {
+        return this.mareasService.addObservadorEtapa(id, etapaId, observadorId, aplicarASiguientesEtapas ?? false, user);
+    }
+
+    @Delete(':id/etapas/:etapaId/observadores/:observadorId')
+    @Auth(ValidRoles.admin, ValidRoles.tecnico)
+    @AuditEvent({
+        tipoEvento: 'QUITAR_OBSERVADOR_ETAPA',
+        categoria: AuditCategoria.MAREAS,
+        descripcion: 'Remocion de observador secundario de una etapa'
+    })
+    removeObservadorEtapa(
+        @Param('id') id: string,
+        @Param('etapaId') etapaId: string,
+        @Param('observadorId') observadorId: string,
+        @GetUser() user: User
+    ) {
+        return this.mareasService.removeObservadorEtapa(id, etapaId, observadorId, user);
+    }
+
+    @Patch(':id/etapas/:etapaId/observadores/:observadorId')
+    @Auth(ValidRoles.admin, ValidRoles.tecnico)
+    @AuditEvent({
+        tipoEvento: 'ACTUALIZAR_OBSERVADOR_ETAPA',
+        categoria: AuditCategoria.MAREAS,
+        descripcion: 'Actualizacion o reemplazo de observador secundario de una etapa'
+    })
+    updateObservadorEtapa(
+        @Param('id') id: string,
+        @Param('etapaId') etapaId: string,
+        @Param('observadorId') observadorId: string,
+        @Body('nuevoObservadorId') nuevoObservadorId: string,
+        @GetUser() user: User
+    ) {
+        return this.mareasService.updateObservadorEtapa(id, etapaId, observadorId, nuevoObservadorId, user);
+    }
+
+    @Post('admin/migrar-informes-drive')
+    @Auth(ValidRoles.admin)
+    @AuditEvent({
+        tipoEvento: 'MIGRAR_INFORMES_DRIVE',
+        categoria: AuditCategoria.MAREAS,
+        descripcion: 'Migración histórica de informes locales a Google Drive'
+    })
+    migrarInformesADrive() {
+        return this.mareasService.migrarInformesADrive();
+    }
+
+    @Get('archivos/:archivoId/preview-pdf')
+    @Auth() // Requiere estar logueado
+    async previewPdf(
+        @Param('archivoId') archivoId: string,
+        @Res() res: Response
+    ) {
+        try {
+            const driveFileId = await this.mareasService.getArchivoDriveId(archivoId);
+            const docxBuffer = await this.driveStorageService.downloadFile(driveFileId);
+            const pdfBuffer = await this.conversionService.convertDocxToPdf(docxBuffer, `preview-${archivoId}.pdf`);
+            
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', `inline; filename="preview-${archivoId}.pdf"`);
+            res.send(pdfBuffer);
+        } catch (error) {
+            res.status(500).json({ statusCode: 500, message: 'Error al previsualizar el archivo', error: error.message });
+        }
+    }
 }
+

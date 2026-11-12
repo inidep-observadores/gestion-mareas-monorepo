@@ -5,6 +5,8 @@ import { MailService } from '../../mail/mail.service';
 import { AlertsService } from '../../alerts/alerts.service';
 import { BusinessRulesService } from '../../common/business-rules/business-rules.service';
 import { ConfigService } from '@nestjs/config';
+import { DriveStorageService } from '../../files/drive-storage.service';
+import { JobQueueService } from '../../jobs/job-queue.service';
 import { TipoEtapa, MareaEstado } from '../mareas.constants';
 
 describe('MareasService (CRUD)', () => {
@@ -43,6 +45,12 @@ describe('MareasService (CRUD)', () => {
         observador: {
             findUnique: jest.fn().mockResolvedValue({}),
         },
+        mareaArchivo: {
+            findMany: jest.fn().mockResolvedValue([]),
+        },
+        mareaMovimiento: {
+            create: jest.fn().mockResolvedValue({ id: 'mov-id' }),
+        },
         $transaction: jest.fn((cb) => cb(mockPrisma)),
     };
 
@@ -55,6 +63,8 @@ describe('MareasService (CRUD)', () => {
                 { provide: AlertsService, useValue: {} },
                 { provide: BusinessRulesService, useValue: { validate: () => ({ success: true }), rules: () => ({}) } },
                 { provide: ConfigService, useValue: { get: () => 14 } },
+                { provide: DriveStorageService, useValue: {} },
+                { provide: JobQueueService, useValue: {} },
             ],
         }).compile();
         service = module.get<MareasService>(MareasService);

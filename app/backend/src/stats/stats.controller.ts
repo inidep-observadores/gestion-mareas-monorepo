@@ -107,6 +107,15 @@ export class StatsController {
         @Res() res: Response,
         @Query() query: GetStatsDto
     ) {
+        let snapshotDate: Date | undefined = query.endDate ? new Date(query.endDate) : undefined;
+        if (snapshotDate) {
+            snapshotDate.setUTCHours(23, 59, 59, 999);
+            const now = new Date();
+            if (snapshotDate > now) {
+                snapshotDate = now;
+            }
+        }
+
         const workbook = await this.statsService.getExportWorkbook(
             query.year,
             query.mode,
@@ -122,7 +131,7 @@ export class StatsController {
             query.protocolizationStartDate,
             query.protocolizationEndDate,
             query.includeSummaries,
-            query.endDate ? new Date(query.endDate) : undefined,
+            snapshotDate,
             query.includeAnnualAnnex
         );
 
