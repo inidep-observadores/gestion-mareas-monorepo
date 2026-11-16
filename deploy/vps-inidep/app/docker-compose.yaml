@@ -11,8 +11,8 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME:-mareas_db}
     ports:
-      # Puerto 5435 publicado en el host para gestión remota interna (DBeaver)
-      - "${DB_EXTERNAL_PORT:-5435}:5432"
+      # Puerto 5437 publicado en el host (evita colisión con 5435 de dev)
+      - "${DB_EXTERNAL_PORT:-5437}:5432"
     volumes:
       - mareas_db_data_inidep:/var/lib/postgresql/data
     networks:
@@ -24,9 +24,7 @@ services:
   redis:
     image: redis:7-alpine
     restart: always
-    container_name: sigma-redis
-    ports:
-      - "6379:6379"
+    container_name: sigma-redis-vps
     volumes:
       - redis_data_inidep:/data
     command: redis-server --appendonly yes

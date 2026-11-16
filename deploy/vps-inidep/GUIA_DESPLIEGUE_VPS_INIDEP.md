@@ -26,7 +26,7 @@ Asegúrese de que el VPS cuente con:
    sudo ufw allow 22/tcp    # SSH
    sudo ufw allow 80/tcp    # HTTP (Traefik - Fase 1)
    sudo ufw allow 443/tcp   # HTTPS (Traefik - Fase 2)
-   sudo ufw allow 5435/tcp  # PostgreSQL para DBeaver desde la red local
+   sudo ufw allow 5437/tcp  # PostgreSQL para DBeaver desde la red local (evita colisión con 5435 de dev)
    ```
 
 ---
@@ -188,8 +188,8 @@ cat /ruta/hacia/backup_prod.sql | docker exec -i sigma-db psql -U postgres -d ma
    - Las solicitudes a la API se canalizan automáticamente a `http://10.0.64.46/api/...`.
 
 2. **Gestor de Base de Datos (DBeaver / DataGrip):**
-   - **Host:** `10.0.64.46`
-   - **Puerto:** `5435`
+   - **Host:** `10.0.64.46` (o su IP / localhost)
+   - **Puerto:** `5437`
    - **Base de datos:** `mareas_db`
    - **Usuario:** `postgres` (o el valor de `DB_USERNAME`)
    - **Contraseña:** el valor asignado en `DB_PASSWORD`
