@@ -3,7 +3,9 @@ import { Response } from 'express';
 import { DisponibilidadService } from './disponibilidad.service';
 import { DisponibilidadResponseDto } from './dto/disponibilidad-response.dto';
 import { ExportarDisponibilidadExcelDto } from './dto/exportar-disponibilidad-excel.dto';
+import { Auth } from '../auth/decorators';
 
+@Auth()
 @Controller('presentismo/disponibilidad')
 export class DisponibilidadController {
   constructor(private readonly disponibilidadService: DisponibilidadService) {}

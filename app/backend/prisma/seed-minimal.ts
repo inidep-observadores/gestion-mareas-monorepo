@@ -6,6 +6,8 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import * as bcrypt from 'bcrypt';
 
+import * as crypto from 'crypto';
+
 dotenv.config();
 
 function expandEnv(str: string | undefined): string | undefined {
@@ -21,96 +23,125 @@ if (!process.env.DATABASE_URL || process.env.DATABASE_URL.includes('${')) {
 process.env.DATABASE_URL = expandEnv(process.env.DATABASE_URL);
 
 async function main() {
-  console.log('--- Iniciando Seed Mínimo (Usuarios y Catálogos) ---');
-
-  // 1. Salvaguarda contra pérdida de datos
-  const isProduction = process.env.NODE_ENV === 'production';
-  const isProdDb = process.env.DATABASE_URL?.includes('supabase') || process.env.DATABASE_URL?.includes('prod');
-
-  if (isProduction || isProdDb) {
-    console.error('🚨 [ERROR CRÍTICO] EL SEED FUE BLOQUEADO.');
-    console.error('Este script es DESTRUCTIVO y se intentó ejecutar en PRODUCCIÓN.');
-    process.exit(1);
-  }
+  console.log('--- Iniciando Inicialización Base (Usuarios y Catálogos) ---');
 
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   const adapter = new PrismaPg(pool);
   const prisma = new PrismaClient({ adapter });
 
   try {
-    // 2. Limpieza exhaustiva en orden inverso de dependencias
-    console.log('Limpiando tablas...');
-    
-    // Sistema y Auditoría
-    await prisma.alertaEvento.deleteMany();
-    await prisma.alerta.deleteMany();
-    await prisma.auditoriaEvento.deleteMany();
-    await prisma.auditoriaEntidad.deleteMany();
-    await prisma.auditoriaNavegacion.deleteMany();
-    await prisma.auditoriaApi.deleteMany();
-    await prisma.errorLog.deleteMany();
-    await prisma.jobQueue.deleteMany();
-    await prisma.systemStatus.deleteMany();
+    // 1. Salvaguarda contra pérdida de datos
+    const isProduction = process.env.NODE_ENV === 'production';
+    const isProdDb = process.env.DATABASE_URL?.includes('supabase') || process.env.DATABASE_URL?.includes('prod');
+    const userCount = await prisma.user.count();
 
-    // Snapshots y API Externas
-    await prisma.pnaZarpadaArribo.deleteMany();
-    await prisma.pnaApiSnapshot.deleteMany();
-    await prisma.trackingEventSnapshot.deleteMany();
-    await prisma.importacionAccessSnapshot.deleteMany();
-    await prisma.buqueTrayectoriaPunto.deleteMany();
-    await prisma.buqueTrayectoria.deleteMany();
-
-    // Mareas y Muestreo
-    await prisma.muestraDetalleTalla.deleteMany();
-    await prisma.submuestra.deleteMany();
-    await prisma.muestra.deleteMany();
-    await prisma.captura.deleteMany();
-    await prisma.lance.deleteMany();
-    await prisma.mareaEtapaObservador.deleteMany();
-    await prisma.mareaEtapa.deleteMany();
-    await prisma.mareaArchivo.deleteMany();
-    await prisma.mareaMovimiento.deleteMany();
-    await prisma.produccion.deleteMany();
-    await prisma.marea.deleteMany();
-
-    // Personal y Buques
-    await prisma.observadorNovedadArchivo.deleteMany();
-    await prisma.observadorNovedad.deleteMany();
-    await prisma.observadorPesqueria.deleteMany();
-    await prisma.experienciaObservador.deleteMany();
-    await prisma.observador.deleteMany();
-    await prisma.buque.deleteMany();
-    await prisma.requerimientoCobertura.deleteMany();
-
-    // Catálogos Base
-    await prisma.pesqueria.deleteMany();
-    await prisma.puerto.deleteMany();
-    await prisma.especie.deleteMany();
-    await prisma.artePesca.deleteMany();
-    await prisma.tipoFlota.deleteMany();
-    await prisma.tipoNovedad.deleteMany();
-
-    // CRM y Auth
-    await prisma.productImage.deleteMany();
-    await prisma.product.deleteMany();
-    await prisma.transicionEstado.deleteMany();
-    await prisma.estadoMarea.deleteMany();
-    await prisma.passwordResetToken.deleteMany();
-    await prisma.user.deleteMany();
-
-    // 3. Usuarios básicos
-    console.log('Creando usuarios básicos...');
-    const password = await bcrypt.hash('Obs123', 10);
-    const usersData = [
-      { email: 'admin@obs.com', fullName: 'Administrador Sistema', password: password, roles: ['admin'] },
-      { email: 'tecnico@obs.com', fullName: 'Técnico de Datos', password: password, roles: ['tecnico_datos'] },
-      { email: 'danieldt2000@hotmail.com', fullName: 'Daniel Di Tullio', password: password, roles: ['tecnico_datos'] },
-    ];
-
-    for (const userData of usersData) {
-      await prisma.user.create({ data: userData });
+    if ((isProduction || isProdDb) && userCount > 0) {
+      console.error('🚨 [ERROR CRÍTICO] EL SEED FUE BLOQUEADO.');
+      console.error('La base de datos ya contiene usuarios registrados.');
+      console.error('Para evitar pérdida de información operativa, el seed no puede ejecutarse.');
+      process.exit(1);
     }
-    console.log(`Usuarios creados: ${usersData.length}`);
+
+    // 2. Limpieza solo en desarrollo si la base no es de producción
+    if (!isProduction && !isProdDb) {
+      console.log('Limpiando tablas para entorno de desarrollo...');
+      
+      // Sistema y Auditoría
+      await prisma.alertaEvento.deleteMany();
+      await prisma.alerta.deleteMany();
+      await prisma.auditoriaEvento.deleteMany();
+      await prisma.auditoriaEntidad.deleteMany();
+      await prisma.auditoriaNavegacion.deleteMany();
+      await prisma.auditoriaApi.deleteMany();
+      await prisma.errorLog.deleteMany();
+      await prisma.jobQueue.deleteMany();
+      await prisma.systemStatus.deleteMany();
+
+      // Snapshots y API Externas
+      await prisma.pnaZarpadaArribo.deleteMany();
+      await prisma.pnaApiSnapshot.deleteMany();
+      await prisma.trackingEventSnapshot.deleteMany();
+      await prisma.importacionAccessSnapshot.deleteMany();
+      await prisma.buqueTrayectoriaPunto.deleteMany();
+      await prisma.buqueTrayectoria.deleteMany();
+
+      // Mareas y Muestreo
+      await prisma.muestraDetalleTalla.deleteMany();
+      await prisma.submuestra.deleteMany();
+      await prisma.muestra.deleteMany();
+      await prisma.captura.deleteMany();
+      await prisma.lance.deleteMany();
+      await prisma.mareaEtapaObservador.deleteMany();
+      await prisma.mareaEtapa.deleteMany();
+      await prisma.mareaArchivo.deleteMany();
+      await prisma.mareaMovimiento.deleteMany();
+      await prisma.produccion.deleteMany();
+      await prisma.marea.deleteMany();
+
+      // Personal y Buques
+      await prisma.observadorNovedadArchivo.deleteMany();
+      await prisma.observadorNovedad.deleteMany();
+      await prisma.observadorPesqueria.deleteMany();
+      await prisma.experienciaObservador.deleteMany();
+      await prisma.observador.deleteMany();
+      await prisma.buque.deleteMany();
+      await prisma.requerimientoCobertura.deleteMany();
+
+      // Catálogos Base
+      await prisma.pesqueria.deleteMany();
+      await prisma.puerto.deleteMany();
+      await prisma.especie.deleteMany();
+      await prisma.artePesca.deleteMany();
+      await prisma.tipoFlota.deleteMany();
+      await prisma.tipoNovedad.deleteMany();
+
+      // CRM y Auth
+      await prisma.productImage.deleteMany();
+      await prisma.product.deleteMany();
+      await prisma.transicionEstado.deleteMany();
+      await prisma.estadoMarea.deleteMany();
+      await prisma.passwordResetToken.deleteMany();
+      await prisma.user.deleteMany();
+    }
+
+    // 3. Crear usuario administrador seguro
+    console.log('Verificando usuario administrador...');
+    const adminEmail = (process.env.INITIAL_ADMIN_EMAIL || 'admin@inidep.edu.ar').toLowerCase().trim();
+    const existingAdmin = await prisma.user.findUnique({ where: { email: adminEmail } });
+
+    if (!existingAdmin) {
+      let plainPassword = process.env.INITIAL_ADMIN_PASSWORD;
+      let generatedPassword = false;
+
+      if (!plainPassword || plainPassword.trim() === '') {
+        plainPassword = crypto.randomBytes(9).toString('base64').replace(/[^a-zA-Z0-9]/g, 'A') + '1aA!';
+        generatedPassword = true;
+      }
+
+      const hashedPassword = await bcrypt.hash(plainPassword, 10);
+      await prisma.user.create({
+        data: {
+          email: adminEmail,
+          fullName: 'Administrador Sistema',
+          password: hashedPassword,
+          roles: ['admin'],
+          isActive: true,
+        },
+      });
+
+      console.log('===========================================================');
+      console.log('✅ USUARIO ADMINISTRADOR INICIAL CREADO:');
+      console.log(`   Email: ${adminEmail}`);
+      if (generatedPassword) {
+        console.log(`   Contraseña generada: ${plainPassword}`);
+        console.log('   ⚠️ Guarde esta contraseña y cámbiela tras su primer acceso.');
+      } else {
+        console.log('   Contraseña: [Configurada mediante INITIAL_ADMIN_PASSWORD]');
+      }
+      console.log('===========================================================');
+    } else {
+      console.log(`Usuario administrador (${adminEmail}) ya existe. No se modifica.`);
+    }
 
     // 4. Estados de Marea (Configuración inicial de flujo de trabajo)
     console.log('Cargando Estados de Marea...');
@@ -132,7 +163,11 @@ async function main() {
     ];
 
     for (const data of estadosMareaData) {
-      await prisma.estadoMarea.create({ data });
+      await prisma.estadoMarea.upsert({
+        where: { codigo: data.codigo },
+        update: data,
+        create: data,
+      });
     }
 
     // 4b. Tipos de Novedades
@@ -154,7 +189,11 @@ async function main() {
     ];
 
     for (const data of tiposNovedadesData) {
-      await prisma.tipoNovedad.create({ data });
+      await prisma.tipoNovedad.upsert({
+        where: { codigo: data.codigo },
+        update: data,
+        create: data,
+      });
     }
 
     // 5. Transiciones de Estado
@@ -192,17 +231,22 @@ async function main() {
       const fromId = getEstadoId(t.from);
       const toId = getEstadoId(t.to);
       if (fromId && toId) {
-        await prisma.transicionEstado.create({
-          data: {
-            estadoOrigenId: fromId,
-            estadoDestinoId: toId,
-            accion: t.action,
-            etiqueta: t.label,
-            claseBoton: t.btn,
-            activo: true,
-            mostrarEnPanel: (t as any).mostrarEnPanel !== false
-          }
+        const existing = await prisma.transicionEstado.findFirst({
+          where: { estadoOrigenId: fromId, estadoDestinoId: toId, accion: t.action }
         });
+        if (!existing) {
+          await prisma.transicionEstado.create({
+            data: {
+              estadoOrigenId: fromId,
+              estadoDestinoId: toId,
+              accion: t.action,
+              etiqueta: t.label,
+              claseBoton: t.btn,
+              activo: true,
+              mostrarEnPanel: (t as any).mostrarEnPanel !== false
+            }
+          });
+        }
       }
     }
 
@@ -234,10 +278,14 @@ async function main() {
           });
 
         if ('createMany' in catalog.model) {
-          await (catalog.model as any).createMany({ data });
+          await (catalog.model as any).createMany({ data, skipDuplicates: true });
         } else {
           for (const item of data) {
-            await (catalog.model as any).create({ data: item });
+            try {
+              await (catalog.model as any).create({ data: item });
+            } catch (err: any) {
+              if (err.code !== 'P2002') throw err; // Ignorar si ya existe por unique constraint
+            }
           }
         }
       } else {

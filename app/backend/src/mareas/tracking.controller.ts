@@ -3,7 +3,9 @@ import { Controller, Post, Get, Param, Query, UseInterceptors, UploadedFile, Par
 import { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { TrackingService } from './tracking.service';
+import { Auth } from '../auth/decorators';
 
+@Auth()
 @Controller('tracking')
 export class TrackingController {
     constructor(private readonly trackingService: TrackingService) { }

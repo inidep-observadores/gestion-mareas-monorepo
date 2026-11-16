@@ -7,6 +7,7 @@ import { FilesService } from './files.service';
 import { DriveStorageService } from './drive-storage.service';
 
 import { fileFilter, fileNamer } from './helpers';
+import { Auth } from '../auth/decorators';
 
 
 @Controller('files')
@@ -40,6 +41,7 @@ export class FilesController {
   }
 
   @Post('product')
+  @Auth()
   @UseInterceptors(FileInterceptor('file', {
     fileFilter: fileFilter,
     storage: diskStorage({
@@ -61,6 +63,7 @@ export class FilesController {
   }
 
     @Post('user')
+    @Auth()
     @UseInterceptors(FileInterceptor('file', {
         fileFilter: fileFilter,
         storage: diskStorage({
@@ -80,6 +83,7 @@ export class FilesController {
     }
 
     @Post('novedad/drive')
+    @Auth()
     @UseInterceptors(FileInterceptor('file', {
         storage: memoryStorage(),
         fileFilter: (req, file, cb) => {
@@ -121,6 +125,7 @@ export class FilesController {
     }
 
     @Post('observador')
+    @Auth()
     @UseInterceptors(FileInterceptor('file', {
         storage: memoryStorage(),
         fileFilter: (req, file, cb) => {

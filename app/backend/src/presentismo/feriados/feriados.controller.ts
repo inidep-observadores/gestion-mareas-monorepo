@@ -11,7 +11,9 @@ import {
 } from '@nestjs/common';
 import { FeriadosService } from './feriados.service';
 import { CreateFeriadoDto } from './dto/create-feriado.dto';
+import { Auth } from '../../auth/decorators';
 
+@Auth()
 @Controller('feriados')
 export class FeriadosController {
   constructor(private readonly feriadosService: FeriadosService) {}

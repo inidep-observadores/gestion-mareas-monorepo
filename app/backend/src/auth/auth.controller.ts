@@ -17,6 +17,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) { }
 
   @Post('register')
+  @Auth(ValidRoles.admin)
   async createUser(
     @Body() createUserDto: CreateUserDto,
     @Res({ passthrough: true }) res: Response
