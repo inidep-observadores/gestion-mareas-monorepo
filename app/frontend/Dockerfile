@@ -23,7 +23,7 @@ RUN pnpm install --no-frozen-lockfile
 COPY . .
 
 # Construir la aplicación (por defecto producción 'dist', o staging según BUILD_SCRIPT)
-RUN pnpm $BUILD_SCRIPT
+RUN NODE_OPTIONS=--max-old-space-size=4096 pnpm $BUILD_SCRIPT
 
 # Production stage
 FROM nginx:stable-alpine AS production-stage
