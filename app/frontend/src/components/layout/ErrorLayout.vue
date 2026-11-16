@@ -40,7 +40,7 @@
         <!-- Footer Info -->
         <div class="mt-12 pt-8 border-t border-border">
           <p class="text-xs text-text-muted font-medium uppercase tracking-[0.2em]">
-            INIDEP - Gestión de Mareas
+            SIGMA - INIDEP
           </p>
         </div>
       </div>

@@ -7,7 +7,7 @@
         <div class="max-w-none space-y-6 text-text-muted leading-relaxed text-sm">
           <section>
             <h2 class="text-xl font-bold text-text mb-2 uppercase tracking-tight">1. Aceptación de los Términos</h2>
-            <p>Al acceder y utilizar el Sistema de Gestión de Mareas del INIDEP, usted acepta estar sujeto a estos Términos y Condiciones de Uso. Si no está de acuerdo con alguno de estos términos, le solicitamos que no utilice el sistema.</p>
+            <p>Al acceder y utilizar SIGMA (Sistema Integral de Gestión de Mareas) del INIDEP, usted acepta estar sujeto a estos Términos y Condiciones de Uso. Si no está de acuerdo con alguno de estos términos, le solicitamos que no utilice el sistema.</p>
           </section>
 
           <section>

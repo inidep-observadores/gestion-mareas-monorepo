@@ -6,8 +6,8 @@
       <WaveIcon class="w-5 h-5 text-white" />
     </div>
     <div class="flex flex-col">
-      <span class="text-sm font-bold text-text leading-tight">Gestión de</span>
-      <span class="text-sm font-bold text-primary leading-tight">Mareas</span>
+      <span class="text-base font-black tracking-wider text-text leading-tight">SIGMA</span>
+      <span class="text-[9px] font-semibold uppercase tracking-wider text-text-muted leading-tight">Gestión de Mareas</span>
     </div>
   </router-link>
 </template>

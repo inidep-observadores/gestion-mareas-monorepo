@@ -16,8 +16,8 @@
       <router-link :to="{ name: 'Dashboard' }" class="flex items-center gap-3">
         <SigmaLogo width="40px" :animated="true" theme="auto" />
         <div v-if="isExpanded || isHovered || isMobileOpen" class="flex flex-col">
-          <span class="text-lg font-bold text-text leading-tight">Gestión de</span>
-          <span class="text-lg font-bold text-primary leading-tight">Mareas</span>
+          <span class="text-xl font-black tracking-wider text-text leading-tight">SIGMA</span>
+          <span class="text-[10px] font-semibold uppercase tracking-wider text-text-muted leading-tight">Gestión de Mareas</span>
         </div>
       </router-link>
     </div>
