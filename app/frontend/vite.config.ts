@@ -14,10 +14,14 @@ export default defineConfig(({ mode }) => ({
   ],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      'apexcharts/ssr': 'apexcharts',
     },
   },
   build: {
-    outDir: mode === 'staging' ? 'dist-staging' : 'dist'
+    outDir: mode === 'staging' ? 'dist-staging' : 'dist',
+    rollupOptions: {
+      external: ['apexcharts/ssr'],
+    },
   }
 }))
