@@ -8,8 +8,10 @@ export const getFullImageUrl = (path: string | undefined): string => {
 
     // If apiUrl has /api at the end, remove it to get the host, OR just use URL object
     try {
-        const url = new URL(apiUrl);
-        return `${url.origin}${path}`;
+        const base = typeof window !== 'undefined' ? window.location.origin : 'http://localhost';
+        const url = new URL(apiUrl || '', base);
+        const formattedPath = path.startsWith('/') ? path : `/${path}`;
+        return `${url.origin}${formattedPath}`;
     } catch (error) {
         return path;
     }

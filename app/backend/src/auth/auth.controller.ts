@@ -65,10 +65,16 @@ export class AuthController {
   logout(
     @Res({ passthrough: true }) res: Response
   ) {
+    const secure = process.env.COOKIE_SECURE !== undefined
+      ? process.env.COOKIE_SECURE === 'true'
+      : process.env.NODE_ENV === 'production';
+    const sameSite = (process.env.COOKIE_SAMESITE as 'none' | 'lax' | 'strict') ||
+      (process.env.NODE_ENV === 'production' ? 'none' : 'lax');
+
     res.cookie('refreshToken', '', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      secure,
+      sameSite,
       expires: new Date(0)
     });
     return { ok: true };
@@ -77,10 +83,16 @@ export class AuthController {
 
   // Helper
   private setRefreshTokenCookie(res: Response, token: string, remember = false) {
+    const secure = process.env.COOKIE_SECURE !== undefined
+      ? process.env.COOKIE_SECURE === 'true'
+      : process.env.NODE_ENV === 'production';
+    const sameSite = (process.env.COOKIE_SAMESITE as 'none' | 'lax' | 'strict') ||
+      (process.env.NODE_ENV === 'production' ? 'none' : 'lax');
+
     const cookieOptions: any = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      secure,
+      sameSite,
     };
 
     if (remember) {
