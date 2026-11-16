@@ -50,8 +50,7 @@ Siguiendo el esquema de producción, los servicios se distribuyen en `/opt`:
             ├── traefik/              # Plantillas originales de Traefik
             ├── app/
             │   ├── docker-compose.yaml        # Stack de SIGMA (App, DB, Redis, Gotenberg)
-            │   ├── .env.backend               # Variables reales del backend
-            │   ├── .env                       # Variables del frontend
+            │   ├── .env                       # Variables reales unificadas (DB, Backend, Frontend)
             │   ├── backups/                   # Copias de seguridad de la base
             │   ├── static/                    # Archivos estáticos persistentes
             │   └── uploads/                   # Documentos e informes cargados
@@ -117,21 +116,20 @@ docker network create traefik
    cd /opt/sigma/deploy/vps-inidep/app
    ```
 
-2. Genere los archivos de entorno a partir de las plantillas:
+2. Genere el archivo de entorno `.env` a partir de la plantilla:
    ```bash
-   cp .env.backend.example .env.backend
-   cp .env.frontend.example .env
+   cp .env.example .env
    ```
 
-3. Edite `.env.backend` y configure sus valores:
+3. Edite `.env` y configure sus valores:
    ```bash
-   nano .env.backend
+   nano .env
    ```
    *Puntos clave para la Fase 1 (Red Local):*
    - `DB_PASSWORD`: Contraseña para la base de datos PostgreSQL.
    - `JWT_SECRET` y `BACKUP_SECRET`: Cadenas aleatorias seguras.
-   - `FRONTEND_URL`: `http://10.0.64.46`
-   - `HOST_API`: `http://10.0.64.46/api`
+   - `FRONTEND_URL`: `http://10.0.64.46` (o su IP / `http://localhost`)
+   - `HOST_API`: `http://10.0.64.46/api` (o su IP / `http://localhost/api`)
    - `COOKIE_SECURE`: `false` (imprescindible para sesión por HTTP en IP local).
    - `COOKIE_SAMESITE`: `lax`
 
@@ -229,7 +227,7 @@ Una vez que el centro de cómputos asigne el nombre de dominio (ej. `mareas.inid
      docker compose up -d
      ```
 
-2. **Actualizar Backend (`/opt/sigma/deploy/vps-inidep/app/.env.backend`):**
+2. **Actualizar Entorno (`/opt/sigma/deploy/vps-inidep/app/.env`):**
    - Modifique los orígenes para HTTPS:
      ```env
      FRONTEND_URL=https://mareas.inidep.gob.ar

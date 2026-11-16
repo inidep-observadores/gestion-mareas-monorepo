@@ -17,7 +17,7 @@ RUN npm install -g pnpm@9.15.4
 COPY package.json pnpm-lock.yaml* ./
 
 # Instalar dependencias
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 
 # Copiar el resto del código
 COPY . .
