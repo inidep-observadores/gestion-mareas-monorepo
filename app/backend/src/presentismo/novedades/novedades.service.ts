@@ -140,7 +140,11 @@ export class NovedadesService {
 
     // Autocierre para eventos de un solo día o tipos puntuales conocidos
     const tiposPuntuales = ['VIAJE_INICIO', 'VIAJE_FIN', 'FC', 'RP', 'DONACION_SANGRE', 'EXAMEN', 'NACIMIENTO', 'FALLECIMIENTO', 'ACTUALIZACION_CEDULA'];
-    if (tiposPuntuales.includes(tipoNovedad.codigo)) {
+    // Los tipos puntuales acumulan (ej: Franco Compensatorio) y nunca deben tener fechaFin=null.
+    // Para ellos excluimos la condición { fechaFin: null } del solapamiento a fin de evitar
+    // falsos positivos causados por registros históricos anómalos sin fechaFin.
+    const esTipoPuntual = tiposPuntuales.includes(tipoNovedad.codigo);
+    if (esTipoPuntual) {
       if (!end) end = start;
     } else {
       if (!end) isInfinite = true;
@@ -148,10 +152,9 @@ export class NovedadesService {
 
     const overlapConditions: any[] = [
       {
-        OR: [
-          { fechaFin: { gte: start } },
-          { fechaFin: null }
-        ]
+        OR: esTipoPuntual
+          ? [{ fechaFin: { gte: start } }]
+          : [{ fechaFin: { gte: start } }, { fechaFin: null }]
       }
     ];
 
@@ -159,11 +162,13 @@ export class NovedadesService {
       overlapConditions.push({ fechaInicio: { lte: end } });
     }
 
+    // También excluimos RECTIFICADA: las novedades ya rectificadas no deben bloquear
+    // la creación de nuevas novedades aunque sus fechas coincidan.
     const overlaps = await this.prisma.observadorNovedad.findFirst({
       where: {
         observadorId: createNovedadDto.observadorId,
         tipoNovedadId: createNovedadDto.tipoNovedadId,
-        estadoAprobacion: { not: 'RECHAZADA' },
+        estadoAprobacion: { notIn: ['RECHAZADA', 'RECTIFICADA'] },
         activo: true,
         AND: overlapConditions
       }
@@ -245,7 +250,8 @@ export class NovedadesService {
 
     // Autocierre para eventos de un solo día o tipos puntuales en update
     const tiposPuntuales = ['VIAJE_INICIO', 'VIAJE_FIN', 'FC', 'RP', 'DONACION_SANGRE', 'EXAMEN', 'NACIMIENTO', 'FALLECIMIENTO', 'ACTUALIZACION_CEDULA'];
-    if (tiposPuntuales.includes(existing.tipoNovedad.codigo)) {
+    const esTipoPuntualUpdate = tiposPuntuales.includes(existing.tipoNovedad.codigo);
+    if (esTipoPuntualUpdate) {
       if (!end) {
         end = start;
         data.fechaFin = end;
@@ -261,12 +267,13 @@ export class NovedadesService {
 
     // Si no estamos rechazando la novedad y no es actualización de cédula, verificar solapamiento
     if (updateNovedadDto.estadoAprobacion !== 'RECHAZADA' && existing.tipoNovedad.codigo !== 'ACTUALIZACION_CEDULA') {
+      // Para tipos puntuales excluimos { fechaFin: null } del solapamiento (ver create method).
+      // Además excluimos RECTIFICADA: las novedades rectificadas no deben bloquear ediciones.
       const overlapConditions: any[] = [
         {
-          OR: [
-            { fechaFin: { gte: start } },
-            { fechaFin: null }
-          ]
+          OR: esTipoPuntualUpdate
+            ? [{ fechaFin: { gte: start } }]
+            : [{ fechaFin: { gte: start } }, { fechaFin: null }]
         }
       ];
 
@@ -287,7 +294,7 @@ export class NovedadesService {
           id: { notIn: excludeIds },
           observadorId: existing.observadorId,
           tipoNovedadId: data.tipoNovedadId !== undefined ? data.tipoNovedadId : existing.tipoNovedadId,
-          estadoAprobacion: { not: 'RECHAZADA' },
+          estadoAprobacion: { notIn: ['RECHAZADA', 'RECTIFICADA'] },
           activo: true,
           AND: overlapConditions
         }

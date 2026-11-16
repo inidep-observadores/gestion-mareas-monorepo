@@ -295,7 +295,11 @@ export class NovedadesAiProcessor implements JobProcessor {
                             }
 
                             const tiposPuntuales = ['VIAJE_INICIO', 'VIAJE_FIN', 'FC', 'RP', 'DONACION_SANGRE', 'EXAMEN', 'NACIMIENTO', 'FALLECIMIENTO', 'ACTUALIZACION_CEDULA'];
-                            if (tiposPuntuales.includes(tipoNovedad.codigo)) {
+                            // Los tipos puntales acumulan (ej: Franco Compensatorio) → fechaFin nunca es null
+                            // para ellos, por lo que NO incluimos la condición { fechaFin: null } en el
+                            // solapamiento para evitar falsos positivos con registros históricos sin fechaFin.
+                            const esTipoPuntual = tiposPuntuales.includes(tipoNovedad.codigo);
+                            if (esTipoPuntual) {
                                 if (!end) end = start;
                             } else {
                                 if (!end) isInfinite = true;
@@ -303,10 +307,11 @@ export class NovedadesAiProcessor implements JobProcessor {
 
                             const overlapConditions: any[] = [
                                 {
-                                    OR: [
-                                        { fechaFin: { gte: start } },
-                                        { fechaFin: null }
-                                    ]
+                                    OR: esTipoPuntual
+                                        // Tipos puntuales: nunca tienen fechaFin=null; excluimos esa condición
+                                        // para evitar falsos solapamientos con registros históricos anómalos.
+                                        ? [{ fechaFin: { gte: start } }]
+                                        : [{ fechaFin: { gte: start } }, { fechaFin: null }]
                                 }
                             ];
 
@@ -325,11 +330,13 @@ export class NovedadesAiProcessor implements JobProcessor {
                                     }
                                 });
                             } else {
+                                // Excluimos RECTIFICADA además de RECHAZADA: las novedades ya rectificadas
+                                // no deben bloquear ni interferir con nuevas novedades.
                                 const potentialOverlaps = await this.prisma.observadorNovedad.findMany({
                                     where: {
                                         observadorId: observador.id,
                                         tipoNovedadId: tipoNovedad.id,
-                                        estadoAprobacion: { not: 'RECHAZADA' },
+                                        estadoAprobacion: { notIn: ['RECHAZADA', 'RECTIFICADA'] },
                                         activo: true,
                                         AND: overlapConditions
                                     }
@@ -359,6 +366,9 @@ export class NovedadesAiProcessor implements JobProcessor {
 
                             if (overlaps) {
                                 if (overlaps.estadoAprobacion === 'PENDIENTE') {
+                                    // Para tipos puntales que ACUMULAN (ej: Franco Compensatorio), dos novedades
+                                    // PENDIENTES en fechas diferentes deben coexistir; solo se rectifica cuando
+                                    // las fechas se solapan de verdad (ya garantizado por overlapConditions).
                                     await this.prisma.observadorNovedad.update({
                                         where: { id: overlaps.id },
                                         data: {
@@ -369,7 +379,7 @@ export class NovedadesAiProcessor implements JobProcessor {
                                                     tipoEvento: 'REEMPLAZADA_POR_EMAIL',
                                                     estadoAnterior: overlaps.estadoAprobacion,
                                                     estadoNuevo: 'RECTIFICADA',
-                                                    comentarios: 'Rectificada automáticamente por recepción de un nuevo correo con fechas actualizadas.',
+                                                    comentarios: 'Rectificada automáticamente por recepción de un nuevo correo cuyo período solapa o extiende el anterior.',
                                                 }
                                             }
                                         }
@@ -380,7 +390,8 @@ export class NovedadesAiProcessor implements JobProcessor {
                                     novedadOriginalId = overlaps.id;
                                     estadoDetalle = 'REQUIERE_REVISION';
                                 } else {
-                                    throw new Error('El observador ya tiene una novedad de este tipo registrada en estas fechas');
+                                    // Estado inesperado: no debería ocurrir por los filtros anteriores.
+                                    this.logger.warn(`Solapamiento con novedad en estado inesperado: ${overlaps.estadoAprobacion} (id: ${overlaps.id}). Se omite y se crea la nueva novedad igualmente.`);
                                 }
                             } else {
                                 const isIncomingDisponible = ['DISPONIBLE', 'DISPONIBILIDAD'].includes(tipoNovedad.codigo);

@@ -11,6 +11,11 @@ All notable changes to this project will be documented in this file.
 - **componentes:** dotar a `ObservadorAvatar` de interactividad (`cursor-pointer`, hover visual y apertura de ficha de observador) y soporte para apertura sin peticiones HTTP redundantes cuando los datos están precargados.
 - **backend:** incluir `codigoInterno` y `dni` en los registros devueltos por `getWorkforceStatus` y `observador_id` en las mareas operativas para vinculación directa de datos.
 
+### Fixed
+- **novedades:** corregir regla de acumulación de Francos Compensatorios (`FC`) para evitar que nuevas solicitudes en fechas distintas rectifiquen a las anteriores al procesar correos o registrar novedades.
+- **novedades:** omitir `{ fechaFin: null }` en el cálculo de solapamiento para tipos de novedad puntuales y acotados, previniendo falsos positivos por registros históricos anómalos.
+- **novedades:** excluir novedades en estado `RECTIFICADA` de las comprobaciones de solapamiento activo.
+
 ## [v0.21.0] - 2026-11-01
 
 ### Added
