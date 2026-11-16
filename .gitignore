@@ -11,8 +11,9 @@ pnpm-lock.yaml
 .env
 .env.*
 !.env.template
+!.env.*.template
 !.env.example
-!.env.audit.example
+!.env.*.example
 *.local
 
 # **\--- LOGS \---**
