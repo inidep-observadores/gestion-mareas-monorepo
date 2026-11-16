@@ -174,11 +174,11 @@ export class DataLoader {
 }
 
 async function main() {
-    if (!process.env.DATABASE_URL || process.env.DATABASE_URL.includes('${')) {
+    if (!process.env.DATABASE_URL && !process.env.DB_HOST) {
         dotenv.config({ path: path.join(process.cwd(), '.env.develop') });
     }
 
-    process.env.DATABASE_URL = expandEnv(process.env.DATABASE_URL);
+    process.env.DATABASE_URL = getDatabaseUrl();
     
     // =========================================================================
     // SALVAGUARDA CONTRA PÉRDIDA DE DATOS
