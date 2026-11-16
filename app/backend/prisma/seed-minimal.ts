@@ -10,22 +10,45 @@ import * as crypto from 'crypto';
 
 dotenv.config();
 
-function expandEnv(str: string | undefined): string | undefined {
-  if (!str) return str;
-  return str.replace(/\${(\w+)}/g, (_, v) => process.env[v] || '');
+function getDatabaseUrl(): string {
+  let url = process.env.DATABASE_URL;
+
+  // Si existe en el entorno, limpiar comillas envolventes y expandir variables tipo ${VAR}
+  if (url) {
+    url = url.trim().replace(/^["']|["']$/g, '');
+    url = url.replace(/\${(\w+)}/g, (_, v) => process.env[v] || '');
+  }
+
+  // Si aún está vacía, contiene variables no expandidas o no inicia con postgresql/postgres
+  if (!url || url.includes('${') || (!url.startsWith('postgresql://') && !url.startsWith('postgres://'))) {
+    const user = process.env.DB_USERNAME || 'postgres';
+    const rawPass = process.env.DB_PASSWORD || '';
+    const pass = rawPass ? encodeURIComponent(rawPass) : '';
+    const host = process.env.DB_HOST || 'db';
+    const port = process.env.DB_PORT || '5432';
+    const name = process.env.DB_NAME || 'mareas_db';
+    const auth = pass ? `${user}:${pass}` : user;
+    url = `postgresql://${auth}@${host}:${port}/${name}`;
+  }
+
+  return url;
 }
 
-// Cargar .env.develop si DATABASE_URL no está definido o tiene variables sin expandir
-if (!process.env.DATABASE_URL || process.env.DATABASE_URL.includes('${')) {
+// Cargar .env.develop solo en desarrollo local si no hay DATABASE_URL ni DB_HOST
+if (!process.env.DATABASE_URL && !process.env.DB_HOST) {
   dotenv.config({ path: path.join(process.cwd(), '.env.develop') });
 }
 
-process.env.DATABASE_URL = expandEnv(process.env.DATABASE_URL);
+process.env.DATABASE_URL = getDatabaseUrl();
 
 async function main() {
   console.log('--- Iniciando Inicialización Base (Usuarios y Catálogos) ---');
 
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const connectionString = getDatabaseUrl();
+  const sanitizedUrl = connectionString.replace(/:\/\/([^:]+):([^@]+)@/, '://$1:****@');
+  console.log(`📡 Conectando a PostgreSQL: ${sanitizedUrl}`);
+
+  const pool = new Pool({ connectionString });
   const adapter = new PrismaPg(pool);
   const prisma = new PrismaClient({ adapter });
 
