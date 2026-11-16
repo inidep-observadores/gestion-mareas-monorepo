@@ -138,6 +138,79 @@ describe('NovedadesService', () => {
       }));
     });
 
+    it('debe permitir crear múltiples FC en fechas distintas sin rectificar las anteriores (francos acumulables)', async () => {
+      // Regla de negocio: los francos compensatorios se ACUMULAN.
+      // Un FC en fecha distinta no debe rectificar a otro FC ya creado.
+      mockPrismaService.observador.findUnique.mockResolvedValue({ id: 'obs-1' });
+      mockPrismaService.tipoNovedad.findUnique.mockResolvedValue({ id: 'tipo-fc', activo: true, codigo: 'FC', tiposContratoPermitidos: [] });
+      // Simula que ya existe un FC aprobado el 10/10 (fechaFin correcto, no null)
+      // → el nuevo FC del 12/10 NO debe solapar con él (10/10 < 12/10)
+      mockPrismaService.observadorNovedad.findFirst.mockResolvedValue(null); // sin solapamiento
+      mockPrismaService.observadorNovedad.create.mockResolvedValue({
+        id: 'fc-nuevo',
+        estadoAprobacion: 'APROBADA',
+        fechaInicio: new Date('2026-10-12T00:00:00Z'),
+        fechaFin: new Date('2026-10-12T00:00:00Z'),
+        tipoNovedad: { codigo: 'FC' },
+      });
+      mockPrismaService.marea.findMany.mockResolvedValue([]);
+
+      const res = await service.create({ observadorId: 'obs-1', tipoNovedadId: 'tipo-fc', fechaInicio: '2026-10-12' }, mockUser);
+
+      // Debe crearse correctamente sin lanzar excepción
+      expect(prisma.observadorNovedad.create).toHaveBeenCalled();
+      expect(res.id).toBe('fc-nuevo');
+    });
+
+    it('debe rechazar (solapamiento real) si se intenta crear un FC en la misma fecha que uno existente', async () => {
+      // Regla de negocio: si el MISMO día ya tiene un FC activo, sí es solapamiento real.
+      mockPrismaService.observador.findUnique.mockResolvedValue({ id: 'obs-1' });
+      mockPrismaService.tipoNovedad.findUnique.mockResolvedValue({ id: 'tipo-fc', activo: true, codigo: 'FC', tiposContratoPermitidos: [] });
+      // Simula FC existente el 10/10 con fechaFin correcto (10/10), mismo día que el nuevo
+      mockPrismaService.observadorNovedad.findFirst.mockResolvedValue({
+        id: 'fc-existente',
+        fechaInicio: new Date('2026-10-10T00:00:00Z'),
+        fechaFin: new Date('2026-10-10T00:00:00Z'),
+        estadoAprobacion: 'APROBADA',
+      });
+
+      await expect(
+        service.create({ observadorId: 'obs-1', tipoNovedadId: 'tipo-fc', fechaInicio: '2026-10-10' }, mockUser)
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('no debe detectar solapamiento FC si el existente tiene fechaFin null (registro anómalo histórico)', async () => {
+      // Regla de negocio: { fechaFin: null } NO debe aplicar a tipos puntuales como FC.
+      // Si existe un FC anómalo con fechaFin=null, no debe bloquear nuevos FCs en otras fechas.
+      // La consulta ya no incluye { fechaFin: null } para tipos puntuales.
+      mockPrismaService.observador.findUnique.mockResolvedValue({ id: 'obs-1' });
+      mockPrismaService.tipoNovedad.findUnique.mockResolvedValue({ id: 'tipo-fc', activo: true, codigo: 'FC', tiposContratoPermitidos: [] });
+      // findFirst retorna null porque la query correcta ya excluye fechaFin:null para FC
+      mockPrismaService.observadorNovedad.findFirst.mockResolvedValue(null);
+      mockPrismaService.observadorNovedad.create.mockResolvedValue({
+        id: 'fc-nuevo',
+        estadoAprobacion: 'APROBADA',
+        fechaInicio: new Date('2026-11-15T00:00:00Z'),
+        fechaFin: new Date('2026-11-15T00:00:00Z'),
+        tipoNovedad: { codigo: 'FC' },
+      });
+      mockPrismaService.marea.findMany.mockResolvedValue([]);
+
+      const res = await service.create({ observadorId: 'obs-1', tipoNovedadId: 'tipo-fc', fechaInicio: '2026-11-15' }, mockUser);
+
+      // Debe crear sin error; verificamos que la query de solapamiento NO incluye { fechaFin: null }
+      expect(prisma.observadorNovedad.findFirst).toHaveBeenCalledWith(expect.objectContaining({
+        where: expect.objectContaining({
+          AND: expect.arrayContaining([
+            expect.objectContaining({
+              OR: expect.not.arrayContaining([{ fechaFin: null }])
+            })
+          ])
+        })
+      }));
+      expect(res.id).toBe('fc-nuevo');
+    });
+
     it('debe permitir crear DISPONIBLE si la novedad previa similar esta separada por una marea intermedia', async () => {
       mockPrismaService.observador.findUnique.mockResolvedValue({ id: '1' });
       mockPrismaService.tipoNovedad.findUnique.mockResolvedValue({ id: '2', activo: true, codigo: 'DISPONIBLE' });
