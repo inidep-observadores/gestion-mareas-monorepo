@@ -437,6 +437,14 @@
       @close="showProtocolizacionDialog = false"
       @confirm="handleProtocolizacionConfirm"
     />
+
+    <ReemplazarInformeDialog
+      :show="showReemplazarInformeDialog"
+      :marea="mareaToManage"
+      :loading="executingAction"
+      @close="showReemplazarInformeDialog = false"
+      @confirm="handleReemplazarInformeConfirm"
+    />
       
     <EditMareaDesignadaDialog 
       v-if="selectedMarea"
@@ -461,6 +469,7 @@ import GestionEtapasMareaDialog from '../components/GestionEtapasMareaDialog.vue
 import RecibirArchivosDialog from '../components/RecibirArchivosDialog.vue'
 import MareaGenericActionDialog from '../components/MareaGenericActionDialog.vue'
 import FinalizarProtocolizacionDialog from '../components/FinalizarProtocolizacionDialog.vue'
+import ReemplazarInformeDialog from '../components/ReemplazarInformeDialog.vue'
 import EditMareaDesignadaDialog from '../components/EditMareaDesignadaDialog.vue'
 import SearchInput from '@/components/ui/SearchInput.vue'
 import Button from '@/components/ui/Button.vue'
@@ -707,6 +716,7 @@ const showRecibirDialog = ref(false)
 const showCancelarDialog = ref(false)
 const showGenericDialog = ref(false)
 const showProtocolizacionDialog = ref(false)
+const showReemplazarInformeDialog = ref(false)
 const selectedActionKey = ref<string | null>(null)
 const selectedActionData = ref<any>(null)
 const executingAction = ref(false)
@@ -784,6 +794,12 @@ const executeSidebarAction = async (key: string) => {
     return
   }
 
+  if (key === 'REEMPLAZAR_INFORME') {
+    mareaToManage.value = selectedMareaContext.value?.marea || selectedMarea.value
+    showReemplazarInformeDialog.value = true
+    return
+  }
+
   // Si la acción tiene metadatos en el contexto y no es una de las especiales, usar diálogo genérico
   const actionMetadata = selectedMareaContext.value?.actions[key]
   if (actionMetadata) {
@@ -800,6 +816,23 @@ const executeSidebarAction = async (key: string) => {
     await loadInbox()
   } catch (err) {
     console.error('Action failed:', err)
+  } finally {
+    executingAction.value = false
+  }
+}
+
+const handleReemplazarInformeConfirm = async (file: File, motivo: string) => {
+  if (!mareaToManage.value) return
+  try {
+    executingAction.value = true
+    await mareasService.reemplazarInforme(mareaToManage.value.id, file, motivo)
+    toast.success('Informe de marea reemplazado correctamente.')
+    showReemplazarInformeDialog.value = false
+    mareaToManage.value = null
+    await loadInbox()
+  } catch (err: any) {
+    console.error('Error reemplazando informe:', err)
+    toast.error(err.response?.data?.message || 'No se pudo reemplazar el informe de marea.')
   } finally {
     executingAction.value = false
   }

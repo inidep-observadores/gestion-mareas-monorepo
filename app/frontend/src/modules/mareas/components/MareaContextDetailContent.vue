@@ -202,8 +202,39 @@
           </div>
         </section>
 
+        <!-- 2.5. Informe Técnico Aprobado (Si está disponible) -->
+        <section v-if="context?.marea?.informeAprobado" class="space-y-2">
+          <div class="flex items-center justify-between">
+            <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">Informe Técnico Aprobado</h4>
+          </div>
+          <div class="p-3.5 bg-surface-muted/50 border border-border rounded-2xl flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="p-2 bg-success/10 rounded-xl text-success shrink-0">
+                <DocsIcon class="w-4 h-4" />
+              </div>
+              <div class="min-w-0">
+                <p class="text-xs font-bold text-text truncate" :title="context.marea.informeAprobado.nombre">
+                  {{ context.marea.informeAprobado.nombre }}
+                </p>
+                <p class="text-[9px] text-text-muted font-bold">
+                  {{ formatDate(context.marea.informeAprobado.fechaSubida) }}
+                </p>
+              </div>
+            </div>
+            <button
+              v-if="!readOnly && canManage && currentMarea.estado_codigo === 'PARA_PROTOCOLIZAR'"
+              type="button"
+              @click="onAction('REEMPLAZAR_INFORME')"
+              class="px-3 py-1.5 bg-surface border border-border hover:border-primary/50 text-text hover:text-primary rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shadow-sm shrink-0 flex items-center gap-1.5 active:scale-95"
+            >
+              <RefreshIcon class="w-3.5 h-3.5" />
+              <span>Reemplazar</span>
+            </button>
+          </div>
+        </section>
+
         <!-- 3. Actions -->
-        <section v-if="!readOnly && canManage" class="space-y-4">
+        <section v-if="!readOnly && canManage && Object.keys(context.actions || {}).length > 0" class="space-y-4">
           <div class="flex items-center justify-between">
             <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted italic">Acciones sugeridas</h4>
           </div>
@@ -356,7 +387,8 @@ import {
   ShieldIcon,
   SportsScoreIcon,
   ArchiveIcon,
-  DownloadIcon
+  DownloadIcon,
+  RefreshIcon
 } from '@/icons'
 import type { MareaContext } from '../types/marea.types'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
@@ -552,6 +584,7 @@ const getActionIcon = (key: string | number) => {
     RETORNAR_CORRECCION: ArrowLeftIcon,
     ENVIAR_A_REVISION: SendIcon,
     APROBAR_INFORME: SuccessIcon,
+    REEMPLAZAR_INFORME: RefreshIcon,
     RECHAZAR_INFORME: ErrorIcon,
     INICIAR_TRAMITE: HistoryIcon,
     FINALIZAR_PROTOCOLIZACION: ShieldIcon,

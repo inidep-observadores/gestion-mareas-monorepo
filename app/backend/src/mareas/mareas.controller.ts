@@ -319,6 +319,24 @@ export class MareasController {
         return this.mareasService.deleteArchivo(id, archivoId, user);
     }
 
+    @Post(':id/reemplazar-informe')
+    @Auth(ValidRoles.admin, ValidRoles.tecnico)
+    @UseInterceptors(AnyFilesInterceptor())
+    @AuditEvent({
+        tipoEvento: 'REEMPLAZAR_INFORME',
+        categoria: AuditCategoria.MAREAS,
+        descripcion: 'Reemplazo de informe técnico aprobado en marea'
+    })
+    reemplazarInforme(
+        @Param('id') id: string,
+        @GetUser() user: User,
+        @Body('motivo') motivo: string,
+        @UploadedFiles() files?: Array<Express.Multer.File>
+    ) {
+        const file = files && files[0];
+        return this.mareasService.reemplazarInforme(id, file, motivo, user);
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // OBSERVADORES SECUNDARIOS
     // ─────────────────────────────────────────────────────────────────────────

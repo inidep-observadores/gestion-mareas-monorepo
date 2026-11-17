@@ -111,6 +111,16 @@ const mareasService = {
         return data
     },
 
+    reemplazarInforme: async (id: string, file: File, motivo: string): Promise<any> => {
+        const formData = new FormData()
+        formData.append('files', file)
+        formData.append('motivo', motivo)
+        const { data } = await httpClient.post(`/mareas/${id}/reemplazar-informe`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        })
+        return data
+    },
+
     enviarAProtocolizacion: async (formData: FormData): Promise<{ message: string, count: number }> => {
         const { data } = await httpClient.post<{ message: string, count: number }>('/mareas/protocolizacion/enviar', formData, {
             headers: {

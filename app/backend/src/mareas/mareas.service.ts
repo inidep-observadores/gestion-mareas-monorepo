@@ -2024,6 +2024,11 @@ export class MareasService {
                         include: {
                             usuario: true
                         }
+                    },
+                    archivos: {
+                        where: { tipoArchivo: 'INFORME_APROBACION' },
+                        orderBy: { fechaSubida: 'desc' },
+                        take: 1
                     }
                 } as any
             }),
@@ -2120,6 +2125,13 @@ export class MareasService {
                 tipoMarea: marea.tipoMarea,
                 desestimada: marea.desestimada || false,
                 observaciones: marea.observaciones || '',
+                informeAprobado: marea.archivos?.[0] ? {
+                    id: marea.archivos[0].id,
+                    nombre: (marea.archivos[0].metadata as any)?.originalName || 'Informe de Marea (.docx)',
+                    fechaSubida: marea.archivos[0].fechaSubida,
+                    formato: marea.archivos[0].formato,
+                    rutaArchivo: marea.archivos[0].rutaArchivo
+                } : null,
                 alertas: activeAlerts,
                 metadata: marea.metadata,
                 etapas: marea.etapas.map((e: any) => ({
@@ -3298,6 +3310,160 @@ export class MareasService {
         });
 
         return { success: true };
+    }
+
+    async reemplazarInforme(id: string, file: Express.Multer.File, motivo: string, user: User) {
+        if (!file) {
+            throw new BadRequestException('Es obligatorio adjuntar el nuevo informe (.docx) para reemplazar.');
+        }
+
+        const fileExt = path.extname(file.originalname).toLowerCase();
+        if (fileExt !== '.docx') {
+            throw new BadRequestException('El archivo adjunto debe ser un documento Word (.docx).');
+        }
+
+        if (!motivo || !motivo.trim()) {
+            throw new BadRequestException('Es obligatorio ingresar el motivo del reemplazo del informe.');
+        }
+
+        const marea = await this.prisma.marea.findUnique({
+            where: { id },
+            include: {
+                estadoActual: true,
+                archivos: {
+                    where: { tipoArchivo: 'INFORME_APROBACION' },
+                    orderBy: { fechaSubida: 'desc' }
+                }
+            }
+        });
+
+        if (!marea) {
+            throw new NotFoundException('Marea no encontrada');
+        }
+
+        if (marea.estadoActual.codigo !== MareaEstado.PARA_PROTOCOLIZAR) {
+            throw new BadRequestException('Solo se puede reemplazar el informe mientras la marea esté en estado Para Protocolizar (previo al inicio de protocolización).');
+        }
+
+        if (!marea.archivos || marea.archivos.length === 0) {
+            throw new BadRequestException('La marea no cuenta con un informe aprobado previo para reemplazar.');
+        }
+
+        const archivoAnterior = marea.archivos[0];
+        const metaAnterior = (archivoAnterior.metadata as any) || {};
+
+        // 1. Limpieza de archivo anterior en Google Drive o cola de subida
+        if (metaAnterior.driveFileId) {
+            try {
+                await this.driveStorageService.deleteFile(metaAnterior.driveFileId);
+            } catch (err: any) {
+                this.logger.warn(`No se pudo eliminar archivo previo de Drive (${metaAnterior.driveFileId}): ${err?.message}`);
+            }
+        }
+
+        // Si había un job DRIVE_SYNC pendiente para el archivo anterior, cancelarlo/eliminarlo
+        try {
+            const pendingJobs = await (this.prisma as any).jobQueue.findMany({
+                where: {
+                    type: JobType.DRIVE_SYNC,
+                    status: 'PENDING'
+                }
+            });
+            const jobsToDelete = pendingJobs.filter((j: any) => j.payload?.mareaArchivoId === archivoAnterior.id);
+            if (jobsToDelete.length > 0) {
+                await (this.prisma as any).jobQueue.deleteMany({
+                    where: {
+                        id: { in: jobsToDelete.map((j: any) => j.id) }
+                    }
+                });
+            }
+        } catch (err: any) {
+            this.logger.warn(`Error al verificar jobs pendientes para archivo previo: ${err?.message}`);
+        }
+
+        // Si existía tempFilePath local anterior, borrarlo si aún existe
+        if (metaAnterior.tempFilePath && fs.existsSync(metaAnterior.tempFilePath)) {
+            try {
+                fs.unlinkSync(metaAnterior.tempFilePath);
+            } catch (err: any) {
+                this.logger.warn(`No se pudo eliminar el archivo temporal anterior ${metaAnterior.tempFilePath}: ${err?.message}`);
+            }
+        }
+
+        // 2. Guardar físicamente el nuevo archivo
+        const uploadsBase = this.configService.get<string>('UPLOADS_PATH') || './uploads';
+        const informesDir = this.configService.get<string>('MAREA_INFORMES_DIR') || path.join(uploadsBase, 'informes_marea');
+        if (!fs.existsSync(informesDir)) {
+            fs.mkdirSync(informesDir, { recursive: true });
+        }
+        const newFileName = `${marea.anioMarea}_${marea.nroMarea}_${marea.tipoMarea}_APROBACION_CORREGIDO_${Date.now()}${fileExt}`;
+        const newFilePath = path.join(informesDir, newFileName);
+        fs.writeFileSync(newFilePath, file.buffer);
+
+        // 3. Transacción en base de datos
+        return await this.prisma.$transaction(async (tx) => {
+            // Eliminar el registro anterior de mareaArchivo para evitar archivos huérfanos
+            await tx.mareaArchivo.delete({
+                where: { id: archivoAnterior.id }
+            });
+
+            // Registrar movimiento en la bitácora
+            const nuevoMovimiento = await tx.mareaMovimiento.create({
+                data: {
+                    mareaId: id,
+                    fechaHora: new Date(),
+                    usuarioId: user.id,
+                    tipoEvento: 'REEMPLAZO_INFORME',
+                    estadoDesdeId: marea.estadoActualId,
+                    estadoHastaId: marea.estadoActualId,
+                    detalle: 'Reemplazo de informe técnico aprobado',
+                    comentarios: motivo.trim()
+                }
+            });
+
+            // Crear nuevo registro de mareaArchivo
+            const nuevoArchivo = await tx.mareaArchivo.create({
+                data: {
+                    mareaId: id,
+                    movimientoOrigenId: nuevoMovimiento.id,
+                    tipoArchivo: 'INFORME_APROBACION',
+                    formato: fileExt.replace('.', '').toUpperCase(),
+                    version: 'CORREGIDO',
+                    rutaArchivo: newFilePath.replace(/\\/g, '/'),
+                    usuarioSubioId: user.id,
+                    descripcion: `Informe corregido: ${motivo.trim()}`,
+                    metadata: {
+                        originalName: file.originalname,
+                        mimetype: file.mimetype,
+                        tempFilePath: newFilePath,
+                        estadoDrive: 'PENDING'
+                    }
+                }
+            });
+
+            // Actualizar fecha última actualización de la marea
+            await tx.marea.update({
+                where: { id },
+                data: { fechaUltimaActualizacion: new Date() }
+            });
+
+            // Encolar nuevo trabajo de subida a Drive
+            await (tx as any).jobQueue.create({
+                data: {
+                    type: JobType.DRIVE_SYNC,
+                    payload: {
+                        action: 'UPLOAD',
+                        mareaArchivoId: nuevoArchivo.id,
+                        categoria: 'INFORME_APROBACION'
+                    },
+                    priority: 10,
+                    status: 'PENDING',
+                    nextRunAt: new Date()
+                }
+            });
+
+            return nuevoArchivo;
+        });
     }
 
     async getInbox(year?: number, user?: User) {

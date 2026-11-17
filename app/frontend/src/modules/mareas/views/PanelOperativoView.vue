@@ -385,6 +385,14 @@
       @confirm="handleAprobarInformeConfirm"
     />
 
+    <ReemplazarInformeDialog
+      :show="showReemplazarInformeDialog"
+      :marea="mareaToManage"
+      :loading="executingAction"
+      @close="showReemplazarInformeDialog = false"
+      @confirm="handleReemplazarInformeConfirm"
+    />
+
     <EditMareaDesignadaDialog 
       v-if="selectedMarea"
       :show="showEditDesignadaDialog" 
@@ -413,6 +421,7 @@ import CancelarMareaDialog from '../components/CancelarMareaDialog.vue'
 import MareaGenericActionDialog from '../components/MareaGenericActionDialog.vue'
 import FinalizarProtocolizacionDialog from '../components/FinalizarProtocolizacionDialog.vue'
 import AprobarInformeDialog from '../components/AprobarInformeDialog.vue'
+import ReemplazarInformeDialog from '../components/ReemplazarInformeDialog.vue'
 import EditMareaDesignadaDialog from '../components/EditMareaDesignadaDialog.vue'
 // @ts-ignore
 import AlertManagementDialog from '../../alerts/components/AlertManagementDialog.vue'
@@ -420,6 +429,7 @@ import StatusFilterChip from '../components/StatusFilterChip.vue'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
 import { useMareas } from '../composables/useMareas'
 import mareasService from '../services/mareas.service'
+import { toast } from 'vue-sonner'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import {
   ShipIcon,
@@ -486,6 +496,7 @@ const showCancelarDialog = ref(false)
 const showGenericDialog = ref(false)
 const showProtocolizacionDialog = ref(false)
 const showAprobarInformeDialog = ref(false)
+const showReemplazarInformeDialog = ref(false)
 const selectedActionKey = ref<string | null>(null)
 const selectedActionData = ref<any>(null)
 const executingAction = ref(false)
@@ -690,6 +701,12 @@ const executeActionFromSidebar = async (actionKey: string) => {
     return
   }
 
+  if (actionKey === 'REEMPLAZAR_INFORME') {
+    mareaToManage.value = mareaContext
+    showReemplazarInformeDialog.value = true
+    return
+  }
+
   // Si la acción tiene metadatos en el contexto y no es una de las especiales manejadas arriba, usar diálogo genérico
   const actionMetadata = selectedMareaContext.value?.actions[actionKey]
   if (actionMetadata) {
@@ -720,6 +737,24 @@ const handleAprobarInformeConfirm = async (file: File, comentarios: string) => {
     await fetchDashboard()
   } catch (err) {
     console.error('Error aprobando informe:', err)
+  } finally {
+    executingAction.value = false
+  }
+}
+
+const handleReemplazarInformeConfirm = async (file: File, motivo: string) => {
+  if (!mareaToManage.value) return
+  try {
+    executingAction.value = true
+    await mareasService.reemplazarInforme(mareaToManage.value.id, file, motivo)
+    toast.success('Informe de marea reemplazado correctamente.')
+    showReemplazarInformeDialog.value = false
+    mareaToManage.value = null
+    closeSidebar()
+    await fetchDashboard()
+  } catch (err: any) {
+    console.error('Error reemplazando informe:', err)
+    toast.error(err.response?.data?.message || 'No se pudo reemplazar el informe de marea.')
   } finally {
     executingAction.value = false
   }
