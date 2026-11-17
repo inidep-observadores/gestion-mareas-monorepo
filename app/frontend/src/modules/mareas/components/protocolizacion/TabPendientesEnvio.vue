@@ -75,12 +75,23 @@
 
           <!-- Footer (File Input) -->
           <div v-if="isSelected(marea.id) && !enviadoPorCanalExterno" class="animate-in fade-in slide-in-from-top-2 duration-300">
-              <div v-if="getInformeAprobado(marea)" class="flex items-center gap-3 p-3 bg-success/10 border border-success/20 rounded-xl">
-                  <DocumentCheckIcon class="w-6 h-6 text-success shrink-0" />
-                  <span class="text-[10px] font-black uppercase text-success tracking-tight overflow-hidden text-ellipsis">
-                      ✓ Informe Aprobado<br/>
-                      <span class="text-[9px] font-bold text-success/80 block w-full truncate" :title="getInformeAprobado(marea).metadata?.originalName">{{ getInformeAprobado(marea).metadata?.originalName || 'Documento .docx' }}</span>
-                  </span>
+              <div v-if="getInformeAprobado(marea)" class="flex items-center justify-between gap-3 p-3 bg-success/10 border border-success/20 rounded-xl">
+                  <div class="flex items-center gap-3 overflow-hidden">
+                    <DocumentCheckIcon class="w-6 h-6 text-success shrink-0" />
+                    <span class="text-[10px] font-black uppercase text-success tracking-tight overflow-hidden text-ellipsis">
+                        ✓ Informe Aprobado<br/>
+                        <span class="text-[9px] font-bold text-success/80 block w-full truncate" :title="getInformeAprobado(marea).metadata?.originalName">{{ getInformeAprobado(marea).metadata?.originalName || 'Documento .docx' }}</span>
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    @click.stop="openReemplazarModal(marea)"
+                    class="px-2.5 py-1 text-[9px] font-black uppercase tracking-wider rounded-lg bg-surface border border-border hover:border-primary/50 text-text hover:text-primary transition-all shadow-sm shrink-0 flex items-center gap-1 active:scale-95"
+                    title="Reemplazar por nuevo archivo corregido"
+                  >
+                    <RefreshIcon class="w-3 h-3" />
+                    <span>Reemplazar</span>
+                  </button>
               </div>
               <div v-else class="space-y-2">
                   <label class="text-[9px] font-black uppercase tracking-widest text-text-muted/70">Adjuntar Informe (.docx)</label>
@@ -227,11 +238,21 @@
               </td>
               <td class="px-5 py-3">
                 <div v-if="isSelected(marea.id) && !enviadoPorCanalExterno" class="animate-in fade-in flex items-center justify-center">
-                  <div v-if="getInformeAprobado(marea)" class="flex items-center gap-2 px-3 py-1.5 bg-success/10 border border-success/20 rounded-lg max-w-[200px]">
-                      <DocumentCheckIcon class="w-4 h-4 text-success shrink-0" />
-                      <span class="text-[9px] font-black uppercase text-success tracking-tight truncate" :title="getInformeAprobado(marea).metadata?.originalName">
-                          {{ getInformeAprobado(marea).metadata?.originalName || 'Informe Aprobado' }}
-                      </span>
+                  <div v-if="getInformeAprobado(marea)" class="flex items-center gap-1.5">
+                    <div class="flex items-center gap-2 px-3 py-1.5 bg-success/10 border border-success/20 rounded-lg max-w-[180px]">
+                        <DocumentCheckIcon class="w-4 h-4 text-success shrink-0" />
+                        <span class="text-[9px] font-black uppercase text-success tracking-tight truncate" :title="getInformeAprobado(marea).metadata?.originalName">
+                            {{ getInformeAprobado(marea).metadata?.originalName || 'Informe Aprobado' }}
+                        </span>
+                    </div>
+                    <button
+                      type="button"
+                      @click.stop="openReemplazarModal(marea)"
+                      class="p-1.5 rounded-lg bg-surface border border-border hover:border-primary/50 text-text-muted hover:text-primary transition-colors shrink-0 shadow-sm"
+                      title="Reemplazar informe"
+                    >
+                      <RefreshIcon class="w-3.5 h-3.5" />
+                    </button>
                   </div>
                   <div v-else class="flex items-center gap-2">
                     <label 
@@ -307,6 +328,14 @@
       @close="showExternalModal = false"
       @confirm="onConfirmExternal"
     />
+
+    <ReemplazarInformeDialog
+      :show="showReemplazarModal"
+      :marea="mareaParaReemplazar"
+      :loading="reemplazandoInforme"
+      @close="showReemplazarModal = false"
+      @confirm="onConfirmReemplazar"
+    />
   </div>
 </template>
 
@@ -314,11 +343,12 @@
 import { ref } from 'vue'
 import mareasService from '../../services/mareas.service'
 import { toast } from 'vue-sonner'
-import { ShipIcon, ChevronDownIcon } from '@/icons'
+import { ShipIcon, ChevronDownIcon, RefreshIcon } from '@/icons'
 import { FileCheck2 as DocumentCheckIcon } from 'lucide-vue-next'
 import SearchInput from '@/components/ui/SearchInput.vue'
 import ModalConfirmarEnvioEmail from './ModalConfirmarEnvioEmail.vue'
 import ModalConfirmarCanalExterno from './ModalConfirmarCanalExterno.vue'
+import ReemplazarInformeDialog from '../ReemplazarInformeDialog.vue'
 import { computed } from 'vue'
 
 const props = defineProps<{
@@ -334,6 +364,9 @@ const enviadoPorCanalExterno = ref(false)
 const sending = ref(false)
 const showEmailModal = ref(false)
 const showExternalModal = ref(false)
+const showReemplazarModal = ref(false)
+const mareaParaReemplazar = ref<any>(null)
+const reemplazandoInforme = ref(false)
 const idsToProcessFinal = ref<string[]>([])
 const searchQuery = ref('')
 const sortBy = ref('marea')
@@ -350,6 +383,37 @@ const formatMareaCode = (marea: any) => {
 
 const getInformeAprobado = (marea: any) => {
     return marea.archivos?.find((a: any) => a.tipoArchivo === 'INFORME_APROBACION')
+}
+
+const openReemplazarModal = (marea: any) => {
+  mareaParaReemplazar.value = {
+    ...marea,
+    id_marea: formatMareaCode(marea),
+    buque_nombre: marea.buque?.nombreBuque || marea.buque_nombre,
+    observador: marea.observadorPrincipal ? `${marea.observadorPrincipal.nombre} ${marea.observadorPrincipal.apellido}` : (marea.observador || 'Sin Observador'),
+    estado: 'Para Protocolizar',
+    informeAprobado: {
+      nombre: getInformeAprobado(marea)?.metadata?.originalName || 'Informe Aprobado (.docx)'
+    }
+  }
+  showReemplazarModal.value = true
+}
+
+const onConfirmReemplazar = async (file: File, motivo: string) => {
+  if (!mareaParaReemplazar.value) return
+  try {
+    reemplazandoInforme.value = true
+    await mareasService.reemplazarInforme(mareaParaReemplazar.value.id, file, motivo)
+    toast.success('Informe de marea reemplazado correctamente.')
+    showReemplazarModal.value = false
+    mareaParaReemplazar.value = null
+    emit('refresh')
+  } catch (err: any) {
+    console.error('Error reemplazando informe:', err)
+    toast.error(err.response?.data?.message || 'No se pudo reemplazar el informe de marea.')
+  } finally {
+    reemplazandoInforme.value = false
+  }
 }
 
 const isSelected = (id: string) => selectedMareaIds.value.includes(id)

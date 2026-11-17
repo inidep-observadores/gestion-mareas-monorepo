@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **mareas:** nueva funcionalidad para reemplazar informe técnico de marea previamente aprobado en estado `PARA_PROTOCOLIZAR`, con solicitud de motivo obligatorio y registro del evento en la bitácora `mareas_movimientos` (`REEMPLAZO_INFORME`) para visualización en la actividad reciente.
+- **mareas:** diálogo modal `ReemplazarInformeDialog` con soporte de drag & drop para `.docx`, validaciones, referencia del informe actual y advertencia de trazabilidad.
+- **archivos:** limpieza integral y prevención de archivos huérfanos en Google Drive (`driveStorageService.deleteFile`) y jobs pendientes en `jobQueue` al reemplazar un informe de marea.
+- **protocolizacion:** botón y acción directa de reemplazo de informe aprobado en tarjetas y tabla de la pestaña "Pendientes de Envío" (`TabPendientesEnvio`).
+- **ui:** bloque y botón de reemplazo de informe aprobado en el panel lateral contextual de la marea (`MareaContextDetailContent`).
+
+
 ## [v0.22.0] - 2026-11-17
 
 ### Added

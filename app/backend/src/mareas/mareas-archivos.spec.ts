@@ -1,4 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import * as path from 'path';
+import * as os from 'os';
 import { MareasService } from './mareas.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { DriveStorageService } from '../files/drive-storage.service';
@@ -17,8 +19,11 @@ describe('MareasService - Archivos/Pasajes', () => {
     let jobQueue: JobQueueService;
 
     const mockPrisma = {
-        marea: { findUnique: jest.fn() },
-        mareaArchivo: { create: jest.fn(), findUnique: jest.fn(), delete: jest.fn() }
+        marea: { findUnique: jest.fn(), update: jest.fn() },
+        mareaArchivo: { create: jest.fn(), findUnique: jest.fn(), delete: jest.fn() },
+        mareaMovimiento: { create: jest.fn() },
+        jobQueue: { findMany: jest.fn(), deleteMany: jest.fn(), create: jest.fn() },
+        $transaction: jest.fn()
     };
     const mockDrive = {
         uploadFile: jest.fn(),
@@ -28,7 +33,12 @@ describe('MareasService - Archivos/Pasajes', () => {
         addJob: jest.fn()
     };
     const mockConfig = {
-        get: jest.fn().mockReturnValue('mock_folder_id')
+        get: jest.fn().mockImplementation((key: string) => {
+            if (key === 'UPLOADS_PATH' || key === 'MAREA_INFORMES_DIR') {
+                return path.join(os.tmpdir(), 'sigma-test-uploads');
+            }
+            return 'mock_folder_id';
+        })
     };
 
     beforeEach(async () => {
@@ -195,6 +205,116 @@ describe('MareasService - Archivos/Pasajes', () => {
             await expect((service as any).resolverAdjuntoArchivo(
                 { id: 'a1', rutaArchivo: './uploads/no-existe.docx', metadata: {} }, marea
             )).rejects.toThrow(BadRequestException);
+        });
+    });
+
+    describe('reemplazarInforme', () => {
+        const user = { id: 'u1', fullName: 'Tester' } as any;
+        const validFile = {
+            originalname: 'informe_nuevo.docx',
+            mimetype: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            buffer: Buffer.from('contenido docx')
+        } as Express.Multer.File;
+
+        it('lanza BadRequestException si no se adjunta archivo', async () => {
+            await expect(service.reemplazarInforme('m1', null as any, 'Motivo', user))
+                .rejects.toThrow(BadRequestException);
+        });
+
+        it('lanza BadRequestException si la extensión no es .docx', async () => {
+            const badFile = { ...validFile, originalname: 'informe.pdf' } as Express.Multer.File;
+            await expect(service.reemplazarInforme('m1', badFile, 'Motivo', user))
+                .rejects.toThrow(BadRequestException);
+        });
+
+        it('lanza BadRequestException si el motivo está vacío', async () => {
+            await expect(service.reemplazarInforme('m1', validFile, '   ', user))
+                .rejects.toThrow(BadRequestException);
+        });
+
+        it('lanza NotFoundException si la marea no existe', async () => {
+            mockPrisma.marea.findUnique.mockResolvedValue(null);
+            await expect(service.reemplazarInforme('m1', validFile, 'Corrección de errores', user))
+                .rejects.toThrow(NotFoundException);
+        });
+
+        it('lanza BadRequestException si el estado no es PARA_PROTOCOLIZAR', async () => {
+            mockPrisma.marea.findUnique.mockResolvedValue({
+                id: 'm1',
+                estadoActual: { codigo: 'EN_EJECUCION' },
+                archivos: [{ id: 'arch-1', tipoArchivo: 'INFORME_APROBACION' }]
+            });
+            await expect(service.reemplazarInforme('m1', validFile, 'Corrección de errores', user))
+                .rejects.toThrow(BadRequestException);
+        });
+
+        it('lanza BadRequestException si no cuenta con informe previo', async () => {
+            mockPrisma.marea.findUnique.mockResolvedValue({
+                id: 'm1',
+                estadoActual: { codigo: 'PARA_PROTOCOLIZAR' },
+                archivos: []
+            });
+            await expect(service.reemplazarInforme('m1', validFile, 'Corrección de errores', user))
+                .rejects.toThrow(BadRequestException);
+        });
+
+        it('reemplaza exitosamente el informe, limpia en Drive y registra movimiento en la bitácora', async () => {
+            const archivoAnterior = {
+                id: 'arch-previo',
+                tipoArchivo: 'INFORME_APROBACION',
+                metadata: {
+                    driveFileId: 'drive-file-123',
+                    tempFilePath: null
+                }
+            };
+
+            mockPrisma.marea.findUnique.mockResolvedValue({
+                id: 'm1',
+                anioMarea: 2026,
+                nroMarea: 50,
+                tipoMarea: 'COM',
+                estadoActualId: 'est-para-prot',
+                estadoActual: { codigo: 'PARA_PROTOCOLIZAR' },
+                archivos: [archivoAnterior]
+            });
+
+            mockPrisma.jobQueue.findMany.mockResolvedValue([
+                { id: 'job-1', payload: { mareaArchivoId: 'arch-previo' } }
+            ]);
+            mockPrisma.jobQueue.deleteMany.mockResolvedValue({ count: 1 });
+
+            const nuevoMovimiento = { id: 'mov-reemplazo' };
+            const nuevoArchivo = {
+                id: 'arch-nuevo',
+                mareaId: 'm1',
+                tipoArchivo: 'INFORME_APROBACION',
+                version: 'CORREGIDO'
+            };
+
+            mockPrisma.$transaction.mockImplementation(async (callback: any) => {
+                const tx = {
+                    mareaArchivo: {
+                        delete: jest.fn().mockResolvedValue({}),
+                        create: jest.fn().mockResolvedValue(nuevoArchivo)
+                    },
+                    mareaMovimiento: {
+                        create: jest.fn().mockResolvedValue(nuevoMovimiento)
+                    },
+                    marea: {
+                        update: jest.fn().mockResolvedValue({})
+                    },
+                    jobQueue: {
+                        create: jest.fn().mockResolvedValue({})
+                    }
+                };
+                return await callback(tx);
+            });
+
+            const result = await service.reemplazarInforme('m1', validFile, 'Ajuste de resumen en página 2', user);
+
+            expect(mockDrive.deleteFile).toHaveBeenCalledWith('drive-file-123');
+            expect(mockPrisma.jobQueue.deleteMany).toHaveBeenCalled();
+            expect(result).toEqual(nuevoArchivo);
         });
     });
 });

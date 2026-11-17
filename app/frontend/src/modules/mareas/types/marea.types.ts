@@ -65,6 +65,13 @@ export interface MareaContext {
         id_pesqueria?: string;
         tipo_marea: TipoMarea;
         desestimada?: boolean;
+        informeAprobado?: {
+            id: string;
+            nombre: string;
+            fechaSubida: string;
+            formato?: string;
+            rutaArchivo?: string;
+        } | null;
         etapas?: any[];
     };
     actions: Record<string, { enabled: boolean; label: string; blockedReason?: string; toStateCodigo?: string; claseBoton?: string }>;
