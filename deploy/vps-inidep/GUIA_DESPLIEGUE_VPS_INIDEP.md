@@ -133,6 +133,9 @@ docker network create traefik
    - `COOKIE_SECURE`: `false` (imprescindible para sesión por HTTP en IP local).
    - `COOKIE_SAMESITE`: `lax`
 
+   > [!NOTE] Google Drive y Credenciales
+   > La integración con Google Drive opera 100% mediante variables de entorno OAuth2 (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN`). **No se requiere copiar ni instalar ningún archivo físico `google-credentials.json` en el servidor.**
+
 ### Paso 6: Construir y Levantar SIGMA
 
 Desde `/opt/sigma/deploy/vps-inidep/app`:
