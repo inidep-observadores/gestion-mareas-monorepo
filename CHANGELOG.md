@@ -4,14 +4,27 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v0.22.0] - 2026-11-17
+
 ### Added
-- **observadores:** incorporar avatar con foto de perfil (`ObservadorAvatar`) en el encabezado del diálogo de historial completo del observador (`ObservadorTimelineDialog`).
-- **componentes:** soporte para tamaño `2xl` (`w-12 h-12`) en `ObservadorAvatar`.
+- **despliegue:** arquitectura completa de despliegue contenerizada para VPS local y red intranet INIDEP con Traefik como reverse proxy (redirección HTTP/HTTPS, certificados dinámicos y soporte de IP directa), PostgreSQL 15, Redis 7 y Gotenberg 8.
+- **despliegue:** guía exhaustiva de instalación y mantenimiento de infraestructura local en `deploy/vps-inidep/GUIA_DESPLIEGUE_VPS_INIDEP.md`.
+- **seguridad:** configuración de credenciales iniciales de administrador mediante variables de entorno (`INITIAL_ADMIN_EMAIL`, `INITIAL_ADMIN_PASSWORD`) en semillas para producción, condicionando la ejecución a base de datos vacía (`userCount === 0`).
+- **seguridad:** restricción de endpoints de registro de usuarios exclusivamente a roles con privilegios de administración (`admin`).
 - **observadores:** nuevo modal interactivo de ficha rápida (`ObservadorQuickModal`) accesible al hacer clic sobre el avatar en cualquier vista, que visualiza la foto ampliada (96x96 px), nombre completo, Nº de legajo, DNI, Nº de cédula de embarque y estado de vencimientos de documentación con indicador de alertas.
-- **componentes:** dotar a `ObservadorAvatar` de interactividad (`cursor-pointer`, hover visual y apertura de ficha de observador) y soporte para apertura sin peticiones HTTP redundantes cuando los datos están precargados.
+- **observadores:** incorporar avatar con foto de perfil (`ObservadorAvatar`) en el encabezado del diálogo de historial completo del observador (`ObservadorTimelineDialog`).
+- **componentes:** soporte para tamaño `2xl` (`w-12 h-12`), interactividad (`cursor-pointer`, hover visual) y apertura de ficha de observador en `ObservadorAvatar`.
 - **backend:** incluir `codigoInterno` y `dni` en los registros devueltos por `getWorkforceStatus` y `observador_id` en las mareas operativas para vinculación directa de datos.
+- **frontend:** helper universal `generateUUID` y polyfill de `crypto.randomUUID` en `app/frontend/src/helpers/uuid.helper.ts` con fallback criptográfico para navegación en contextos HTTP no seguros sobre IP directa.
+
+### Changed
+- **ui:** estandarizar identidad visual y de marca a **SIGMA (GESTIÓN DE MAREAS)** - INIDEP en títulos de ventana, barra superior, menú lateral y manifest web.
+- **almacenamiento:** desvincular la carpeta de archivos multimedia y uploads `app/backend/static` del control de versiones (Git), asegurando su creación automática en el `Dockerfile` de backend y persistencia en `.gitignore`.
+- **backend:** importar `AuthModule` en `PresentismoModule`, `FeriadosModule` y `FilesModule`, resolviendo advertencias de inyección de dependencias con `AuthGuard`.
+- **semillas:** corrección de interpolación y obtención de `DATABASE_URL` en scripts de seed (`seed-static.ts`, `seed-dev.ts`) evitando fallos de conexión por formato de comillas en variables de entorno.
 
 ### Fixed
+- **simulador:** solucionar pantalla en blanco en Simulador de Cobertura y capas de monitor sobre conexiones HTTP locales por indisponibilidad de `crypto.randomUUID` en contextos no seguros.
 - **novedades:** corregir regla de acumulación de Francos Compensatorios (`FC`) para evitar que nuevas solicitudes en fechas distintas rectifiquen a las anteriores al procesar correos o registrar novedades.
 - **novedades:** omitir `{ fechaFin: null }` en el cálculo de solapamiento para tipos de novedad puntuales y acotados, previniendo falsos positivos por registros históricos anómalos.
 - **novedades:** excluir novedades en estado `RECTIFICADA` de las comprobaciones de solapamiento activo.

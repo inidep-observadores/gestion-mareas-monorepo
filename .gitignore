@@ -41,6 +41,7 @@ app/backend/backups/
 app/backend/backups-staging/
 app/backend/data-exports/
 app/backend/uploads/
+app/backend/static/
 app/backend/outputs/
 app/backend/test-results/
 app/backend/old_data/
