@@ -1,9 +1,6 @@
 import './assets/main.css'
-// Polyfill para crypto.randomUUID en contextos no seguros (HTTP por IP privada)
-import { generateUUID } from '@/helpers/uuid.helper'
-if (typeof crypto !== 'undefined' && typeof crypto.randomUUID !== 'function') {
-  crypto.randomUUID = generateUUID as any
-}
+// Polyfill universal para crypto.randomUUID en contextos no seguros (HTTP por IP privada)
+import '@/helpers/uuid.helper'
 // Import Swiper styles
 import 'swiper/css'
 import 'swiper/css/navigation'
