@@ -107,7 +107,7 @@ const sending = ref(false)
 const messageInput = ref<HTMLTextAreaElement | null>(null)
 
 const generateTemplate = () => {
-  const signature = authStore.user?.fullName || 'Gestión de Mareas'
+  const signature = authStore.user?.fullName || 'SIGMA - INIDEP'
   return `Estimado/a ${props.obsName},
 
 Se solicita la entrega de la documentación correspondiente a la marea ${props.mareaId} realizada en el buque ${props.vesselName}.

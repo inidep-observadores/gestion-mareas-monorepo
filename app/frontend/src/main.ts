@@ -1,4 +1,6 @@
 import './assets/main.css'
+// Polyfill universal para crypto.randomUUID en contextos no seguros (HTTP por IP privada)
+import '@/helpers/uuid.helper'
 // Import Swiper styles
 import 'swiper/css'
 import 'swiper/css/navigation'

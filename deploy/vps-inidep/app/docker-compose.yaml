@@ -1,0 +1,125 @@
+services:
+  # ---------------------------------------------------------------------------
+  # BASE DE DATOS (PostgreSQL 15)
+  # ---------------------------------------------------------------------------
+  db:
+    image: postgres:15-alpine
+    restart: always
+    container_name: sigma-db
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-mareas_db}
+    ports:
+      # Puerto 5437 publicado en el host (evita colisión con 5435 de dev)
+      - "${DB_EXTERNAL_PORT:-5437}:5432"
+    volumes:
+      - mareas_db_data_inidep:/var/lib/postgresql/data
+    networks:
+      - sigma-network
+
+  # ---------------------------------------------------------------------------
+  # COLA ASÍNCRONA Y CACHÉ (Redis 7)
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    restart: always
+    container_name: sigma-redis-vps
+    volumes:
+      - redis_data_inidep:/data
+    command: redis-server --appendonly yes
+    networks:
+      - sigma-network
+
+  # ---------------------------------------------------------------------------
+  # GENERACIÓN DE REPORTES Y PDF (Gotenberg 8)
+  # ---------------------------------------------------------------------------
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    restart: always
+    container_name: sigma-gotenberg
+    networks:
+      - sigma-network
+
+  # ---------------------------------------------------------------------------
+  # BACKEND (NestJS API)
+  # ---------------------------------------------------------------------------
+  backend:
+    build:
+      context: ../../../app/backend
+      dockerfile: Dockerfile
+    container_name: sigma-backend
+    restart: always
+    env_file:
+      - .env
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      GOTENBERG_URL: http://gotenberg:3000
+      DATABASE_URL: "postgresql://${DB_USERNAME:-postgres}:${DB_PASSWORD}@db:5432/${DB_NAME:-mareas_db}"
+    depends_on:
+      - db
+      - redis
+      - gotenberg
+    volumes:
+      - ./backups:/app/backups
+      - ./static:/app/static
+      - ./uploads:/app/uploads
+    command: >
+      sh -c "npx prisma generate && npx prisma migrate deploy && node dist/main"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik"
+      # Enrutamiento de la API bajo el prefijo /api con prioridad alta
+      - "traefik.http.routers.sigma-backend.rule=PathPrefix(`/api`)"
+      - "traefik.http.routers.sigma-backend.priority=100"
+      - "traefik.http.routers.sigma-backend.entrypoints=web,websecure"
+      - "traefik.http.services.sigma-backend.loadbalancer.server.port=3000"
+      # En Etapa 2 (con dominio y TLS), descomente las siguientes 2 líneas:
+      # - "traefik.http.routers.sigma-backend.tls=true"
+      # - "traefik.http.routers.sigma-backend.tls.certresolver=mytlschallenge"
+    networks:
+      - sigma-network
+      - traefik
+
+  # ---------------------------------------------------------------------------
+  # FRONTEND (Vue 3 + Nginx SPA)
+  # ---------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ../../../app/frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_BACKEND_URL: ${FRONTEND_API_URL:-/api}
+        BUILD_SCRIPT: "build-only"
+        DIST_DIR: "dist"
+    container_name: sigma-frontend
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik"
+      # Enrutamiento de la aplicación Web SPA
+      - "traefik.http.routers.sigma-frontend.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.sigma-frontend.priority=10"
+      - "traefik.http.routers.sigma-frontend.entrypoints=web,websecure"
+      - "traefik.http.services.sigma-frontend.loadbalancer.server.port=80"
+      # En Etapa 2 (con dominio y TLS), descomente las siguientes 2 líneas:
+      # - "traefik.http.routers.sigma-frontend.tls=true"
+      # - "traefik.http.routers.sigma-frontend.tls.certresolver=mytlschallenge"
+    networks:
+      - traefik
+
+networks:
+  sigma-network:
+    driver: bridge
+  traefik:
+    external: true
+
+volumes:
+  mareas_db_data_inidep:
+  redis_data_inidep:
+

@@ -3,6 +3,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        BUILD_SCRIPT: "build:staging"
+        DIST_DIR: "dist-staging"
     container_name: sigma-frontend-staging
     restart: unless-stopped
     networks:

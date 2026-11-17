@@ -2,7 +2,9 @@ import { Controller, Get, Query, ParseIntPipe, BadRequestException, Post, Body, 
 import { Response } from 'express';
 import { PresentismoService } from './presentismo.service';
 import { PlanillaMensualResponseDto } from './dto/planilla-mensual-response.dto';
+import { Auth } from '../auth/decorators';
 
+@Auth()
 @Controller('presentismo')
 export class PresentismoController {
   constructor(private readonly presentismoService: PresentismoService) {}

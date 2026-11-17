@@ -1,7 +1,7 @@
 {
-    "name": "Gestión de Mareas - INIDEP",
-    "short_name": "Mareas",
-    "description": "Sistema de gestión y monitoreo de mareas - INIDEP.",
+    "name": "SIGMA - Sistema Integral de Gestión de Mareas | INIDEP",
+    "short_name": "SIGMA",
+    "description": "SIGMA - Sistema Integral de Gestión de Mareas - INIDEP.",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#ffffff",

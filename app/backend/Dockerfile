@@ -31,6 +31,6 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.js ./prisma.config.js
-COPY --from=builder /app/static ./static
+RUN mkdir -p static/products static/users static/novedades static/uploads
 CMD ["node", "dist/main"]
 

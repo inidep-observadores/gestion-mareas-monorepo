@@ -6,9 +6,10 @@ import { DisponibilidadController } from './disponibilidad.controller';
 import { DisponibilidadService } from './disponibilidad.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { NovedadesModule } from './novedades/novedades.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [FeriadosModule, NovedadesModule, PrismaModule],
+  imports: [FeriadosModule, NovedadesModule, PrismaModule, AuthModule],
   controllers: [PresentismoController, DisponibilidadController],
   providers: [PresentismoService, DisponibilidadService],
   exports: [PresentismoService, DisponibilidadService],

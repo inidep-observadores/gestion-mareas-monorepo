@@ -7,9 +7,26 @@ import { Pool } from 'pg';
 
 dotenv.config();
 
-function expandEnv(str: string | undefined): string | undefined {
-    if (!str) return str;
-    return str.replace(/\${(\w+)}/g, (_, v) => process.env[v] || '');
+function getDatabaseUrl(): string {
+    let url = process.env.DATABASE_URL;
+
+    if (url) {
+        url = url.trim().replace(/^["']|["']$/g, '');
+        url = url.replace(/\${(\w+)}/g, (_, v) => process.env[v] || '');
+    }
+
+    if (!url || url.includes('${') || (!url.startsWith('postgresql://') && !url.startsWith('postgres://'))) {
+        const user = process.env.DB_USERNAME || 'postgres';
+        const rawPass = process.env.DB_PASSWORD || '';
+        const pass = rawPass ? encodeURIComponent(rawPass) : '';
+        const host = process.env.DB_HOST || 'db';
+        const port = process.env.DB_PORT || '5432';
+        const name = process.env.DB_NAME || 'mareas_db';
+        const auth = pass ? `${user}:${pass}` : user;
+        url = `postgresql://${auth}@${host}:${port}/${name}`;
+    }
+
+    return url;
 }
 
 // Orden de carga (Padres antes que hijos)
@@ -157,11 +174,11 @@ export class DataLoader {
 }
 
 async function main() {
-    if (!process.env.DATABASE_URL || process.env.DATABASE_URL.includes('${')) {
+    if (!process.env.DATABASE_URL && !process.env.DB_HOST) {
         dotenv.config({ path: path.join(process.cwd(), '.env.develop') });
     }
 
-    process.env.DATABASE_URL = expandEnv(process.env.DATABASE_URL);
+    process.env.DATABASE_URL = getDatabaseUrl();
     
     // =========================================================================
     // SALVAGUARDA CONTRA PÉRDIDA DE DATOS
@@ -178,7 +195,8 @@ async function main() {
     }
     // =========================================================================
 
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    const connectionString = getDatabaseUrl();
+    const pool = new Pool({ connectionString });
     const adapter = new PrismaPg(pool);
     const prisma = new PrismaClient({ adapter });
 

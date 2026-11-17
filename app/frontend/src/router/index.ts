@@ -531,7 +531,7 @@ const getSessionId = () => {
 };
 
 router.beforeEach(async (to, from, next) => {
-  document.title = `${to.meta.title} | Gestión de Mareas - INIDEP`
+  document.title = `${to.meta.title} | SIGMA - INIDEP`
 
   const authStore = useAuthStore()
   const businessRulesStore = useBusinessRulesStore()
