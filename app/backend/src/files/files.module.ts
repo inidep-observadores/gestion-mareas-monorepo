@@ -6,6 +6,7 @@ import { FilesController } from './files.controller';
 import { DriveStorageService } from './drive-storage.service';
 import { GotenbergService } from './gotenberg.service';
 import { ErrorLogsModule } from '../common/error-logs/error-logs.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Global()
 @Module({
@@ -13,7 +14,8 @@ import { ErrorLogsModule } from '../common/error-logs/error-logs.module';
   providers: [FilesService, DriveStorageService, GotenbergService],
   imports: [
     ConfigModule,
-    ErrorLogsModule
+    ErrorLogsModule,
+    AuthModule
   ],
   exports: [FilesService, DriveStorageService, GotenbergService]
 })
