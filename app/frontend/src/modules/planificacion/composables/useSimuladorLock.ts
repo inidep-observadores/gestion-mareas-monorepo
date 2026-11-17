@@ -1,10 +1,11 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import httpClient from '@/config/http/http.client';
+import { generateUUID } from '@/helpers/uuid.helper';
 
 export function useSimuladorLock(escenarioIdRef: import('vue').Ref<string | null>) {
   const isLockedByMe = ref(true);
   const lockedByOtherUser = ref('');
-  const lockTabId = ref(crypto.randomUUID());
+  const lockTabId = ref(generateUUID());
   
   let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
 

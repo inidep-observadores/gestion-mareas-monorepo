@@ -1,5 +1,6 @@
 import { ref, readonly } from 'vue'
 import { userLayersStorage, type UserMapLayer } from '../services/userLayers.storage'
+import { generateUUID } from '@/helpers/uuid.helper'
 
 const PALETTE = ['#6366F1', '#14B8A6', '#F97316', '#A855F7', '#06B6D4', '#EC4899']
 const MAX_FILE_BYTES = 20 * 1024 * 1024
@@ -42,7 +43,7 @@ const importFile = async (file: File): Promise<UserMapLayer> => {
   if (!type || !VALID_TYPES.includes(type)) throw new Error('El archivo no es un GeoJSON válido')
 
   const layer: UserMapLayer = {
-    id: crypto.randomUUID(),
+    id: generateUUID(),
     name: file.name.replace(/\.(geo)?json$/i, ''),
     color: PALETTE[layers.value.length % PALETTE.length],
     isVisible: true,
